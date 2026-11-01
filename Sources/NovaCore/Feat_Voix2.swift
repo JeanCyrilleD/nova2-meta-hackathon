@@ -231,7 +231,9 @@ public enum VoixVocab {
         let retraits: Set<String> = Set(man.retraits.map { (t: String) -> String in key(t) })
         var out: [String] = []
         var seen: Set<String> = []
-        for t in man.ajouts + calcule().map({ (e: [String: String]) -> String in e["terme"] ?? "" }) {
+        // 01/11 (voix-rapide) : pays du Sahel et sigles humanitaires (VoixRapide.vocabulairePrioritaire) juste après les ajouts
+        // manuels — jamais coupés par la limite (avant : 35 contacts passaient devant, « Mali » absent → « Molly »).
+        for t in man.ajouts + VoixRapide.vocabulairePrioritaire + calcule().map({ (e: [String: String]) -> String in e["terme"] ?? "" }) {
             let k: String = key(t)
             if k.isEmpty || t.count > 50 || seen.contains(k) || retraits.contains(k) { continue }
             seen.insert(k)

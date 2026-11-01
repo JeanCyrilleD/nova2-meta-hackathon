@@ -27,15 +27,19 @@ public final class Voice {
     /// X-Nova-Voice: local (+ X-Nova-Voice-Name). false = aucun son produit (rien n'a été envoyé).
     func speakLocal(_ clean: String, res: Response, wantsPCM: Bool, why: String, t0: Date) -> Bool {
         let vid: String = settings.get("voix_locale_id", "")
-        let info: [String: String]? = LocalVoice.shared.voiceInfo(preferred: vid)
+        // 01/11 (voix-rapide) : la langue est détectée sur le TEXTE à dire (pas seulement sur le réglage) — une réponse anglaise
+        // est lue par une voix anglaise, une réponse française par une voix française. Réglage langue = départage d'un texte ambigu.
+        let lang: String = VoixRapide.langue(clean, defaut: VoixReglages.langue().hasPrefix("en") ? "en" : "fr")
+        let info: [String: String]? = LocalVoice.shared.voiceInfo(preferred: vid, language: VoixRapide.langueVoix(lang))
         let name: String = info?["nom"] ?? ""
         let qual: String = info?["qualite"] ?? ""
         var hdr: [String: String] = ["X-Nova-Voice": "local"]
         hdr["X-Nova-Voice-Name"] = LocalVoice.headerSafe(name + (qual.isEmpty ? "" : " (" + qual + ")"))
         hdr["X-Nova-Voice-Reason"] = LocalVoice.headerSafe(why)
+        hdr["X-Nova-Voice-Lang"] = lang
         var first: Int? = nil
         var pcm: Data = Data()
-        let r = LocalVoice.shared.render(text: clean, voiceId: vid, cancel: { () -> Bool in res.clientGone }) { (d: Data) -> Bool in
+        let r = LocalVoice.shared.renderDetailed(text: clean, voiceId: vid, language: VoixRapide.langueVoix(lang), cancel: { () -> Bool in res.clientGone }) { (d: Data) -> Bool in
             if wantsPCM {
                 if first == nil {
                     first = Int(Date().timeIntervalSince(t0) * 1000)
@@ -52,7 +56,7 @@ public final class Voice {
         }
         let ms: Int = Int(Date().timeIntervalSince(t0) * 1000)
         journal.add(["moteur": "local", "voix": name, "ok": first != nil, "premier_octet_ms": first ?? -1, "total_ms": ms,
-                     "chars": clean.count, "pourquoi": shortError(why, 100), "raison": shortError(r.error ?? "", 120)])
+                     "chars": clean.count, "langue": lang, "pourquoi": shortError(why, 100), "raison": shortError(r.error ?? "", 120)])
         return first != nil
     }
 
@@ -204,8 +208,8 @@ public final class Voice {
     }
 
     /// Envoi multipart à Muse Voice Transcribe (WAV PCM 16 kHz mono déjà prêt). Connexion réutilisée (HTTPStream.pooledHosts).
-    func postMetaASR(wav: Data, key: String, language: String) -> (text: String?, error: String?) {
-        let reqObj: [String: Any] = ["model": "muse-voice-transcribe-1.0", "language": (language == "fra" || language == "auto") ? "fr" : language, "audioEncoding": "WAV"]
+    func postMetaASR(wav: Data, key: String, language: String, vocabulaire: Bool = true) -> (text: String?, error: String?) {
+        let reqObj: [String: Any] = Voice.metaASRRequest(language: language, vocabulaire: vocabulaire && settings.get("stt_meta_vocabulaire", true))
         guard let reqData = try? JSONSerialization.data(withJSONObject: reqObj) else { return (nil, "Muse Voice Transcribe : requête JSON non construite") }
         let b = "----nova" + UUID().uuidString
         var body = Data()
@@ -227,10 +231,28 @@ public final class Voice {
         }
         let metaErrMsg = (respObj?["error"] as? [String: Any])?["message"] as? String
         if st == 404 || st == 405 { metaRouteDead = true }   // route absente sous cette forme : inutile de la retaquer à chaque dictée (session seulement)
+        // 01/11 (voix-rapide) : un 400 avec le vocabulaire (keywords / languageBias) → UNE relance sans lui, journalisée — la dictée
+        // ne dépend jamais d'un champ facultatif.
+        if st == 400 && vocabulaire && (reqObj["keywords"] != nil || reqObj["languageBias"] != nil) {
+            journal.add(["stt": "meta", "model": "muse-voice-transcribe-1.0", "ok": false, "vocabulaire_refuse": true, "err": shortError(metaErrMsg ?? "HTTP 400", 120)])
+            return postMetaASR(wav: wav, key: key, language: language, vocabulaire: false)
+        }
         let bodyPeek = metaErrMsg == nil ? shortError((String(data: data, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines), 120) : ""
         let err = "Muse Voice Transcribe : HTTP \(st)" + (metaErrMsg.map { " — \($0)" } ?? (bodyPeek.isEmpty ? "" : " — corps : \(bodyPeek)"))
         journal.add(["stt": "meta", "model": "muse-voice-transcribe-1.0", "ok": false, "err": shortError(err, 160)])
         _ = BlackBox.record(["tool": "stt", "actor": "Nova", "why": "échec muse-voice-transcribe-1.0 : " + shortError(err, 120), "ok": false, "effect": "aucun"])
         return (nil, err)
+    }
+
+    /// 01/11 (voix-rapide) : partie « request » de /v1/asr/transcribe. Champs DOCUMENTÉS (dev.meta.ai/docs/api-reference/voice/schemas) :
+    /// model, audioEncoding, keywords (termes à favoriser : sigles, pays, villes — liste fixe, jamais les contacts ni la mémoire),
+    /// languageBias (« French » / « English » ; absent en « auto »). « language » (non documenté, accepté jusqu'ici) est gardé tel quel.
+    static func metaASRRequest(language: String, vocabulaire: Bool) -> [String: Any] {
+        var o: [String: Any] = ["model": "muse-voice-transcribe-1.0", "language": (language == "fra" || language == "auto") ? "fr" : language, "audioEncoding": "WAV"]
+        if vocabulaire {
+            o["keywords"] = VoixRapide.motsClesMeta()
+            if let lb = VoixRapide.languageBias(language == "fra" ? "fr" : language) { o["languageBias"] = lb }
+        }
+        return o
     }
 }

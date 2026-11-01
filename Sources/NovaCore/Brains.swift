@@ -318,7 +318,10 @@ public final class BrainRunner {
             if let s = sysPlain, !s.isEmpty { msgs.append(["role": "system", "content": s]) }
             msgs += messages.map { ["role": $0.role, "content": $0.content] }
             // Les modèles à raisonnement dépensent d'abord des jetons à « réfléchir » : plancher de sortie à la 1re tentative.
-            let cap = spec.id == "spark-open-baseten" ? max(maxTokens, 2048) : ((retried || spec.kind == .local) ? maxTokens : max(maxTokens, 320)) // 28/10 contrôle : raisonnement Baseten 259 tok sur Hello, plancher 320 insuffisant
+            var cap = spec.id == "spark-open-baseten" ? max(maxTokens, 2048) : ((retried || spec.kind == .local) ? maxTokens : max(maxTokens, 320)) // 28/10 contrôle : raisonnement Baseten 259 tok sur Hello, plancher 320 insuffisant
+            // 01/11 (voix-rapide, banc voix 08:42) : Spark facture son raisonnement en sortie SANS le diffuser (≈ 100–300 jetons même en
+            // « minimal ») ; à 320 il mangeait tout le plafond : 2 réponses vides sur 24, et des réponses coupées (« d'UNH »). Plancher voix.
+            if spec.baseURL.contains("api.meta.ai") && mode == "voice" { cap = max(cap, VoixRapide.plancherSortieVoixMeta) }
             body = ["model": spec.model, "max_tokens": cap, "stream": true, "messages": msgs]
             if spec.baseURL.contains("api.meta.ai") {
                 // 29/10 (journal Live du 27/10 : 3,5 à 6 s entre la fin de la phrase et le 1er mot sur Spark) :
@@ -336,6 +339,7 @@ public final class BrainRunner {
         var gotTool = false       // AUDIT-BRAIN-A : un bloc tool_use a commencé (réponse « outil seul », sans texte : ce n'est PAS une réponse vide)
         var gotLife = false       // AUDIT-BRAIN-A : message_start / ping / début de bloc = signe de vie avant le premier mot
         var stopReason: String = ""   // AUDIT-24/10: stop_reason ([tiers]) / finish_reason ([tiers]) — « max_tokens » = réponse tronquée
+        var finishSeen: String = ""   // 01/11 (voix-rapide) : finish_reason brut (length, content_filter…) — nomme une réponse vide
         var failure: BrainFailure? = nil
         var acc: [Int: NativeBlockAcc] = [:]   // AUDIT-BRAIN-A : blocs [tiers] par index
         var msIn: Int = 0                      // AUDIT-BRAIN-A : jetons d'entrée lus dès message_start
@@ -376,8 +380,11 @@ public final class BrainRunner {
                     }
                     for ch in (o["choices"] as? [[String: Any]]) ?? [] {
                         if let fr = ch["finish_reason"] as? String, fr == "length" { stopReason = "max_tokens" }   // AUDIT-24/10
+                        if let fr = ch["finish_reason"] as? String, !fr.isEmpty { finishSeen = fr }
                         if let d = ch["delta"] as? [String: Any] {
                             if let tx = d["content"] as? String, !tx.isEmpty { gotDelta = true; onDelta(tx) }
+                            // 01/11 (voix-rapide) : « refusal » (champ documenté du delta, API Meta) = texte de refus à dire — avant : ignoré → « réponse vide ».
+                            else if let rf = d["refusal"] as? String, !rf.isEmpty { gotDelta = true; onDelta(rf) }
                             else if let r = (d["reasoning"] as? String) ?? (d["reasoning_content"] as? String), !r.isEmpty { gotThinking = true }
                         }
                     }
@@ -410,7 +417,7 @@ public final class BrainRunner {
             throw BrainFailure(kind: res.kind ?? .other, message: e)
         }
         if gotDelta || gotTool, stopReason == "max_tokens" { onStop?("max_tokens") }   // AUDIT-24/10: plafond de sortie atteint = réponse tronquée
-        if !gotDelta && !gotTool { throw BrainFailure(kind: .other, message: gotThinking ? "raisonnement sans texte (plafond de sortie atteint pendant la réflexion)" : "réponse vide") }   // DIAG2-FLUX P2 : échec nommé par sa cause — le journal cerveaux distingue désormais les deux régimes
+        if !gotDelta && !gotTool { throw BrainFailure(kind: .other, message: VoixRapide.motifVide(finish: finishSeen, raisonnementVu: gotThinking)) }   // 01/11 (voix-rapide) : finish_reason nommé (length, content_filter)   // DIAG2-FLUX P2 : échec nommé par sa cause — le journal cerveaux distingue désormais les deux régimes
         if native, let ob = onBlocks { ob(BrainRunner.finalBlocks(acc), stopReason) }   // AUDIT-BRAIN-A : contenu structuré de la réponse (texte + tool_use complets)
     }
 }

@@ -386,6 +386,12 @@ public final class VoiceLiveEngine {
     private let localSpeech = VLLocalSpeech()
     #endif
     private var lastPartial = ""
+    // 01/11 (voix-rapide) : départ anticipé et barge-in.
+    private var carryText = ""                         // début d'un tour annulé par une reprise de parole (fusionné au suivant)
+    private var speculativeWindowUntil: Date? = nil   // fenêtre posée à la fin de parole (pause tolérée des réglages)
+    private var echoRefAfterBarge = ""                // ce que Nova disait au moment d'un barge-in (filtre d'écho du tour suivant)
+    private var lastTurnAcked = false                 // accusé au tour précédent : jamais deux fois de suite
+    private var lastAckPhrase = ""
     private var lastPartialAt = Date.distantPast
     private var lastPartialPublishAt = Date.distantPast
 
@@ -417,6 +423,14 @@ public final class VoiceLiveEngine {
         var brainAttempt: Int = 0            // tentative courante (une relance invalide la précédente)
         var triedBrains: [String] = []
         var forcedEnd = false                // tour clos par ForceEndpoint (bruit de fond qui gardait le tour ouvert)
+        // 01/11 (voix-rapide) : départ anticipé, première clause, langue de la voix, accusé, relance d'une réponse vide.
+        var speculativeUntil: Date? = nil    // fenêtre où une reprise de parole d'Ahadi annule ce tour et fusionne les deux morceaux
+        var firstChunkSent = false           // la première clause est partie (ensuite : découpe en phrases)
+        var lang: String? = nil              // langue de la réponse (« en » / « fr »), fixée à la première phrase
+        var ackAt: Date? = nil               // accusé de réception joué (ms depuis le final au journal)
+        var ackMs: Int = -1                  // décision → tampon planifié
+        var emptyRetried = false
+        var merged = false                   // texte fusionné après une reprise de parole
         init(id: Int, userText: String, userFinalAt: Date, speechEndAt: Date?, sttEngine: String) {
             self.id = id; self.userText = userText; self.userFinalAt = userFinalAt
             self.speechEndAt = speechEndAt; self.sttEngine = sttEngine
@@ -518,6 +532,7 @@ public final class VoiceLiveEngine {
                 guard let self = self else { completion(false, "moteur absent"); return }
                 self.running = true
                 self.sessionStartedAt = Date()
+                self.prepareFastVoice()   // 01/11 (voix-rapide) : connexion api.meta.ai préchauffée + accusés rendus d'avance
                 self.connectSTT(completion: completion)
             }
         }
@@ -799,6 +814,28 @@ extension VoiceLiveEngine {
         guard !txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         // VAGUE 2 : pause tolérée = réglage voix (600 ms de VAD déjà écoulées), 1,4 s par défaut.
         let extra: Double = max(0.3, Double(VoixReglages.pauseMs() - 600) / 1000.0)
+        // 01/11 (voix-rapide) : DÉPART ANTICIPÉ — le cerveau part dès la fin de parole détectée, avec le partiel SFSpeech, dès qu'il est
+        // stable (≤ 250 ms sans nouveau partiel, attente plafonnée à 500 ms). Avant : +0,8 s d'attente fixe (pause tolérée) avant tout
+        // (journal voix_live : fin_parole_a_final_ms 1 254 à 4 569 ms). La pause tolérée reste une FENÊTRE : si Ahadi reprend dans ce
+        // délai, le tour est annulé et sa phrase fusionnée (handlePartial). Réglage « voix_depart_anticipe » (défaut vrai).
+        if settings?.get("voix_depart_anticipe", true) ?? true {
+            let endAt: Date = Date()
+            func tryGo() {
+                // Un partiel tardif (mots en retard sur l'audio) ne bloque pas ; une vraie reprise de voix (VAD) si.
+                guard running, sttMode == .local, stateName == "ecoute", !vad.inSpeech,
+                      !localSpeech.lastText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                let sinceP: Int = Int(Date().timeIntervalSince(lastPartialAt) * 1000)
+                let sinceE: Int = Int(Date().timeIntervalSince(endAt) * 1000)
+                if VoixRapide.partielStable(depuisDernierPartielMs: sinceP, depuisFinParoleMs: sinceE) {
+                    speculativeWindowUntil = Date().addingTimeInterval(extra)
+                    localSpeech.forceEnd()
+                } else {
+                    q.asyncAfter(deadline: .now() + 0.05) { tryGo() }
+                }
+            }
+            tryGo()
+            return
+        }
         q.asyncAfter(deadline: .now() + extra) { [weak self] in
             guard let self = self, self.running, self.sttMode == .local, self.stateName == "ecoute" else { return }
             if self.lastPartialAt == partialAt { self.localSpeech.forceEnd() }
@@ -811,7 +848,14 @@ extension VoiceLiveEngine {
         // VAGUE 2 · écho : pendant que Nova réfléchit/parle, un partiel n'est montré que s'il n'est
         // PAS sa propre voix — et s'il est franchement autre chose (≥ 3 mots, ≥ 4 sans AEC), c'est
         // une interruption volontaire : barge-in, même si le VAD n'a pas franchi son seuil.
-        let st = stateName
+        var st = stateName
+        // 01/11 (voix-rapide) : départ anticipé — Ahadi reprend la parole pendant la fenêtre de pause tolérée : il n'avait pas fini.
+        // Le tour anticipé est annulé (son, synthèse, cerveau) et son texte sera fusionné avec la suite au prochain final.
+        if (st == "parole" || st == "reflexion"), let cur = currentTurn, let until = cur.speculativeUntil, Date() < until,
+           VoixRapide.repriseDeParole(t, dejaDit: cur.spokenText) {
+            cancelSpeculative(cur)
+            st = stateName
+        }
         if st == "parole" || st == "reflexion" {
             guard let cur = currentTurn else { return }
             let nWords: Int = t.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).filter { $0.count >= 3 }.count
@@ -843,7 +887,9 @@ extension VoiceLiveEngine {
         let st = stateName
         // 26/10 : séances réelles — « Laisse-moi réfléchir… Oui, je t'entends très bien, je suis là, dis-moi. » : la phrase de Nova
         // était COLLÉE dans celle d'Ahadi. On retire, phrase par phrase, ce qui reprend ce que Nova vient de dire.
-        let spokenRecent: String = (currentTurn?.spokenText ?? "") + " " + lastSpokenText
+        // 01/11 (voix-rapide) : après un barge-in, la tâche SFSpeech n'est plus jetée — ce que Nova disait sert de filtre d'écho ici.
+        let spokenRecent: String = (currentTurn?.spokenText ?? "") + " " + lastSpokenText + " " + echoRefAfterBarge
+        echoRefAfterBarge = ""
         if !spokenRecent.trimmingCharacters(in: .whitespaces).isEmpty {
             let stripped: String = stripEcho(text, spokenRecent)
             if stripped != text {
@@ -877,6 +923,11 @@ extension VoiceLiveEngine {
             lastSpokenText = ""
             return
         }
+        // 01/11 (voix-rapide) : un tour anticipé annulé par une reprise de parole est fusionné avec la suite.
+        var mergedTurn: Bool = false
+        if !carryText.isEmpty { text = VoixRapide.fusion(carryText, text); carryText = ""; mergedTurn = true }
+        let specUntil: Date? = speculativeWindowUntil.flatMap { $0 > Date() ? $0 : nil }
+        speculativeWindowUntil = nil
         turnCounter += 1
         // 31/10 (voix/mémoire/Live) : la fin de parole n'est retenue que si elle suit le tour précédent (et le début
         // de la séance) ; sinon « inconnue » (-1 au journal) plutôt qu'un délai fictif de 16 à 46 s.
@@ -893,6 +944,8 @@ extension VoiceLiveEngine {
                           speechEndAt: endAt, sttEngine: moteur)
         turn.speechEndSource = endSrc
         turn.forcedEnd = wasForced
+        turn.speculativeUntil = specUntil
+        turn.merged = mergedTurn
         currentTurn = turn
         history.append(ChatMsg("user", text))
         trimHistory()
@@ -942,6 +995,7 @@ extension VoiceLiveEngine {
         // Version Meta : cerveau de la voix = Meta (Spark…) ; aucun relais non Meta.
         if !router.usable(brainId), let m = router.firstUsableMeta(preferring: settings.get("brain", "spark-1.3")) { brainId = m }
         startTTS(turn, gen: gen)
+        scheduleAck(turn, gen: gen)   // 01/11 (voix-rapide) : accusé instantané si rien n'est dit après 700 ms
         // VAGUE 2 · pas de silence mort : si le premier fragment tarde (≥ 1,4 s), une courte phrase
         // d'attente neutre est dite ; si un outil est réellement lancé, une phrase qui le nomme.
         if VoixReglages.phrasesAttente() {
@@ -1007,7 +1061,8 @@ extension VoiceLiveEngine {
                         if turn.firstFragmentAt == nil { turn.firstFragmentAt = Date() }
                         turn.responseText += d
                         sentenceBuf += d
-                        let (ready, rest) = VLSentences.extract(sentenceBuf)
+                        // 01/11 (voix-rapide) : la PREMIÈRE clause (virgule ou ≥ 6 mots) part en synthèse sans attendre la fin de phrase.
+                        let (ready, rest) = VoixRapide.decoupe(sentenceBuf, premier: !turn.firstChunkSent)
                         sentenceBuf = rest
                         for s in ready { self.dispatchSentence(s, turn: turn, gen: gen) }
                     }
@@ -1041,6 +1096,24 @@ extension VoiceLiveEngine {
             }
             self.q.async { [weak self] in
                 guard let self = self, self.generation == gen, self.currentTurn === turn, !turn.finished, turn.brainAttempt == attempt else { return }
+                // 01/11 (voix-rapide) : réponse VIDE (aucun texte, aucune erreur réseau) → UNE relance, puis une phrase honnête plutôt que le silence.
+                if turn.responseText.isEmpty && sentenceBuf.isEmpty && !turn.interrupted {
+                    let why: String = turn.brainError ?? "réponse vide"
+                    if VoixRapide.relancerSiVide(why) && !turn.emptyRetried {
+                        turn.emptyRetried = true
+                        turn.brainAttempt += 1
+                        turn.brainError = nil
+                        self.journal.add(["type": "tour", "evenement": "reponse_vide_relance", "tour": turn.id, "cerveau": brainId, "raison": shortError(why, 140)])
+                        self.launchBrain(turn, gen: gen, brainId: brainId)
+                        return
+                    }
+                    if VoixRapide.relancerSiVide(why) {
+                        let l: String = VoixRapide.langue(turn.userText, defaut: "fr")
+                        self.journal.add(["type": "tour", "evenement": "reponse_vide_apres_relance", "tour": turn.id, "raison": shortError(why, 140)])
+                        sentenceBuf = VoixRapide.phraseSansReponse(langue: l)
+                        turn.responseText = sentenceBuf
+                    }
+                }
                 turn.brainDone = true
                 turn.brainUsed = used
                 if !sentenceBuf.isEmpty { self.dispatchSentence(sentenceBuf, turn: turn, gen: gen); sentenceBuf = "" }
@@ -1089,6 +1162,10 @@ extension VoiceLiveEngine {
     private func dispatchSentence(_ s: String, turn: VLTurn, gen: Int) {
         let clean: String = VLSentences.clean(s)   // V6-COMPAGNON : la balise <mission> (et tout markdown) n'est jamais dite, même dans le reliquat final
         guard !clean.isEmpty else { return }
+        turn.firstChunkSent = true
+        if turn.lang == nil {   // 01/11 (voix-rapide) : langue de la RÉPONSE (départage : langue de la question)
+            turn.lang = VoixRapide.langue(turn.responseText.isEmpty ? clean : turn.responseText, defaut: VoixRapide.langue(turn.userText, defaut: "fr"))
+        }
         turn.spokenText += (turn.spokenText.isEmpty ? "" : " ") + clean
         turn.httpUsed = true
         turn.httpPending += 1
@@ -1106,8 +1183,11 @@ extension VoiceLiveEngine {
     /// 25/10 : phrase dite par la voix LOCALE (AVSpeechSynthesizer → PCM16 24 kHz) sur le même lecteur natif.
     /// Bloquant : appelé sur ttsQ.
     private func localSentence(_ s: String, gen: Int, turn: VLTurn) {
+        if generation != gen { return }   // 01/11 (voix-rapide) : phrase d'un tour interrompu — rien n'est synthétisé, la file se vide tout de suite
         let vid: String = settings?.get("voix_locale_id", "") ?? ""
-        let r = LocalVoice.shared.render(text: s, voiceId: vid, cancel: { [weak self] () -> Bool in (self?.generation ?? -1) != gen }) { [weak self] (d: Data) -> Bool in
+        // 01/11 (voix-rapide) : voix de la langue de la RÉPONSE (anglaise pour une réponse anglaise), pas seulement du réglage.
+        let lang: String? = VoixRapide.langueVoix(turn.lang ?? VoixRapide.langue(s, defaut: "fr"))
+        let r = LocalVoice.shared.renderDetailed(text: s, voiceId: vid, language: lang, cancel: { [weak self] () -> Bool in (self?.generation ?? -1) != gen }) { [weak self] (d: Data) -> Bool in
             guard let self = self else { return false }
             if self.generation != gen { return false }
             #if canImport(AVFoundation) && os(macOS)
@@ -1116,7 +1196,7 @@ extension VoiceLiveEngine {
             self.q.async { self.markFirstAudio(turn) }
             return true
         }
-        if !r.ok {
+        if !r.ok && generation == gen {
             let why: String = r.error ?? "voix locale sans son"
             q.async { [weak self] in
                 self?.journal.add(["type": "tour", "evenement": "tts_local_echec", "tour": turn.id, "raison": shortError(why, 120)])
@@ -1199,6 +1279,10 @@ extension VoiceLiveEngine {
                 "cerveau_essais": turn.triedBrains.count,
                 "fin_forcee": turn.forcedEnd,
                 "phrase_attente": turn.fillerSaid,
+                // 01/11 (voix-rapide)
+                "depart_anticipe": turn.speculativeUntil != nil, "fusionne": turn.merged, "langue_voix": turn.lang ?? "",
+                "accuse_a_ms": ms(turn.userFinalAt, turn.ackAt), "accuse_planif_ms": turn.ackMs, "relance_vide": turn.emptyRetried,
+                "final_a_audio_ms": ms(turn.userFinalAt, turn.firstAudioAt),
                 "tts_voie": ttsLocal ? "locale" : (turn.httpUsed ? "http" : "ws"),
                 "user_chars": turn.userText.count,
                 "reponse_chars": turn.responseText.count,
@@ -1236,8 +1320,72 @@ extension VoiceLiveEngine {
         currentTurn = nil
         lastSpokenText = ""   // jamais de filtre d'écho après une vraie interruption
         #if canImport(Speech) && canImport(AVFoundation) && os(macOS)
-        if sttMode == .local { localSpeech.discard() }   // VAGUE 2 : sans cela, la voix de Nova se mêlait à la phrase d'Ahadi
+        // 01/11 (voix-rapide, barge-in) : une interruption PARLÉE n'efface plus la reconnaissance en cours — avant, discard() jetait
+        // les mots mêmes d'Ahadi qui avaient déclenché l'interruption (le tour suivant partait amputé, ou pas du tout, et la tâche
+        // SFSpeech repartait à froid). Ce que Nova disait sert de filtre d'écho au prochain final. Bouton : tâche remise à blanc.
+        if sttMode == .local && manuelle { localSpeech.discard() }
         #endif
+        echoRefAfterBarge = manuelle ? "" : turn.spokenText
+        setState("ecoute")
+    }
+
+    // MARK: 01/11 (voix-rapide) — préchauffage, accusé de réception, départ anticipé
+
+    /// Micro ouvert : connexion HTTP vers api.meta.ai préchauffée (cerveau Meta), accusés rendus d'avance par la voix locale.
+    private func prepareFastVoice() {
+        guard let st = settings else { return }
+        let brain: String = st.get("voix_live_cerveau", "").isEmpty ? st.get("brain", "spark-1.3") : st.get("voix_live_cerveau", "")
+        if MetaOnly.enabled || brain.contains("spark") || brain.contains("muse") || brain.contains("wonder") {
+            VoixRapide.prechaufferMeta(intervalle: 5)
+        }
+        guard st.get("voix_accuse", true) else { return }
+        let vid: String = st.get("voix_locale_id", "")
+        DispatchQueue.global(qos: .utility).async {
+            for l in ["fr", "en"] { for p in VoixRapide.accuses(langue: l) { _ = LocalVoice.shared.pcmAccuse(p, language: VoixRapide.langueVoix(l), voiceId: vid) } }
+        }
+    }
+
+    /// Accusé de réception (« Mm. », « D'accord, ») : joué tel quel (PCM déjà rendu) quand la réponse n'a fait aucun son après 700 ms.
+    /// Réglage « voix_accuse » (défaut vrai). Voix locale seulement (jamais une autre voix que celle de la réponse). Jamais deux tours
+    /// de suite, jamais la même phrase deux fois d'affilée.
+    private func scheduleAck(_ turn: VLTurn, gen: Int) {
+        guard let st = settings else { return }
+        let on: Bool = st.get("voix_accuse", true) && (ttsLocal || LocalVoice.mode(st) == "local")
+        let prevAcked: Bool = lastTurnAcked
+        lastTurnAcked = false
+        guard on, !turn.userText.isEmpty else { return }
+        let ms: Int = VoixRapide.seuilAccuseMs
+        q.asyncAfter(deadline: .now() + .milliseconds(ms)) { [weak self] in
+            guard let self = self, self.generation == gen, self.currentTurn === turn else { return }
+            guard VoixRapide.doitAccuser(reglage: true, ecouleMs: Int(Date().timeIntervalSince(turn.userFinalAt) * 1000), dejaDuSon: turn.firstAudioAt != nil,
+                                         tourClos: turn.finished || turn.interrupted, accuseAuTourPrecedent: prevAcked) else { return }
+            let l: String = VoixRapide.langue(turn.userText, defaut: "fr")
+            let phrase: String = VoixRapide.phraseAccuse(langue: l, precedente: self.lastAckPhrase)
+            let t0: Date = Date()
+            guard let pcm = LocalVoice.shared.pcmAccusePret(phrase, language: VoixRapide.langueVoix(l), voiceId: st.get("voix_locale_id", "")) else { return }
+            #if canImport(AVFoundation) && os(macOS)
+            self.player?.schedule(pcm16: pcm)
+            #endif
+            turn.ackAt = Date(); turn.ackMs = Int(Date().timeIntervalSince(t0) * 1000)
+            turn.spokenText = phrase + (turn.spokenText.isEmpty ? "" : " " + turn.spokenText)   // filtre d'écho : Nova l'a dit
+            self.lastTurnAcked = true
+            self.lastAckPhrase = phrase
+        }
+    }
+
+    /// Ahadi a repris la parole dans la fenêtre du départ anticipé : le tour est annulé sans trace d'interruption ; son texte attend la suite.
+    private func cancelSpeculative(_ turn: VLTurn) {
+        generation += 1
+        turn.interrupted = true
+        turn.finished = true
+        #if canImport(AVFoundation) && os(macOS)
+        player?.stopNow()
+        #endif
+        if let last = history.last, last.role == "user", last.content == turn.userText { history.removeLast() }
+        carryText = turn.userText
+        journal.add(["type": "tour", "evenement": "reprise_parole", "tour": turn.id, "entendu_chars": turn.spokenText.count,
+                     "apres_ms": Int(Date().timeIntervalSince(turn.userFinalAt) * 1000)])
+        currentTurn = nil
         setState("ecoute")
     }
 

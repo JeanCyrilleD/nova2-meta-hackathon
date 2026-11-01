@@ -678,7 +678,8 @@ export async function mount(root, ctx) {
     // DIAG2-CERVEAUX : l'option « auto » a disparu — le moteur la réécrit en « spark-1.3 »
     // à la lecture (Settings.all) et au démarrage (P-BRAIN) : la proposer était un choix illusoire.
     // Le défaut est un cerveau nommé, épinglé à chaque run ; la chaîne ne sert que de secours en cas d'échec.
-    const brainOpts = brains.map((b) => [String(b.id || ""), String(b.label || b.id || "") + (b.etat ? " — " + etatFr(b.etat) : "")]).filter((x) => x[0]);
+    // 01/11 (voix-rapide) : meta_only → seuls les cerveaux Meta (le moteur filtre déjà ; filet si une ligne meta === false subsiste).
+    const brainOpts = brains.filter((b) => !(get("meta_only", false) === true && b && b.meta === false)).map((b) => [String(b.id || ""), String(b.label || b.id || "") + (b.etat ? " — " + etatFr(b.etat) : "")]).filter((x) => x[0]);
     const brainSel = h("select", { class: "fld", onchange: async () => { await save({ brain: brainSel.value }); ctx.toast("Cerveau par défaut enregistré."); } },
       ...brainOpts.map(([v, l]) => h("option", { value: v, ...(v === String(get("brain", "spark-1.3")) ? { selected: "" } : {}) }, l)));
     /* 25/10 : cerveau des Éclats (dots_brain) — épinglé SANS relais pour les tâches de fond (solo) : quand ses

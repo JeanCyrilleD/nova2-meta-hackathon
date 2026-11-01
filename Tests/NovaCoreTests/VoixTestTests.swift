@@ -106,7 +106,7 @@ final class VoixTestTests: XCTestCase {
         let durs: [Int] = Array(repeating: 5_000, count: 12)
         let pire = VoixTest.pireCasPassage(durations: durs, estIn: 200)
         XCTAssertLessThan(pire, VoixTest.plafondUSD, "12 tours courts : bien sous 0,50 $")
-        XCTAssertLessThan(pire, 0.03)
+        XCTAssertLessThan(pire, 0.07, "01/11 (voix-rapide) : plafond de sortie Spark 1024 (était 320) — pire cas 12 tours ≈ 0,058 $")
         XCTAssertGreaterThan(VoixTest.pireCasPassage(durations: durs, estIn: 200, maxOut: 20_000), VoixTest.plafondUSD, "sortie énorme : refusé avant tout envoi")
     }
 

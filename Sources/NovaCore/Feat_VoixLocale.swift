@@ -29,9 +29,10 @@ public final class LocalVoice {
     public static func mode(_ settings: Settings) -> String { "local" }
 
     /// Voix retenue : id, nom, qualité, langue — nil si aucune voix française n'est installée.
-    public func voiceInfo(preferred: String = "") -> [String: String]? {
+    /// 01/11 (voix-rapide) : `language` « en » = la voix anglaise qui lira une réponse anglaise ; nil = français (comme avant).
+    public func voiceInfo(preferred: String = "", language: String? = nil) -> [String: String]? {
         #if canImport(AVFoundation) && os(macOS)
-        guard let v: AVSpeechSynthesisVoice = cachedVoice(preferred: preferred, language: nil) else { return nil }
+        guard let v: AVSpeechSynthesisVoice = cachedVoice(preferred: preferred, language: language) else { return nil }
         let out: [String: String] = ["id": v.identifier, "nom": v.name, "qualite": LocalVoice.qualityName(v), "langue": v.language]
         return out
         #else
@@ -80,7 +81,10 @@ public final class LocalVoice {
     /// 01/11 (voix-test) : `language` = « en » choisit une voix anglaise (en-GB d'abord) ; nil = français, comme avant.
     static func pickVoice(preferred: String, language: String? = nil) -> AVSpeechSynthesisVoice? {
         if !preferred.isEmpty {
-            if let p: AVSpeechSynthesisVoice = AVSpeechSynthesisVoice(identifier: preferred) { return p }
+            // 01/11 (voix-rapide) : la voix forcée (« voix_locale_id ») n'est gardée que si elle parle la langue demandée —
+            // une réponse anglaise n'est plus lue par une voix française forcée (et inversement).
+            if let p: AVSpeechSynthesisVoice = AVSpeechSynthesisVoice(identifier: preferred),
+               LocalVoice.voixDeLaLangue(p.language, want: language) { return p }
         }
         let all: [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices()
         var best: AVSpeechSynthesisVoice? = nil
@@ -104,6 +108,12 @@ public final class LocalVoice {
         return v
     }
     #endif
+
+    /// 01/11 (voix-rapide) : une voix forcée convient-elle à la langue demandée ? (nil = français, règle d'avant : toujours oui).
+    static func voixDeLaLangue(_ voiceLang: String, want: String?) -> Bool {
+        guard let w = want?.lowercased(), !w.isEmpty else { return true }
+        return voiceLang.lowercased().hasPrefix(String(w.prefix(2)))
+    }
 
     /// Score d'une voix (pur, testé) : -1 = langue écartée. Français par défaut (règle d'avant, inchangée) ;
     /// want = « en » : en-GB 100, autre anglais 50 ; qualité × 10 ; voix de référence + 3.
@@ -187,6 +197,9 @@ public final class LocalVoice {
         var out: LocalVoiceRender = LocalVoiceRender()
         #if canImport(AVFoundation) && os(macOS)
         if Thread.isMainThread { out.error = "voix locale appelée sur le fil principal (refusé)"; return out }
+        // 01/11 (voix-rapide, barge-in) : phrase déjà annulée (tour interrompu) → rien n'est synthétisé. Avant : chaque phrase
+        // périmée encore en file démarrait une synthèse puis attendait jusqu'à 250 ms son annulation — la reprise payait la file.
+        if cancel() { out.totalMs = 0; return out }
         guard let voice: AVSpeechSynthesisVoice = cachedVoice(preferred: voiceId, language: language) else {
             out.error = (language ?? "fr").hasPrefix("en") ? "aucune voix anglaise installée" : "aucune voix française installée (Réglages Système › Accessibilité › Contenu énoncé › Voix du système)"
             return out
@@ -223,7 +236,7 @@ public final class LocalVoice {
         DispatchQueue.main.async { synth.write(utt, toBufferCallback: cb) }
         var error: String? = nil
         while true {
-            _ = wake.wait(timeout: .now() + 0.25)
+            _ = wake.wait(timeout: .now() + 0.05)   // 01/11 (voix-rapide) : annulation vue en ≤ 50 ms (avant 250 ms)
             let fin: Bool = state.isFinished()   // lu AVANT la vidange : rien d'empilé ensuite n'est perdu
             let chunks: [Data] = state.drain()
             for c in chunks {
@@ -284,6 +297,31 @@ public final class LocalVoice {
         return out
         #endif
     }
+}
+
+extension LocalVoice {
+    /// 01/11 (voix-rapide) : PCM16 24 kHz d'un accusé de réception (« Mm. », « D'accord, »), rendu UNE fois puis gardé en mémoire —
+    /// rejoué ensuite instantanément (aucune synthèse au moment de le dire). BLOQUANT au premier appel (hors fil principal).
+    public func pcmAccuse(_ phrase: String, language: String?, voiceId: String = "") -> Data? {
+        let k: String = phrase + "|" + (language ?? "fr") + "|" + voiceId
+        LocalVoice.accuseLock.lock()
+        if let d = LocalVoice.accuseCache[k] { LocalVoice.accuseLock.unlock(); return d }
+        LocalVoice.accuseLock.unlock()
+        if Thread.isMainThread { return nil }
+        var pcm: Data = Data()
+        let r: LocalVoiceRender = renderDetailed(text: phrase, voiceId: voiceId, language: language, cancel: { () -> Bool in false }) { (d: Data) -> Bool in pcm.append(d); return true }
+        guard r.ok, !pcm.isEmpty else { return nil }
+        LocalVoice.accuseLock.lock(); LocalVoice.accuseCache[k] = pcm; LocalVoice.accuseLock.unlock()
+        return pcm
+    }
+    /// Accusé déjà prêt (aucune synthèse) — nil s'il n'a pas encore été rendu.
+    public func pcmAccusePret(_ phrase: String, language: String?, voiceId: String = "") -> Data? {
+        let k: String = phrase + "|" + (language ?? "fr") + "|" + voiceId
+        LocalVoice.accuseLock.lock(); defer { LocalVoice.accuseLock.unlock() }
+        return LocalVoice.accuseCache[k]
+    }
+    static let accuseLock: NSLock = NSLock()
+    nonisolated(unsafe) static var accuseCache: [String: Data] = [:]
 }
 
 /// 01/11 (voix-test) : résultat mesuré d'un rendu de la voix locale.

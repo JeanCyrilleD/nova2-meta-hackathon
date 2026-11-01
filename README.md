@@ -34,7 +34,27 @@ a Meta model.** There is no other model provider in this code: no client, no key
   (`Sources/NovaCore/NovaNotifier+Attention.swift`).
 - **Voice**: Muse Voice Transcribe dictation (canonical WAV sent as is, shared HTTP session to `api.meta.ai`),
   Spark 1.3 as the voice brain (`reasoning_effort` `minimal`), macOS system voice pre-warmed at launch, barge-in, and
-  a voice bench (`Sources/NovaCore/VoixBanc.swift`).
+  a voice bench (`Sources/NovaCore/VoixBanc.swift`). Voice update of 01/11/2026 (`Sources/NovaCore/VoixRapide.swift`,
+  `Sources/NovaCore/Feat_VoiceLive.swift`):
+  - **earlier first audio**: the brain starts as soon as the end of speech is detected and the partial transcript is
+    stable (early start; if you resume speaking within the pause window, the turn is cancelled and both parts are merged),
+    the first clause (a comma or six words) is synthesised without waiting for the end of the sentence, the connection
+    to `api.meta.ai` is pre-warmed when live voice starts, and a short pre-rendered acknowledgement ("Mm.", "D'accord,")
+    plays if nothing has been said 700 ms after your question (never two turns in a row);
+  - **language-matched voice**: the language is detected on the reply text, so an English answer is read by an English
+    system voice and a French answer by a French one (also for `/api/tts`);
+  - **barge-in**: an interruption no longer discards the words that triggered it, and sentences of an interrupted turn
+    are no longer synthesised;
+  - **empty replies**: Spark's output cap is raised to 1024 tokens in voice mode (its non-streamed reasoning used up the
+    previous 320-token floor: 2 empty replies out of 24 in the 08:42 bench), `finish_reason` and `refusal` are read and
+    named, and an empty reply is retried once, then answered with an honest sentence instead of silence;
+  - **vocabulary**: dictation sends the documented `keywords` (fixed list of Sahel countries, cities and humanitarian
+    acronyms, never contacts or memory) and `languageBias` fields, with one retry without them on HTTP 400;
+  - **Meta-only picker**: the brain selectors list Meta brains only.
+
+  Measured so far: first audio median **2.77 s** in the file-based voice bench of 01/11/2026 08:42 UTC (before this
+  update; the < 1 s target was not met). The gains of this update have **not yet been measured on real audio**; they
+  are covered by simulated tests only (`VoixRapideTests`, `VoixBancStreamingTests`, `MetaOnlySelecteurTests`).
 - **Images** (Muse Image), **segmentation** (SAM 3.1), mail and agenda triage, the Dots automations, budget ledger
   with spend caps, approvals, keyless demo replay.
 
@@ -90,7 +110,7 @@ with `python3 tools/demo/build_traces.py --diag <run-logs dir>`.
 | Muse Spark Open 816B (Hugging Face) | optional, hand-picked only (HF token) | `Sources/NovaCore/Brains.swift:200` |
 | Muse Code (CLI `muse exec`) | optional, hand-picked only (Muse Code subscription) | `Sources/NovaCore/Brains.swift:196` |
 | Muse Image (`muse-image-1.0`) | images (briefs, design studio) | `Sources/NovaCore/MetaCapabilities.swift:21`, `Sources/NovaCore/App.swift:1131` |
-| Muse Voice Transcribe (`muse-voice-transcribe-1.0`) | dictation and audio-file transcription (`POST /v1/asr/transcribe`) | `Sources/NovaCore/MetaCapabilities.swift:23`, `Sources/NovaCore/Voice.swift:216` |
+| Muse Voice Transcribe (`muse-voice-transcribe-1.0`) | dictation and audio-file transcription (`POST /v1/asr/transcribe`) | `Sources/NovaCore/MetaCapabilities.swift:23`, `Sources/NovaCore/Voice.swift:220` |
 | SAM 3.1 (`sam-3.1`) | image / video segmentation (`POST /api/meta/segment`, explicit confirmation) | `Sources/NovaCore/MetaCapabilities.swift:22`, `Sources/NovaCore/MetaCapabilities.swift:117` |
 
 **Meta calls are visible.** Every call passes a network gate (`Sources/NovaCore/HTTPStream.swift:59` →
@@ -102,7 +122,7 @@ specialty). Live view: `GET /api/meta-only/specialites`. A copy of that journal 
 
 - **Tavily** (web search), **Brave / DuckDuckGo** (search fallback), **Algolia** (full-text index of the user's own
   library) — search services, no model is called.
-- **macOS system voice**: speech synthesis by `AVSpeechSynthesizer` (`Sources/NovaCore/Feat_VoixLocale.swift:205`) and
+- **macOS system voice**: speech synthesis by `AVSpeechSynthesizer` (`Sources/NovaCore/Feat_VoixLocale.swift:218`) and
   speech recognition by `SFSpeechRecognizer` for live voice and wake word (`Sources/NovaCore/Feat_VoiceLive.swift:91`),
   on-device recognition required whenever the language supports it. These are operating-system services, not
   generative models called by Nova. Meta publishes no text-to-speech model (dev.meta.ai: Voice Transcribe "does not
@@ -115,7 +135,7 @@ Muse Spark Open runs on Baseten, model `meta-models/muse-spark-open`, endpoint
 `https://inference.baseten.co/v1/chat/completions` (`Sources/NovaCore/Brains.swift:203`). Three real uses:
 
 1. **Meta fallback.** Every automatic chain is Meta-only, and Spark Open is appended right after the Meta Model API
-   brains (`Sources/NovaCore/MetaSpecialites.swift:188`; reroute pool `Sources/NovaCore/Router.swift:298`): an outage of
+   brains (`Sources/NovaCore/MetaSpecialites.swift:188`; reroute pool `Sources/NovaCore/Router.swift:304`): an outage of
    the Meta API (5xx, 429, timeout, credit) falls over to the open-weight model, never to another vendor.
 2. **CAFU QA review.** After Spark 1.3 drafts a CAFU note, Spark Open reviews it (facts, evidence tags, score) as a
    visible, journaled, costed step (`Sources/NovaCore/MetaSpecialites.swift:283`, called from
@@ -128,7 +148,7 @@ Each Baseten call is logged with tokens and cost at the Baseten price (1.25 $ in
 ## 6. What pre-existed vs built during the event
 
 **About this repository's history.** This public repository starts with a **single-commit snapshot** (01/11/2026) of the
-submission branch, followed by a README update (demo video) and a post-submission update (fixes listed in Features). The real development history starts on **26/10/2026** (root commit `4817512`, tag
+submission branch, followed by README updates (demo video, X post), a post-submission update (fixes listed in Features) and a voice update (Features, Voice). The real development history starts on **26/10/2026** (root commit `4817512`, tag
 `v2.0.0-baseline`, 26/10/2026 16:10:36 UTC) and is kept in the author's private repository, because older commits
 contain personal data that was removed from the code before publication.
 **Development history kept private (contains personal data); available to judges on request.**
@@ -161,7 +181,7 @@ The commit hashes below refer to that private history.
 
 ## 7. Tests
 
-`swift test --sanitize=thread`: 297 XCTest cases, 0 failures (1 skipped), 0 ThreadSanitizer warnings, and `tools/verify.sh` passing on 01/11/2026 after the post-submission update (227 at submission; new suites `ChatAboutiTests`, `PilotageTests`, `UIEtroitNotifTests`, `FiabiliteTests`, `VoixTestTests`). Every test is simulated: no network, no key. Routing
+`swift test --sanitize=thread`: 314 XCTest cases, 0 failures (1 skipped), 0 ThreadSanitizer warnings, and `tools/verify.sh` passing on 01/11/2026 after the voice update (227 at submission; new suites `ChatAboutiTests`, `PilotageTests`, `UIEtroitNotifTests`, `FiabiliteTests`, `VoixTestTests`, `VoixRapideTests`, `VoixBancStreamingTests`, `MetaOnlySelecteurTests`). Every test is simulated: no network, no key. Routing
 v2, budget and bench tests run on a **fictional** provider registry (`Tests/NovaCoreTests/Fixtures/`, vendors named
 `vendor-*`), so the generic engines stay tested while the shipped configuration (`Config/`) is Meta-only.
 `DemoReplayTests.testNoNonMetaModelHostInShippedCode` fails if a non-Meta model host appears in `Sources`, `web/js`

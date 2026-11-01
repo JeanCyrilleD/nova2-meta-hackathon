@@ -140,16 +140,22 @@ public final class Router {
         var all = brains
         if let l = localSpec() { all.append(l) }
         (runner.keys as? KeychainStore)?.warm(Array(Set(all.flatMap { $0.keys.refs })))   // lectures du Trousseau en parallèle
+        let metaOnly: Bool = MetaOnly.enabled
         for s in all where !Catalog.isHidden(s.id) || s.id == demoBrainId {   // POLITIQUE CERVEAUX (24/10) : cerveaux masqués absents des listes servies (sauf héros du mode démo actif)
+            // 01/11 (voix-rapide, défaut d'interface) : en meta_only, les sélecteurs ne listent QUE les cerveaux Meta (ligne « Local »
+            // comprise : aucun moteur local en version Meta). Source unique : /api/state « brains ».
+            let isMeta: Bool = MetaOnly.isMeta(s)
+            if metaOnly && !isMeta { continue }
             let (stBrut, det) = s.id == "local" ? ("ok", "moteur local détecté") : status(s); let st = Router.etatLibelle(stBrut)
             // VAGUE-NUIT (item 1) : si le héros de démo figure dans brains_off, son détail le DIT —
             // l'état n'est plus « désactivé » (voir status()), et le contournement est nommé, pas tu.
             let detFinal: String = (s.id == demoBrainId && disabled.contains(s.id)) ? det + " — désactivé dans ta liste, mais le mode démo l'active pour chaque réponse" : det
             lock.lock(); let h = health[s.id] ?? BrainHealth(); lock.unlock()
             out.append(["id": s.id, "label": s.label, "model": s.model, "kind": "\(s.kind)", "etat": st, "detail": detFinal,
-                        "ok": h.ok, "echecs": h.fail, "latence_ms": h.lastLatencyMs as Any? ?? NSNull(), "note": s.note, "tags": Array(s.tags).sorted()])
+                        "ok": h.ok, "echecs": h.fail, "latence_ms": h.lastLatencyMs as Any? ?? NSNull(), "note": s.note, "tags": Array(s.tags).sorted(),
+                        "meta": isMeta])
         }
-        if all.last?.id != "local" { out.append(["id": "local", "label": "Local (aucun moteur détecté)", "model": "", "kind": "local",
+        if all.last?.id != "local" && !metaOnly { out.append(["id": "local", "label": "Local (aucun moteur détecté)", "model": "", "kind": "local",
                                                  "etat": "absent", "detail": "Aucun moteur local en version Meta.", "ok": 0, "echecs": 0,
                                                  "latence_ms": NSNull(), "note": "", "tags": ["local"]]) }
         return out

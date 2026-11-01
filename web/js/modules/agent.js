@@ -295,8 +295,9 @@ export async function mount(root, ctx) {
          Réglages ; le commentaire d'origine disait « /api/settings » à tort,
          contredisant le §35 ci-dessus — rectifié au LOT1, m20) : on la
          récolte ici, puis on (re)peuple les sélecteurs. */
-      const regList = Array.isArray(j.brains) ? j.brains.filter((b) => b && b.id) : [];
-      if (regList.length) brainsList = regList.map((b) => ({ id: String(b.id), label: String(b.label || b.id), etat: String(b.etat || "") }));   // DIAG2-CERVEAUX : l'état servi (prêt / désactivé / sans clé / en panne…) n'est plus jeté — le sélecteur doit le montrer (H2)
+      metaOnlyUI = !!(j && j.settings && j.settings.meta_only === true);
+      const regList = Array.isArray(j.brains) ? j.brains.filter(keepBrain) : [];
+      if (regList.length) brainsList = regList.map((b) => ({ id: String(b.id), label: String(b.label || b.id), etat: String(b.etat || ""), meta: b.meta }));   // DIAG2-CERVEAUX : l'état servi (prêt / désactivé / sans clé / en panne…) n'est plus jeté — le sélecteur doit le montrer (H2)
       if (db && db !== "auto") {
         defaultBrainId = String(db);
         /* À défaut d'identifiant égal dans la liste, on garde le LIBELLÉ
@@ -366,6 +367,10 @@ export async function mount(root, ctx) {
   let sessionSeq = 0;
   let activeId = "";
   let brainsList = [];                 // cerveaux du moteur (GET /api/conversations)
+  /* 01/11 (voix-rapide, défaut d'interface) : en meta_only, le sélecteur ne propose QUE les cerveaux Meta. Le moteur filtre
+     déjà /api/state (Router.healthSnapshot) ; ce filet écarte en plus toute ligne marquée meta === false (cache d'état ancien). */
+  let metaOnlyUI = false;
+  const keepBrain = (b) => !!(b && b.id) && !(metaOnlyUI && b.meta === false);
   const convIndex = new Map();         // conversation_id → { title, updated, brain }
   /* V5-Y : items Direct masqués localement (bandeau) — mémorisés pour la SESSION de l'app
      (sessionStorage) : un ✕ ne revient pas à chaque rechargement du module. */
@@ -1362,7 +1367,7 @@ export async function mount(root, ctx) {
       if (!brainsList.length) return;
       const cur = brainSel.value;
       brainSel.replaceChildren(h("option", { value: "" }, "Cerveau : automatique"),
-        ...brainsList.filter((b) => b && b.id).map((b) => h("option", { value: String(b.id) }, String(b.label || b.id))));
+        ...brainsList.filter(keepBrain).map((b) => h("option", { value: String(b.id) }, String(b.label || b.id))));
       try { paintBrainState(); } catch (e) {}
       if (cur) brainSel.value = cur;
       else if (!s.brainTouched && defaultBrainId) {

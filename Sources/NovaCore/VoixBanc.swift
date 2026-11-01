@@ -42,7 +42,9 @@ public enum VoixTest {
     public static let plafondUSD: Double = 0.50
     public static let sttUSDParHeure: Double = 0.18
     public static let sparkTarif: (input: Double, output: Double) = (1.25, 4.25)   // $ par M (MetaSpecialites, dev.meta.ai/docs/pricing-rate-limits)
-    public static let sparkMaxOut: Int = 320   // plancher de sortie de BrainRunner au premier essai (raisonnement « none » : réponse courte)
+    /// 01/11 (voix-rapide) : 320 → 1024. Spark facture son raisonnement (non diffusé) en sortie : à 320, 2 réponses vides sur 24
+    /// (tours 2 et 14, même question) et des réponses coupées (tour 16 « d'UNH »). Seuls les jetons réellement produits sont facturés.
+    public static let sparkMaxOut: Int = VoixRapide.plancherSortieVoixMeta
     public static let phrasesMax: Int = 2
     public static let system: String = """
     You are Nova, the voice assistant of a humanitarian analyst. This is a live spoken conversation: answer in the language of the question \
@@ -275,6 +277,11 @@ extension NovaApp {
         let baseMs: Int = items.reduce(0) { (acc: Int, it: VoixTestItem) -> Int in
             acc + (Voice.wavInfo((try? Data(contentsOf: URL(fileURLWithPath: dir + "/" + it.fichier))) ?? Data())?.durationMs ?? 0)
         }
+        // 01/11 (voix-rapide) : « mode » = « fichier » (dictée Meta sur fichier, mesure d'origine) | « streaming » (SFSpeech en temps réel,
+        // partiel → Spark, VoixBancStreaming.swift) | « les_deux » (défaut : les deux, pour comparer). Le streaming joue la série une fois.
+        let modeBanc: String = { let m: String = (cfg["mode"] as? String) ?? "les_deux"; return ["fichier", "streaming", "les_deux"].contains(m) ? m : "les_deux" }()
+        doc["mode"] = modeBanc
+        let baseItems: [VoixTestItem] = items
         let reps: Int = max(1, min(3, (cfg["repetitions"] as? NSNumber)?.intValue ?? VoixTest.repetitionsParDefaut(inputMs: baseMs)))
         if reps > 1 { let base: [VoixTestItem] = items; items = (0..<reps).flatMap { _ in base } }
         let bargeIdx: [Int] = ((cfg["barge_in"] as? [Any])?.compactMap { ($0 as? NSNumber)?.intValue }) ?? (ld.bargeIn.isEmpty ? [2, 5, 8] : ld.bargeIn)
@@ -293,7 +300,8 @@ extension NovaApp {
             fin("spark_indisponible", "Spark 1.3 inutilisable : " + router.whyUnusable("spark-1.3")); return
         }
         let estIn: Int = TokenEst.of(VoixTest.system) + 60
-        let pire: Double = VoixTest.pireCasPassage(durations: durs, estIn: estIn)
+        let pireFichier: Double = modeBanc == "streaming" ? 0 : VoixTest.pireCasPassage(durations: durs, estIn: estIn)
+        let pire: Double = pireFichier + (modeBanc == "fichier" ? 0 : Double(baseItems.count) * VoixTest.coutSpark(inTok: estIn, outTok: VoixTest.sparkMaxOut))
         doc["budget"] = ["pire_cas_usd": VoixTest.arrondi(pire), "plafond_usd": VoixTest.plafondUSD] as [String: Any]
         if pire > VoixTest.plafondUSD {
             fin("budget_refuse", String(format: "pire cas %.4f $ > plafond %.2f $ : rien n'est envoyé", pire, VoixTest.plafondUSD)); return
@@ -312,11 +320,12 @@ extension NovaApp {
         var cumul: Double = 0, coutSTT: Double = 0, coutSpark: Double = 0
         var statut: String = "ok", raison: String = ""
         var prevCancelAt: Date? = nil
+        var bargeCarry: String? = nil   // 01/11 (voix-rapide) : interruption prévue sur un tour sans aucun jeton → reportée au tour suivant
         var conversationMs: Int = 0
         let journalLock = NSLock()
         let runId: String = "voix-test-" + String(UUID().uuidString.prefix(8)).lowercased()
 
-        for (idx, it) in items.enumerated() {
+        for (idx, it) in (modeBanc == "streaming" ? [] : items).enumerated() {
             let n: Int = idx + 1
             let lang: String = it.langue.hasPrefix("en") ? "en" : "fr"
             var tour: [String: Any] = ["n": n, "fichier": it.fichier, "langue": lang, "duree_audio_ms": durs[idx]]
@@ -362,7 +371,9 @@ extension NovaApp {
             if let w = VoixTest.wer(reference: it.texte, hypothese: heard) { tour["wer"] = (w * 1000).rounded() / 1000 }
 
             // (b) Spark en flux + (c) synthèse en continu phrase par phrase
-            let barge: String? = plan[n]
+            let barge: String? = plan[n] ?? (n < items.count ? bargeCarry : nil)
+            if plan[n] == nil && barge != nil { tour["barge_in_reporte"] = true }
+            bargeCarry = nil
             let flag: VoixTestFlag = VoixTestFlag()
             let st: VoixTestTurnState = VoixTestTurnState()
             let ttsQ: DispatchQueue = DispatchQueue(label: "nova.voixtest.tts.\(n)")
@@ -373,7 +384,9 @@ extension NovaApp {
                 ttsQ.async {
                     defer { group.leave() }
                     if flag.get() { return }
-                    let r: LocalVoiceRender = LocalVoice.shared.renderDetailed(text: phrase, voiceId: vid, language: lang, cancel: { flag.get() }) { (d: Data) -> Bool in
+                    // 01/11 (voix-rapide) : langue détectée sur la RÉPONSE (départage : langue de la question)
+                    let lv: String? = VoixRapide.langueVoix(VoixRapide.langue(phrase, defaut: lang))
+                    let r: LocalVoiceRender = LocalVoice.shared.renderDetailed(text: phrase, voiceId: vid, language: lv, cancel: { flag.get() }) { (d: Data) -> Bool in
                         st.lock.lock()
                         if st.firstAudio == nil { st.firstAudio = Date() }
                         st.pcm.append(d)
@@ -387,6 +400,12 @@ extension NovaApp {
             var uin: Int = 0, uout: Int = 0
             var failure: BrainFailure? = nil
             let tSpark: Date = Date()
+            var essais: Int = 0
+            var finishTry: [String] = []
+            repeat {   // 01/11 (voix-rapide) : une réponse VIDE est relancée une fois (même requête)
+            essais += 1
+            failure = nil
+            var tin: Int = 0, tout: Int = 0
             do {
                 try router.runner.stream(spec, messages: [ChatMsg("user", heard)], system: VoixTest.system, maxTokens: VoixTest.sparkMaxOut, mode: "voice",
                                          firstTokenTimeout: 15, cancel: { flag.get() },
@@ -406,12 +425,18 @@ extension NovaApp {
                                              for s in ready { enqueue(s) }
                                              if barge == "generation" { flag.set() }   // barge-in : interrompre dès le premier jeton
                                          },
-                                         onUsage: { uin = $0; uout = $1 })
+                                         onUsage: { tin = $0; tout = $1 })
             } catch let f as BrainFailure {
                 failure = f
             } catch {
                 failure = BrainFailure(kind: .other, message: error.localizedDescription)
             }
+            uin += tin; uout += tout
+            if let f = failure { finishTry.append(String(f.message.prefix(160))) }
+            st.lock.lock(); let rien: Bool = st.text.isEmpty; st.lock.unlock()
+            if !(essais < 2 && rien && !flag.get() && failure.map({ VoixRapide.relancerSiVide($0.message) }) == true) { break }
+            } while true
+            if essais > 1 { tour["relance_vide"] = true; tour["echecs_avant_relance"] = finishTry }
             let tSparkEnd: Date = Date()
             st.lock.lock()
             if !flag.get(), st.phrases.count < VoixTest.phrasesMax, let r = VoixTest.reliquat(st.buf) {
@@ -437,6 +462,7 @@ extension NovaApp {
                 LLMSpend.abandon(tk, kind: f.kind, produced: produced)
                 sparkStatut = "echec"
                 tour["erreur_spark"] = String(f.message.prefix(300))
+                tour["jetons_entree"] = uin; tour["jetons_sortie"] = uout; tour["jetons_mesures"] = uin > 0 || uout > 0   // 01/11 : preuve (avant : 0/0 au journal)
                 if produced { cSpark = VoixTest.coutSpark(inTok: estIn, outTok: VoixTest.sparkMaxOut) }
             } else {
                 let inT: Int = uin > 0 ? uin : estIn
@@ -498,7 +524,11 @@ extension NovaApp {
                     if let t = ttsStop { bi["arret_synthese_ms"] = max(0, Int(t.timeIntervalSince(a) * 1000)) }
                     bi["arret_ok"] = arret < 1500
                     prevCancelAt = a
-                } else { bi["arret_ok"] = false }
+                } else {
+                    bi["arret_ok"] = false
+                    bi["raison"] = "aucun jeton ni son : rien à interrompre (réponse vide) — interruption reportée au tour suivant"
+                    if n < items.count { bargeCarry = b }
+                }
                 tour["barge_in"] = bi
             }
             tour["statut"] = sparkStatut == "echec" ? "echec_spark" : (firstAud == nil && !canceled ? "sans_audio" : "ok")
@@ -524,6 +554,17 @@ extension NovaApp {
         etapes["barge_in_arret"] = VoixTest.resume(bis.compactMap { ($0["arret_ms"] as? Int).map { Double($0) } })
         etapes["barge_in_reprise"] = VoixTest.resume(bis.compactMap { ($0["reprise_ms"] as? Int).map { Double($0) } })
         doc["etapes"] = etapes
+        // 01/11 (voix-rapide) : mode streaming simulé — le vrai chemin de la voix classique (SFSpeech au fil de la parole)
+        if modeBanc != "fichier" && statut != "budget_refuse" {
+            let bAud: [Data] = baseItems.map { (it: VoixTestItem) -> Data in (try? Data(contentsOf: URL(fileURLWithPath: dir + "/" + it.fichier))) ?? Data() }
+            let bPlan: [Int: String] = VoixTest.planBargeIn(bargeIdx.filter { $0 <= baseItems.count }, count: baseItems.count)
+            let vit: Double = (cfg["vitesse"] as? NSNumber)?.doubleValue ?? 1.0
+            let sres = voixTestStreaming(items: baseItems, audios: bAud, plan: bPlan, spec: spec, estIn: estIn, dejaDepense: cumul,
+                                         runId: runId, audioOut: audioOut, vitesse: vit)
+            doc["streaming"] = sres.doc
+            cumul += sres.cout; coutSpark += sres.cout
+            save()
+        }
         let wers: [Double] = tours.compactMap { $0["wer"] as? Double }
         if !wers.isEmpty {
             doc["wer"] = ["moyen": (wers.reduce(0, +) / Double(wers.count) * 1000).rounded() / 1000, "median": ((VoixTest.centile(wers, 0.5) ?? 0) * 1000).rounded() / 1000,
@@ -549,7 +590,7 @@ extension NovaApp {
                                     "started": started, "finished": nowISO(), "stages": etapes, "criteria": crit,
                                     "cost_usd": VoixTest.arrondi(cumul)]
         try? jsonData(chain).write(to: traces.appendingPathComponent("voice_chain.json"))
-        if statut == "ok" && tours.isEmpty { statut = "aucun_tour" }
+        if statut == "ok" && tours.isEmpty && modeBanc != "streaming" { statut = "aucun_tour" }
         fin(statut, raison)
     }
 }
