@@ -7,6 +7,8 @@ import json, os, sys, http.server, urllib.parse
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.environ.get("NOVA_WEB") or os.path.normpath(os.path.join(HERE, "..", "..", "web"))   # NOVA_WEB : servir un autre web/ (ex. base bfdcf7a pour les captures avant/après)
 MOCK = json.load(open(os.path.join(HERE, "mock_api.json"), encoding="utf-8"))
+for _x in [x for x in os.environ.get("MOCK_EXTRA", "").split(",") if x]:   # MOCK_EXTRA : fichiers JSON de réponses simulées en plus (ex. mock_api_etroit.json)
+    MOCK.update(json.load(open(_x if os.path.isabs(_x) else os.path.join(HERE, _x), encoding="utf-8")))
 UNKNOWN = set()
 class H(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k): super().__init__(*a, directory=WEB, **k)

@@ -414,14 +414,17 @@ final class NovaCoreTests: XCTestCase {
         XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Voici le résultat complet et détaillé du calcul demandé, avec les trois chiffres vérifiés un par un et leurs sources citées ligne par ligne pour chaque poste du tableau récapitulatif final joint.", ask: "calcule le total du tableau"))
         // Salutation / demande triviale : pas de filet.
         XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Je vais bien, merci.", ask: "bonjour ça va"))
-        XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Je te reviens.", ask: "ok"))
+        // 01/11 (chat abouti) : « ok » est un ACCORD, plus une salutation — « Je te reviens. » sans rien faire déclenche la continuation.
+        XCTAssertTrue(DeliveryGate.needsContinuation(answer: "Je te reviens.", ask: "ok"))
         // 28/10 (retour Ahadi) : demande d'action d'UN mot — le cas réel qui passait.
         XCTAssertTrue(DeliveryGate.needsContinuation(answer: "Je m'en occupe.\n\nJe m'en occupe — transcription du fichier repéré.", ask: "Transcription"))
         XCTAssertTrue(DeliveryGate.needsContinuation(answer: "Je te l'envoie sur ton téléphone.", ask: "telephone"))
         // Mais un accusé à un mot qui n'est pas une action ne déclenche rien,
         // et une annonce APRÈS de vrais outils non plus (le travail existe).
         XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Noté.", ask: "ok"))
-        XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Je m'en occupe.", ask: "Transcription", toolCount: 3))
+        // 01/11 (chat abouti) : une réponse qui FINIT sur la promesse après des outils n'est pas un livrable — continuation unique.
+        XCTAssertTrue(DeliveryGate.needsContinuation(answer: "Je m'en occupe.", ask: "Transcription", toolCount: 3))
+        XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Transcription faite : 12 minutes, 3 intervenants, texte joint ci-dessous.", ask: "Transcription", toolCount: 3))
         // Demande courte sans promesse dans la réponse : rien à continuer.
         XCTAssertFalse(DeliveryGate.needsContinuation(answer: "Voici la transcription complète du fichier, relue et ponctuée.", ask: "Transcription"))
     }

@@ -60,13 +60,15 @@ public enum LLMSpend {
     public static func currentLane(background: Bool) -> SpendLane { isBench() ? .bench : (background ? .background : .interactive) }
 
     /// Réserve avant un envoi (routeur v1 ET chemins directs : CAFU, diagnostic, sondes, images). Voir SpendPolicy.preflight.
-    public static func preflight(spec s: BrainSpec, estIn: Int, maxOut: Int, calls: Int = 1, lane: SpendLane, task: String? = nil, now: Date = Date()) -> Preflight {
+    public static func preflight(spec s: BrainSpec, estIn: Int, maxOut: Int, calls: Int = 1, lane: SpendLane, task: String? = nil,
+                                 worstMaxOut: Int? = nil, worstCalls: Int? = nil, now: Date = Date()) -> Preflight {
         let led: CostLedger? = ledger(now: now)
         let sp = spentMicros(now)
         let floorDay: Micros = lane == .background ? sp.dayBg : (lane == .bench ? sp.dayBench : 0)
         let oid: String? = lane == .background ? nil : led?.activeOverride(lane: lane.ledgerLane, now: now)?.id
         let r: Preflight = SpendPolicy.preflight(ledger: led, book: book(), spec: s, estIn: estIn, maxOut: maxOut, calls: calls, lane: lane, caps: caps(),
-                                                 floorMonth: sp.month, floorDay: floorDay, overrideId: oid, task: task, reserveEnabled: reservationsOn, now: now)
+                                                 floorMonth: sp.month, floorDay: floorDay, overrideId: oid, task: task, reserveEnabled: reservationsOn,
+                                                 worstMaxOut: worstMaxOut, worstCalls: worstCalls, now: now)
         if case .refused(let why) = r {
             _ = BlackBox.record(["tool": "depense", "actor": "Nova", "ok": false, "effect": "lecture", "why": "réservation refusée avant envoi", "result": String(why.prefix(300))])
         }

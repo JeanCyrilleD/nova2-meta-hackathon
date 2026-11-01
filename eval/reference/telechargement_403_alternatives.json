@@ -1,0 +1,4 @@
+{
+  "bonne": "Le serveur refuse l'accès direct (403) ; je passe par deux autres voies au lieu de réessayer la même URL : la version archivée du fichier, puis la recherche du même jeu de données sur HDX (CONASUR / DTM de l'OIM), qui publient les effectifs de PDI du Burkina Faso.\n```actions\n[{\"outil\": \"archive_fetch\", \"cle\": \"pdi-bfa-archive\", \"args\": {\"url\": \"https://data.example-humanitaire.test/bfa/pdi_2026.csv\"}}, {\"outil\": \"web_search\", \"cle\": \"pdi-bfa-hdx\", \"args\": {\"q\": \"Burkina Faso personnes déplacées internes 2026 CSV CONASUR HDX\"}}]\n```",
+  "mauvaise": "Le site renvoie 403 : je n'ai pas pu récupérer le fichier. Réessaie plus tard.\n```actions\n[{\"outil\": \"web_fetch\", \"cle\": \"retry\", \"args\": {\"url\": \"https://data.example-humanitaire.test/bfa/pdi_2026.csv\"}}]\n```"
+}

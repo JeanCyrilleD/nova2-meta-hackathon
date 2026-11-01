@@ -1,0 +1,37 @@
+{
+  "id": "consigne_anglais_trois_puces",
+  "titre": "Consigne : anglais, exactement 3 puces, rien d'autre",
+  "categorie": "instruction",
+  "donnees": "connaissances générales",
+  "origine": "usage réel d'Ahadi (journaux releves/diag et règles du 29/10), anonymisé ou fictif",
+  "entree": {
+    "prompt": "Ahadi : « Answer in English only. Exactly 3 bullet points, one sentence each, no title, no introduction, no closing line, no follow-up suggestions: what are the main risks for humanitarian road access in central Sahel during the rainy season? »"
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "regex",
+      "motif": "^\\s*(?:[-*•][ \\t][^\\n]+(?:\\n+|$)){3}\\s*$",
+      "note": "exactement 3 puces et rien d'autre"
+    },
+    {
+      "type": "regex",
+      "motif": "^(?![\\s\\S]*(?i:\\b(?:les|des|est|pour|dans|avec|une|sont)\\b))",
+      "note": "aucun mot français"
+    },
+    {
+      "type": "max_mots",
+      "n": 90
+    },
+    {
+      "type": "absent",
+      "valeurs": [
+        "nova-suites",
+        "##",
+        "BLUF"
+      ]
+    }
+  ],
+  "grille": "exactitude : risques plausibles et non chiffrés (routes inondées, insécurité/EEI, délais et coûts) ; completude : 3 risques distincts ; forme : anglais seul, exactement 3 puces d'une phrase, aucun titre ni intro ni suite ; concision : ≤ 90 mots.",
+  "seuil_grille": 3.5
+}

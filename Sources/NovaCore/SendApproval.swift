@@ -565,6 +565,7 @@ public final class SendApprovals: @unchecked Sendable {
             let res: String = "canal=" + r.channel.rawValue + " dest=" + dest + " pj=" + pj + " sha=" + String(r.snapshotSha.prefix(12))
             let ok: Bool = to != .failed
             _ = BlackBox.record(["tool": "envoi", "actor": "Nova", "effect": "lecture", "ok": ok, "why": why, "result": res])
+            _ = AttentionNotif.sendTransition(conversationId: r.conversationId, channel: r.channel.rawValue, recipients: r.snapshot.recipients.count, to: to.rawValue)   // 01/11 : envoi à approuver → notification + pastille du Dock
         })
     }()
 

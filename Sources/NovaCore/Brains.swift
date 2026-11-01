@@ -201,7 +201,7 @@ public enum Catalog {
             // 28/10 (Ahadi) : Muse Spark Open servi par Baseten, sélection hackathon Meta — 100 $ de crédits, clé valable UNIQUEMENT pour ce modèle. Visible et sélectionnable à la main ; hors chaînes automatiques (fast/bulk/deep) : aucun contenu personnel n'y part sans choix explicite. Actif seulement si une clé Baseten est enregistrée (Trousseau « nova-baseten » ou variable BASETEN_API_KEY).
             BrainSpec(id: "spark-open-baseten", label: "Muse Spark Open (Baseten — hackathon)", kind: .chat, baseURL: "https://inference.baseten.co/v1/chat/completions",
                       model: "meta-models/muse-spark-open", keys: KeyChain([KnownKeys.basetenNova]), tags: ["puissant"],
-                      note: "Baseten hackathon 28/10, modèle à raisonnement (259 tok raisonnement sur Hello). Streaming SSE à vérifier, exige max_tokens >=2048. Actif seulement si clé Baseten enregistrée."),
+                      note: "01/11 : nom de modèle corrigé (404 « check the model » avec -1026) selon le changelog Baseten — Baseten hackathon 28/10, modèle à raisonnement (259 tok raisonnement sur Hello). Streaming SSE à vérifier, exige max_tokens >=2048. Actif seulement si clé Baseten enregistrée."),
         ]
     }
     /// CREDITS-SENTRY (23/10) : ids désactivés PAR CODE à chaque démarrage (union avec

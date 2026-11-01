@@ -169,7 +169,7 @@ function paintDirectRailBadge() {
   setBadge("conversations", (st.cid ? (st.count || 0) : 0) + unseen);
 }
 try {
-  bus.on("nova:conv-active", (d) => { shellActiveConvCid = (d && d.cid) ? String(d.cid) : ""; });
+  bus.on("nova:conv-active", (d) => { shellActiveConvCid = (d && d.cid) ? String(d.cid) : ""; reportVisible(); });
   bus.on("nova:direct-unread", () => { paintDirectRailBadge(); });   // recalcul/acquittement du module Agent → le rail suit l'état partagé
   bus.on("nova:unseen-done", () => { paintDirectRailBadge(); });   // 28/10 : tâche finie ailleurs -> badge
   bus.on("direct.appended", (d) => {
@@ -187,6 +187,28 @@ try {
       paintDirectRailBadge();
       bus.emit("nova:direct-unread", { cid, count: st.count });   // le module Agent repeint sa ligne s'il est monté (il resynchronise depuis l'état partagé)
     } else if (cidChanged) { directStoreWrite(st); paintDirectRailBadge(); }
+  });
+} catch (e) {}
+
+/* ── 01/11 : notifications natives « une conversation t'attend » ─────────────
+   Le moteur (NovaNotifier+Attention.swift) ne notifie pas ce qu'Ahadi a sous les yeux : l'interface lui signale
+   l'écran et la conversation affichés (POST /api/notify/visible, regroupé à 250 ms). Un clic sur une
+   notification ouvre l'écran (NovaNotify.openScript) puis émet « nova:notif-open » : pour une conversation,
+   on attend que l'écran soit monté et on ouvre LE fil visé (même voie que le retour d'historique). */
+let visModule = "", visTimer = 0;
+function reportVisible() {
+  clearTimeout(visTimer);
+  visTimer = setTimeout(() => {
+    try { const p = api.post("/api/notify/visible", { module: visModule || (current ? current.id : ""), cid: shellActiveConvCid || "" }); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  }, 250);
+}
+try {
+  bus.on("nova:module", (d) => { visModule = (d && d.id) ? String(d.id) : ""; reportVisible(); });
+  bus.on("nova:notif-open", async (d) => {
+    if (!d || !d.id || (d.module !== "conversations" && d.module !== "agent")) return;
+    const cid = String(d.id).replace(/^confirm:/, "");
+    try { await navigate("conversations"); } catch (e) {}
+    bus.emit("nova:nav-open-conv", { cid });
   });
 } catch (e) {}
 
@@ -1109,7 +1131,7 @@ async function boot() {
   initPalette({ ...ctx, modules: MODULES });
   /* NOVA2 (vague 2, items 7+9) : le pont UIPilot — les ordres « app » de l'agent arrivent
      en SSE « ui » et sont exécutés ici, contre le vrai DOM, avec constat renvoyé. */
-  initUIBridge({ api, bus, modules: MODULES, navigate: (id) => navigate(id), currentId: () => (current ? current.id : null), watch: () => ctx.watch });   // 25/10 : + lecteur flottant (outil « media » de l'agent)
+  initUIBridge({ api, bus, modules: MODULES, navigate: (id, force) => navigate(id, force), currentId: () => (current ? current.id : null), watch: () => ctx.watch });   // 25/10 : + lecteur flottant (outil « media » de l'agent)
 
   /* DIAG2-VEILLE (optionnel) : aucun lien de la coquille ne doit quitter
      Nova. Les liens http(s) target=_blank rendus dans la vue principale

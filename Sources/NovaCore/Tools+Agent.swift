@@ -89,6 +89,20 @@ public final class Agent {
     }
     static func looksFailed(_ s: String) -> Bool { s.range(of: "a échoué|délai dépassé|indisponible|introuvable|impossible|Échec|ne répond pas|erreur|not authorized|-1743|-600", options: [.regularExpression, .caseInsensitive]) != nil }   // AUDIT-BRAIN-A : ne sert PLUS qu'au texte final du MODÈLE (« échec déclaré ») — jamais au contenu d'un outil (Tools.toolFailed)
     static let rx = try! NSRegularExpression(pattern: #"<tool\s+name="([a-z_]+)"\s*>([\s\S]*?)</tool>"#)
+    /// 01/11 (chat abouti) : balises d'outil d'une même génération (protocole texte) exécutables ensemble — au moins deux, toutes des
+    /// lectures pures (Tools.concurrentSafe), au plus 6, sans doublon. nil sinon (l'appelant garde le chemin « première balise »).
+    static func parallelTextCalls(_ full: String) -> [(name: String, arg: String)]? {
+        let ns = full as NSString
+        let ms = rx.matches(in: full, range: NSRange(location: 0, length: ns.length))
+        guard ms.count >= 2 else { return nil }
+        var out: [(name: String, arg: String)] = []; var seen = Set<String>()
+        for m in ms.prefix(6) {
+            let name = ns.substring(with: m.range(at: 1)), arg = ns.substring(with: m.range(at: 2))
+            guard Tools.concurrentSafe.contains(name) else { return nil }
+            if seen.insert(name + "\u{1}" + arg).inserted { out.append((name, arg)) }
+        }
+        return out.count >= 2 ? out : nil
+    }
     /// NOVA2-FIX 20/10 (test T5) : formats d'appels d'outils ÉTRANGERS au protocole Nova (balises [tiers] <invoke>,
     /// <function_calls>, <tool_call>…) — émis en texte par certains cerveaux, ils n'exécutent RIEN. Détectés, ils ne
     /// doivent jamais être affichés comme une réponse réussie : relance avec la consigne de format, sinon échec franc.
@@ -357,6 +371,39 @@ public final class Agent {
             let ns = full as NSString
             if useTools, (step == maxSteps || overBudget), full.contains("<tool") {   // plus d'outil possible : on ne montre jamais une balise brute
                 full = full.components(separatedBy: "<tool").first ?? full
+            }
+            // 01/11 (chat abouti, vitesse) : protocole texte (Spark 1.3 : « native »: false sur 60/60 appels du journal du 01/11) —
+            // plusieurs LECTURES PURES écrites dans la même génération s'exécutent ENSEMBLE, en parallèle, comme en mode natif.
+            // Avant : seule la première balise tournait, chaque lecture suivante coûtait un nouvel appel complet (~4 s, ~30 000 jetons).
+            // Toute balise d'écriture ou d'effet garde l'ancien chemin (une seule, la première).
+            if useTools, step < maxSteps, !overBudget, let multi = Agent.parallelTextCalls(full), let m0 = Agent.rx.firstMatch(in: full, range: NSRange(location: 0, length: ns.length)) {
+                let before = ns.substring(to: m0.range.location)
+                var calls: [Call] = []
+                for (k, c) in multi.enumerated() { calls.append(prepare(c.name, c.arg, useId: "", offset: k)) }
+                let g: DispatchGroup = DispatchGroup(); let rl: NSLock = NSLock(); var got: [Int: Call] = [:]
+                for k in 0..<calls.count {
+                    let c: Call = calls[k]
+                    g.enter()
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        let r: Call = execute(c)
+                        rl.lock(); got[k] = r; rl.unlock()
+                        g.leave()
+                    }
+                }
+                g.wait()
+                for k in 0..<calls.count { if let r = got[k] { calls[k] = r } }
+                if cancel() { return lastBrain }
+                var tags: String = ""; var results: [String] = []
+                for c in calls {
+                    let stepFailed: Bool = conclude(c)
+                    tags += "<tool name=\"\(c.name)\">\(c.arg)</tool>"
+                    results.append(Agent.resultText(c.name, Agent.capOut(c.out), failed: stepFailed))
+                }
+                msgs.append(ChatMsg("assistant", before + tags))
+                msgs.append(ChatMsg("user", results.joined(separator: "\n\n")))
+                if actor == "Nova", !ordered, Date().timeIntervalSince(runT0) > 30, !msgs.isEmpty { msgs[msgs.count - 1].content += "\n\n" + budgetHint }
+                injectSteer()
+                continue
             }
             if useTools, step < maxSteps, !overBudget, let m = Agent.rx.firstMatch(in: full, range: NSRange(location: 0, length: ns.length)) {
                 let name = ns.substring(with: m.range(at: 1)), arg = ns.substring(with: m.range(at: 2))

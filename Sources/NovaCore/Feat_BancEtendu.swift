@@ -194,6 +194,15 @@ public enum BancEval {
         public var corrections: Int?
         public var echecs: [String]
         public var erreur: String?
+        /// 01/11 : réponse brute (4 000 caractères max) conservée pour le diagnostic — données d'exercice seulement.
+        public var texte: String? = nil
+    }
+
+    /// 01/11 : le refus du plafond du jour des bancs (échec fermé de LLMSpend) n'est PAS un échec du modèle : résultat en attente,
+    /// et le banc s'arrête au premier refus au lieu d'essuyer un refus par cas.
+    static func refusBudget(_ erreur: String?) -> Bool {
+        guard let e = erreur?.lowercased() else { return false }
+        return e.contains("plafond du jour des bancs") || e.contains("plafond du banc")
     }
 
     public struct Mesures: Equatable {
@@ -562,7 +571,9 @@ public enum BancEval {
                                           echecs: ["non exécuté"], erreur: "plafond du banc atteint"))
                     continue
                 }
-                rs.append(resultat(cas: c, modele: m, tentative: fournisseur.executer(modele: m, cas: c), juges: eligibles, noter: noter))
+                let t: Tentative = fournisseur.executer(modele: m, cas: c)
+                rs.append(resultat(cas: c, modele: m, tentative: t, juges: eligibles, noter: noter))
+                if t.texte == nil && refusBudget(t.erreur) { stop = true }
             }
             out[m.id] = rs
         }
@@ -578,9 +589,11 @@ public enum BancEval {
                                          corrections: t.corrections, echecs: [], erreur: t.erreur)
         guard let texte = t.texte, t.servi == m.id else {
             if t.texte != nil { r.erreur = "servi par " + t.servi + " au lieu de " + m.id + " : ignoré" }
+            if t.texte == nil && refusBudget(t.erreur) { r.enAttente = true; r.echecs = ["non exécuté : plafond du jour des bancs"]; return r }
             r.echecs = [r.erreur ?? "aucune réponse"]
             return r
         }
+        r.texte = String(texte.prefix(4000))
         let ev: Evaluation = evaluer(cas: c, texte: texte, externes: t.externes)
         r.violations = ev.violations
         r.citesTotal = ev.citesTotal
@@ -773,6 +786,7 @@ public enum BancEval {
         if let x = r.ms { o["ms_premiere_reponse_utile"] = x }
         if let x = r.corrections { o["corrections"] = x }
         if let x = r.erreur { o["erreur"] = x }
+        if let x = r.texte { o["texte"] = x }
         return o
     }
 
@@ -783,7 +797,7 @@ public enum BancEval {
                            citesJustes: (o["citations_justes"] as? Int) ?? 0, noteGrille: QualiteNuit.num(o["note_grille"]),
                            juges: (o["juges"] as? [String]) ?? [], coutMicro: entier64(o["cout_micro_usd"]),
                            ms: o["ms_premiere_reponse_utile"] as? Int, relances: (o["relances"] as? Int) ?? 0,
-                           corrections: o["corrections"] as? Int, echecs: (o["echecs"] as? [String]) ?? [], erreur: o["erreur"] as? String)
+                           corrections: o["corrections"] as? Int, echecs: (o["echecs"] as? [String]) ?? [], erreur: o["erreur"] as? String, texte: o["texte"] as? String)
     }
 
     static func dict(_ m: Mesures) -> [String: Any] {
@@ -842,6 +856,17 @@ public enum BancEval {
         let js: [String] = judges.isEmpty ? ["wonder-1.0"] : judges
         let b0 = LLMSpend.benchToday()
         let stop: Double = b0.usd + plafondUSD
+        // 01/11 (passe du 01/11 05:00 : 18 refus « plafond du jour des bancs », 0/18 écrit par-dessus la mesure réelle de 01:02) :
+        // budget du jour des bancs déjà épuisé → aucun appel et AUCUN écrasement des résultats précédents ; raison écrite à part.
+        let resteJour: Double = LLMSpend.benchDayCap() - b0.usd
+        if !simule && resteJour < 0.05 {
+            let doc: [String: Any] = ["updated": nowISO(), "raison": "plafond du jour des bancs atteint : aucun appel, résultats précédents conservés",
+                                      "banc_usd_jour": QualiteNuit.r2(b0.usd), "plafond_jour_usd": LLMSpend.benchDayCap(), "cerveaux": brains, "plafond_demande_usd": plafondUSD]
+            try? jsonData(doc).write(to: URL(fileURLWithPath: root + "/releves/diag/qualite_eval_refus.json"))
+            _ = BlackBox.record(["tool": "qualite_eval", "actor": "Nova", "ok": false, "effect": "lecture",
+                                 "why": "banc Phase 6 non lancé : plafond du jour des bancs atteint", "result": "releves/diag/qualite_eval_refus.json"])
+            return
+        }
         _ = BlackBox.record(["tool": "qualite_eval", "actor": "Nova", "ok": true, "effect": "lecture",
                              "why": "banc Phase 6 (" + (simule ? "simulé" : "réel") + ") : " + String(cas.count) + " cas, " + brains.joined(separator: ","),
                              "result": "début"])

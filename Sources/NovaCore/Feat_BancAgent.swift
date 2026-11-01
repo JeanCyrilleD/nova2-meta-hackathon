@@ -19,6 +19,7 @@ extension NovaApp {
                 Eveil.tick(root: root)
                 self?.applySettingsRequest(root: root)
                 self?.cafuTestPoll(root: root)   // 31/10 (CAFU) : dormant/CAFU_TEST_REQUEST → releves/diag/cafu_test.json
+                self?.voixTestPoll(root: root)   // 01/11 (voix-test) : dormant/VOIX_TEST_REQUEST → releves/diag/voix_test.json
                 AlgoliaBiblio.tick(root: root)   // 31/10 (Algolia biblio) : dormant/ALGOLIA_REARM, diag du disjoncteur, ingestion de fond nova-bibliotheque
                 let req: String = root + "/dormant/AGENT_BENCH.json"
                 if let d = try? Data(contentsOf: URL(fileURLWithPath: req)), let o = parseJSON(d) {

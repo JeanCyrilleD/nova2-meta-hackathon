@@ -140,6 +140,9 @@ public final class Voice {
         // Conversion au SEUL format admis par l'endpoint : WAV PCM mono 16 bits, 16 kHz.
         // afconvert lit wav/mp4/m4a/aiff/caf/mp3 (il renifle le contenu, pas l'extension) ;
         // un conteneur illisible (webm) rend une erreur nommée, journalisée — jamais de plantage, jamais d'appel bancal.
+        // 01/11 (voix-test) : audio DÉJÀ au format admis (WAV PCM 16 bits mono 16 kHz) → envoyé tel quel, sans fichier
+        // temporaire ni processus afconvert (avant : conversion systématique, coût fixe à chaque dictée).
+        if Voice.isEndpointWAV(audio) { return postMetaASR(wav: Voice.canonicalWAV(audio), key: key, language: language) }
         let tmp = NSTemporaryDirectory()
         let inExt = mime.contains("wav") ? "wav" : (mime.contains("mp4") ? "m4a" : (mime.contains("ogg") ? "ogg" : (mime.contains("mpeg") ? "mp3" : "webm")))
         let inPath = tmp + "nova-stt-meta-in-\(UUID().uuidString).\(inExt)"
@@ -158,6 +161,50 @@ public final class Voice {
             _ = BlackBox.record(["tool": "stt", "actor": "Nova", "why": "échec muse-voice-transcribe-1.0 : " + shortError(err, 120), "ok": false, "effect": "aucun"])
             return (nil, err)
         }
+        return postMetaASR(wav: wav, key: key, language: language)
+    }
+
+    /// En-tête RIFF/WAVE lu sans dépendance : format (1 = PCM), canaux, fréquence, bits, octets de données, durée.
+    /// Les blocs intermédiaires (LIST, fact…) sont sautés. nil = pas un WAV lisible.
+    public static func wavInfo(_ d: Data) -> (format: Int, channels: Int, rate: Int, bits: Int, dataBytes: Int, durationMs: Int, dataOffset: Int)? {
+        let b: [UInt8] = [UInt8](d.prefix(4096))
+        guard b.count >= 12, b[0] == 0x52, b[1] == 0x49, b[2] == 0x46, b[3] == 0x46, b[8] == 0x57, b[9] == 0x41, b[10] == 0x56, b[11] == 0x45 else { return nil }
+        func u16(_ i: Int) -> Int { Int(b[i]) | (Int(b[i + 1]) << 8) }
+        func u32(_ i: Int) -> Int { Int(b[i]) | (Int(b[i + 1]) << 8) | (Int(b[i + 2]) << 16) | (Int(b[i + 3]) << 24) }
+        var i: Int = 12
+        var fmt: (Int, Int, Int, Int)? = nil
+        while i + 8 <= b.count {
+            let id: String = String(bytes: b[i..<(i + 4)], encoding: .ascii) ?? ""
+            let len: Int = u32(i + 4)
+            if id == "fmt ", i + 8 + 16 <= b.count { fmt = (u16(i + 8), u16(i + 10), u32(i + 12), u16(i + 22)) }
+            if id == "data" {
+                guard let f = fmt else { return nil }
+                let avail: Int = max(0, d.count - (i + 8))
+                let n: Int = (len == 0 || len > avail) ? avail : len
+                let bytesPerSec: Int = max(1, f.2 * f.1 * max(1, f.3 / 8))
+                return (f.0, f.1, f.2, f.3, n, n * 1000 / bytesPerSec, i + 8)
+            }
+            i += 8 + len + (len % 2)
+        }
+        return nil
+    }
+
+    /// Le seul format admis par /v1/asr/transcribe : WAV PCM 16 bits mono 16 kHz.
+    public static func isEndpointWAV(_ d: Data) -> Bool {
+        guard let w = wavInfo(d) else { return false }
+        return w.format == 1 && w.channels == 1 && w.rate == 16000 && w.bits == 16 && w.dataBytes > 0
+    }
+
+    /// En-tête canonique de 44 octets (blocs LIST/fact retirés), mêmes échantillons — la forme que produit afconvert.
+    public static func canonicalWAV(_ d: Data) -> Data {
+        guard let w = wavInfo(d), w.dataOffset + w.dataBytes <= d.count else { return d }
+        if w.dataOffset == 44 { return d }
+        let pcm: Data = d.subdata(in: (d.startIndex + w.dataOffset)..<(d.startIndex + w.dataOffset + w.dataBytes))
+        return LocalVoice.wav(pcm16: pcm, rate: w.rate)
+    }
+
+    /// Envoi multipart à Muse Voice Transcribe (WAV PCM 16 kHz mono déjà prêt). Connexion réutilisée (HTTPStream.pooledHosts).
+    func postMetaASR(wav: Data, key: String, language: String) -> (text: String?, error: String?) {
         let reqObj: [String: Any] = ["model": "muse-voice-transcribe-1.0", "language": (language == "fra" || language == "auto") ? "fr" : language, "audioEncoding": "WAV"]
         guard let reqData = try? JSONSerialization.data(withJSONObject: reqObj) else { return (nil, "Muse Voice Transcribe : requête JSON non construite") }
         let b = "----nova" + UUID().uuidString

@@ -2,6 +2,8 @@
 
 **▶ Demo video (3 min):** https://youtu.be/TSjw5fsBKsM
 
+License: All rights reserved — see LICENSE (evaluation permitted).
+
 Nova is a native macOS companion (Swift + a local web UI) for a humanitarian foresight analyst: it drafts sourced
 context notes (CAFU format: BLUF, tagged evidence, scenarios, recommendations), reviews them with an open-weight
 model, triages mail and agenda, dictates, generates images and talks back — **and every model it calls at runtime is
@@ -9,6 +11,30 @@ a Meta model.** There is no other model provider in this code: no client, no key
 
 - Track: Indie Developer (solo). Suggested GitHub topic: `meta-hackathon-2026`.
 - Platform: macOS 13+ (Apple silicon or Intel), Xcode 15+ / Swift 5.9+.
+
+## Features
+
+- **Chat with tools** on Muse Spark 1.3: web search and fetch, files, mail, agenda, shell (with approval cards),
+  several pure reads run in parallel in one step.
+- **CAFU context notes**: research → Spark 1.3 draft (BLUF, tagged evidence, scenarios, recommendations) →
+  Spark Open review, each step journaled and costed.
+- **Reliability rule** in the system prompt (safety first, then the explicit instruction of the message, then house
+  style; unknown = said, never guessed; a failed tool is followed by 2–3 other ways) and a **source check**
+  (`Sources/NovaCore/VerifFaits.swift`): a URL that no tool of the turn returned triggers one verification pass, and
+  what stays unconfirmed is marked `[[NON CONFIRMÉ]]`.
+- **Complete answers**: per-request cap raised for Meta brains (1.50 $ by default), cache reads billed at the
+  published Meta price, clean conclusion at the cap instead of a cut, no silence after "Approve" or after
+  "I will do it" (`Sources/NovaCore/Feat_ChatTasks.swift`).
+- **Driving Nova's own UI**: verified internal navigation (the target screen is read back), settings re-read after a
+  change, conversation verbs `conv-liste`, `conv-ouvrir`, `conv-lire` (list, open, read) (`Sources/NovaCore/Pilotage.swift`, `web/js/pilot-resolve.js`).
+- **Narrow window**: the conversation list becomes an opaque drawer over a veil.
+- **Notifications**: a conversation waiting for your approval, a long task finished, Dock badge
+  (`Sources/NovaCore/NovaNotifier+Attention.swift`).
+- **Voice**: Muse Voice Transcribe dictation (canonical WAV sent as is, shared HTTP session to `api.meta.ai`),
+  Spark 1.3 as the voice brain (`reasoning_effort` `minimal`), macOS system voice pre-warmed at launch, barge-in, and
+  a voice bench (`Sources/NovaCore/VoixBanc.swift`).
+- **Images** (Muse Image), **segmentation** (SAM 3.1), mail and agenda triage, the Dots automations, budget ledger
+  with spend caps, approvals, keyless demo replay.
 
 ## 1. Install and run (step by step)
 
@@ -53,7 +79,7 @@ with `python3 tools/demo/build_traces.py --diag <run-logs dir>`.
 
 | Meta model | Role in Nova | Where (file:line) |
 |---|---|---|
-| Muse Spark 1.3 (`muse-spark-1.3`) | default brain: chat, agents and tools, background tasks, vision, CAFU notes (`reasoning_effort` max → xhigh → high), voice-live brain (`none`) | `Sources/NovaCore/Brains.swift:176`, `Sources/NovaCore/MetaSpecialites.swift:89` |
+| Muse Spark 1.3 (`muse-spark-1.3`) | default brain: chat, agents and tools, background tasks, vision, CAFU notes (`reasoning_effort` max → xhigh → high), voice-live brain (`minimal`) | `Sources/NovaCore/Brains.swift:176`, `Sources/NovaCore/MetaSpecialites.swift:89` |
 | Muse Wonder 1.0 (`muse-wonder-1.0`) | code, judge / second reader, deep fallback | `Sources/NovaCore/Brains.swift:172` |
 | Muse Spark 1.2 (`muse-spark-1.2`) | fallback of Spark 1.3 | `Sources/NovaCore/Brains.swift:180` |
 | Muse Spark 1.2/1.3 Contributor | explicit choice only, never in automatic chains (Meta may train on that tier) | `Sources/NovaCore/Brains.swift:193` |
@@ -61,7 +87,7 @@ with `python3 tools/demo/build_traces.py --diag <run-logs dir>`.
 | Muse Spark Open 816B (Hugging Face) | optional, hand-picked only (HF token) | `Sources/NovaCore/Brains.swift:200` |
 | Muse Code (CLI `muse exec`) | optional, hand-picked only (Muse Code subscription) | `Sources/NovaCore/Brains.swift:196` |
 | Muse Image (`muse-image-1.0`) | images (briefs, design studio) | `Sources/NovaCore/MetaCapabilities.swift:21`, `Sources/NovaCore/App.swift:1131` |
-| Muse Voice Transcribe (`muse-voice-transcribe-1.0`) | dictation and audio-file transcription (`POST /v1/asr/transcribe`) | `Sources/NovaCore/MetaCapabilities.swift:23`, `Sources/NovaCore/Voice.swift:169` |
+| Muse Voice Transcribe (`muse-voice-transcribe-1.0`) | dictation and audio-file transcription (`POST /v1/asr/transcribe`) | `Sources/NovaCore/MetaCapabilities.swift:23`, `Sources/NovaCore/Voice.swift:216` |
 | SAM 3.1 (`sam-3.1`) | image / video segmentation (`POST /api/meta/segment`, explicit confirmation) | `Sources/NovaCore/MetaCapabilities.swift:22`, `Sources/NovaCore/MetaCapabilities.swift:117` |
 
 **Meta calls are visible.** Every call passes a network gate (`Sources/NovaCore/HTTPStream.swift:59` →
@@ -73,7 +99,7 @@ specialty). Live view: `GET /api/meta-only/specialites`. A copy of that journal 
 
 - **Tavily** (web search), **Brave / DuckDuckGo** (search fallback), **Algolia** (full-text index of the user's own
   library) — search services, no model is called.
-- **macOS system voice**: speech synthesis by `AVSpeechSynthesizer` (`Sources/NovaCore/Feat_VoixLocale.swift:141`) and
+- **macOS system voice**: speech synthesis by `AVSpeechSynthesizer` (`Sources/NovaCore/Feat_VoixLocale.swift:205`) and
   speech recognition by `SFSpeechRecognizer` for live voice and wake word (`Sources/NovaCore/Feat_VoiceLive.swift:91`),
   on-device recognition required whenever the language supports it. These are operating-system services, not
   generative models called by Nova. Meta publishes no text-to-speech model (dev.meta.ai: Voice Transcribe "does not
@@ -86,7 +112,7 @@ Muse Spark Open runs on Baseten, model `meta-models/muse-spark-open`, endpoint
 `https://inference.baseten.co/v1/chat/completions` (`Sources/NovaCore/Brains.swift:203`). Three real uses:
 
 1. **Meta fallback.** Every automatic chain is Meta-only, and Spark Open is appended right after the Meta Model API
-   brains (`Sources/NovaCore/MetaSpecialites.swift:188`; reroute pool `Sources/NovaCore/Router.swift:293`): an outage of
+   brains (`Sources/NovaCore/MetaSpecialites.swift:188`; reroute pool `Sources/NovaCore/Router.swift:298`): an outage of
    the Meta API (5xx, 429, timeout, credit) falls over to the open-weight model, never to another vendor.
 2. **CAFU QA review.** After Spark 1.3 drafts a CAFU note, Spark Open reviews it (facts, evidence tags, score) as a
    visible, journaled, costed step (`Sources/NovaCore/MetaSpecialites.swift:283`, called from
@@ -132,7 +158,7 @@ The commit hashes below refer to that private history.
 
 ## 7. Tests
 
-`swift test --sanitize=thread`: 227 XCTest cases, 0 failures, 0 ThreadSanitizer warnings on 01/11/2026 (221 before this branch, adapted, plus `DemoReplayTests`). Routing
+`swift test --sanitize=thread`: 297 XCTest cases, 0 failures (1 skipped), 0 ThreadSanitizer warnings, and `tools/verify.sh` passing on 01/11/2026 after the post-submission update (227 at submission; new suites `ChatAboutiTests`, `PilotageTests`, `UIEtroitNotifTests`, `FiabiliteTests`, `VoixTestTests`). Every test is simulated: no network, no key. Routing
 v2, budget and bench tests run on a **fictional** provider registry (`Tests/NovaCoreTests/Fixtures/`, vendors named
 `vendor-*`), so the generic engines stay tested while the shipped configuration (`Config/`) is Meta-only.
 `DemoReplayTests.testNoNonMetaModelHostInShippedCode` fails if a non-Meta model host appears in `Sources`, `web/js`
@@ -147,6 +173,9 @@ or `Config`.
 | Draco decoder, Basis Universal transcoder (wasm) — `web/vendor/draco`, `web/vendor/basis` | Apache-2.0 | 3D assets |
 | hls.js — `web/vendor/hls.min.js` | Apache-2.0 | video playback |
 | Fraunces, Hanken Grotesk, Spline Sans Mono — `web/assets/fonts/` | SIL OFL 1.1 (licence files included) | fonts |
+
+Licence texts and copyright holders of the vendored files: `web/vendor/THIRD_PARTY_LICENSES.txt`. Nova's own code is
+under `LICENSE` (all rights reserved, evaluation permitted); these components keep their own licences.
 
 ## 9. Privacy
 

@@ -1,0 +1,41 @@
+{
+  "id": "ordre_prose_sans_bluf",
+  "titre": "Ordre contraire à l'habitude : prose, sans BLUF ni suites",
+  "categorie": "instruction",
+  "donnees": "connaissances générales",
+  "origine": "usage réel d'Ahadi (journaux releves/diag et règles du 29/10), anonymisé ou fictif",
+  "entree": {
+    "prompt": "Ahadi : « Pour une fois, pas de BLUF, pas de titres, pas de puces, pas de pastilles, pas de suites : un seul paragraphe de prose, 80 mots maximum, qui explique pourquoi la saison des pluies complique la logistique humanitaire au Sahel. »"
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "max_mots",
+      "n": 80
+    },
+    {
+      "type": "regex",
+      "motif": "^(?![\\s\\S]*(?:^|\\n)[ \\t]*(?:[-*•>#]|\\d+[.)][ \\t]))",
+      "note": "aucune puce, citation ni titre"
+    },
+    {
+      "type": "regex",
+      "motif": "^(?![\\s\\S]*\\S[ \\t]*\\n[ \\t]*\\n[\\s]*\\S)",
+      "note": "un seul paragraphe"
+    },
+    {
+      "type": "absent",
+      "valeurs": [
+        "BLUF",
+        "nova-suites",
+        "[[",
+        "##"
+      ]
+    },
+    {
+      "type": "langue_fr"
+    }
+  ],
+  "grille": "exactitude : causes plausibles (routes inondées, enclavement, insécurité, coûts) sans chiffre inventé ; completude : explique le pourquoi ; forme : un seul paragraphe de prose, aucun BLUF, titre, puce, pastille ni suite ; concision : ≤ 80 mots.",
+  "seuil_grille": 3.5
+}

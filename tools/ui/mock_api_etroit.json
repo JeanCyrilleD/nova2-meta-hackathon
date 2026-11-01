@@ -1,0 +1,178 @@
+{
+ "/api/conversations": {
+  "items": [
+   {
+    "id": "direct",
+    "title": "Fil direct",
+    "updated": "2026-11-01T03:40:00Z",
+    "created": "2026-10-20T10:00:00Z",
+    "count": 12,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": true
+   },
+   {
+    "id": "c1",
+    "title": "Approfondissons ta suggestion",
+    "updated": "2026-11-01T02:39:00Z",
+    "created": "2026-10-21T10:00:00Z",
+    "count": 13,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c2",
+    "title": "Mais que penses-tu réellement des chances de Nova",
+    "updated": "2026-11-01T01:38:00Z",
+    "created": "2026-10-22T10:00:00Z",
+    "count": 14,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c3",
+    "title": "Qui dois-je relancer aujourd'hui, et pourquoi ?",
+    "updated": "2026-11-01T00:37:00Z",
+    "created": "2026-10-23T10:00:00Z",
+    "count": 15,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c4",
+    "title": "Draft a 150-word GHO 2027 context",
+    "updated": "2026-11-01T00:36:00Z",
+    "created": "2026-10-24T10:00:00Z",
+    "count": 16,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c5",
+    "title": "Active caféinate pour 12 h",
+    "updated": "2026-11-01T00:35:00Z",
+    "created": "2026-10-25T10:00:00Z",
+    "count": 17,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c6",
+    "title": "Fais le point sur un portefeuille d'exemple (fictif)",
+    "updated": "2026-11-01T00:34:00Z",
+    "created": "2026-10-26T10:00:00Z",
+    "count": 18,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c7",
+    "title": "ONG Exemple — budget du trimestre (fictif)",
+    "updated": "2026-11-01T00:33:00Z",
+    "created": "2026-10-27T10:00:00Z",
+    "count": 19,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c8",
+    "title": "Tous mes fichiers (exemple)",
+    "updated": "2026-11-01T00:32:00Z",
+    "created": "2026-10-28T10:00:00Z",
+    "count": 20,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c9",
+    "title": "Run /cafu-note-quality-v2 test",
+    "updated": "2026-11-01T00:31:00Z",
+    "created": "2026-10-29T10:00:00Z",
+    "count": 21,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   },
+   {
+    "id": "c10",
+    "title": "Fais-moi le point du jour : ce qui est urgent",
+    "updated": "2026-11-01T00:30:00Z",
+    "created": "2026-10-20T10:00:00Z",
+    "count": 22,
+    "brain_label": "Spark 1.3",
+    "archived": "non",
+    "pinned": false
+   }
+  ],
+  "brains": [
+   {
+    "id": "spark",
+    "label": "Spark 1.3 · Muse"
+   }
+  ]
+ },
+ "/api/conversation": {
+  "id": "c2",
+  "messages": [
+   {
+    "role": "user",
+    "content": "Mais que penses-tu réellement des chances de Nova comparée à ce que les autres concurrents sont en train de développer ? Dans les conversations Discord, si tu les as vues ou si tu peux les voir sur Comet, il prend le contrôle complet de l'écran pour naviguer et voir réellement tout ce que les autres proposent.",
+    "ts": "2026-11-01T03:48:00Z"
+   },
+   {
+    "role": "assistant",
+    "content": "Je prends la main pour regarder Comet et te dire franchement où se situe Nova.\n\nJe regarde ce que je peux vérifier sur Comet sans prendre ton écran, puis je te dis franchement où se situe Nova. Je prends la main pour regarder Comet et te dire franchement où se situe Nova.\n\nJe regarde ce que je peux vérifier sur Comet sans prendre ton écran, puis je te dis franchement où se situe Nova. ",
+    "ts": "2026-11-01T03:49:00Z"
+   },
+   {
+    "role": "user",
+    "content": "Et pour la suite ?",
+    "ts": "2026-11-01T03:50:00Z"
+   },
+   {
+    "role": "assistant",
+    "content": "Voici trois points :\n- la vitesse de réponse\n- la mémoire souveraine\n- le contrôle du Mac en arrière-plan",
+    "ts": "2026-11-01T03:51:00Z"
+   }
+  ]
+ },
+ "/api/dossiers": {
+  "items": [
+   {
+    "id": "d1",
+    "titre": "Renouvellement passeport (exemple)",
+    "echeance": "2026-11-20",
+    "pieces_total": 2,
+    "pieces_faites": 1,
+    "pieces": [
+     {
+      "id": "p1",
+      "label": "Photo d'identité",
+      "fait": true
+     },
+     {
+      "id": "p2",
+      "label": "Acte de naissance",
+      "fait": false
+     }
+    ]
+   },
+   {
+    "id": "d2",
+    "titre": "Visa — mission (exemple)",
+    "echeance": "2026-12-02",
+    "pieces_total": 0,
+    "pieces_faites": 0,
+    "pieces": []
+   }
+  ]
+ }
+}

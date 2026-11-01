@@ -28,6 +28,8 @@
    Le même lecteur est exposé aux modules via window.NovaPanes (diagnostic Messages,
    barre du Navigateur, état Tor) : un seul code chemin pour l'agent et pour l'écran. */
 import { handleForm } from "./formfill.js";   // 25/10 : outil « formulaire » (Feat_Formulaire.swift)
+import { resolveScreen, matchLabel, splitRowOption, normTxt, CLIENT_SETTINGS } from "./pilot-resolve.js";   // PILOTAGE 01/11 : navigation interne déterministe
+import { applyTheme } from "./core.js";
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 /* 26/10 : « Submit order » passait (httpbin) — soumettre/valider/commander/acheter/réserver/s'inscrire… ajoutés ;
    et tout bouton qui SOUMET un formulaire (type submit, ou <button> sans type dans un <form>) exige la carte. */
@@ -62,6 +64,120 @@ export function initUIBridge({ api, bus, modules, navigate, currentId, watch }) 
       .filter((el) => visible(el) && !el.closest(".rail") && !el.classList.contains("rail-btn"));
     lastClickables = els.map((el, i) => ({ n: i + 1, el, label: (el.getAttribute("aria-label") || el.textContent || el.value || "").trim().replace(/\s+/g, " ").slice(0, 80), kind: el.tagName.toLowerCase() }));
     return lastClickables;
+  }
+
+  /* ── PILOTAGE (01/11) : observer → agir → vérifier, sur l'interface de Nova elle-même ──
+     Constat du journal (27-28/10) : « go » répondait ok AVANT d'avoir navigué, la section demandée
+     (« Réglages › Cerveaux ») était cherchée dans des sections masquées (Réglages n'affiche qu'une
+     section à la fois) et ne s'ouvrait jamais, un clic sur un réglage hors section visible
+     répondait « introuvable », et aucune conversation de Nova ne pouvait être ouverte par l'agent.
+     Ici : résolution déterministe (pilot-resolve.js), attente du rendu, relecture de l'état. */
+  let lastConvCid = "";
+  bus.on("nova:conv-active", (d) => { lastConvCid = (d && d.cid) ? String(d.cid) : ""; });
+  const waitUntil = async (fn, ms = 2500, step = 120) => { const t0 = Date.now(); for (;;) { let v = null; try { v = fn(); } catch (e) {} if (v) return v; if (Date.now() - t0 >= ms) return null; await sleep(step); } };
+  const txt = (el) => String((el && (el.textContent || el.getAttribute("aria-label"))) || "").trim().replace(/\s+/g, " ");
+  function sectionTabs() {
+    const v = view(); if (!v) return [];
+    return [...v.querySelectorAll("[data-nav], [role='tab'], .set-nav button, .tabs button, .tab-bar button")]
+      .filter((el) => visible(el) && !el.closest(".rail"))
+      .map((el) => ({ el, key: el.getAttribute("data-nav") || el.getAttribute("aria-controls") || "", label: txt(el).slice(0, 60) }))
+      .filter((t) => t.label);
+  }
+  function activeTab() {
+    const v = view(); if (!v) return "";
+    const el = v.querySelector(".set-nav button.on, [role='tab'][aria-selected='true'], .tabs button.on, .tab-bar .on");
+    return el ? txt(el).slice(0, 60) : "";
+  }
+  function headings() { const v = view(); return v ? [...v.querySelectorAll("h1,h2,h3")].filter(visible).map((e) => txt(e).slice(0, 80)).filter(Boolean).slice(0, 16) : []; }
+  function settingRows(all = true) {
+    const v = view(); if (!v) return [];
+    return [...v.querySelectorAll(".set-row")].map((r) => { const lb = r.querySelector(".lb span") || r.querySelector(".lb"); const sec = r.closest("[data-sec]"); return { el: r, key: sec ? sec.getAttribute("data-sec") : "", label: lb ? txt(lb) : "", q: r.getAttribute("data-q") || "" }; })
+      .filter((x) => x.label && (all || visible(x.el)));
+  }
+  async function revealRow(row) {   // ligne d'une section masquée : on active SA section (clic sur l'onglet), comme Ahadi le ferait
+    if (visible(row.el)) return true;
+    const tab = sectionTabs().find((t) => t.key && t.key === row.key);
+    if (!tab) return false;
+    tab.el.click();
+    const ok = await waitUntil(() => visible(row.el), 1500);
+    if (ok) { try { row.el.scrollIntoView({ block: "center" }); } catch (e) {} }
+    return !!ok;
+  }
+  function findRow(q) {
+    const rows = settingRows(); if (!rows.length) return { row: null, rows };
+    const mr = matchLabel(q, rows.map((r) => ({ key: r.label, label: r.label })));
+    if (mr.ok) return { row: rows.find((r) => r.label === mr.label), rows };
+    if (mr.ambigu) return { row: null, rows, ambigu: mr.ambigu };
+    const nq = normTxt(q);
+    const byQ = nq.length >= 4 ? rows.filter((r) => normTxt(r.q).includes(nq)) : [];
+    return { row: byQ.length === 1 ? byQ[0] : null, rows, ambigu: byQ.length > 1 ? byQ.map((r) => r.label).slice(0, 8) : undefined };
+  }
+  async function openSection(q) {
+    const want = String(q || "").trim(); if (!want) return null;
+    const tabs0 = (await waitUntil(() => { const t = sectionTabs(); return t.length ? t : null; }, 3000)) || [];   // le module peut encore charger
+    const mt = matchLabel(want, tabs0.map((t) => ({ key: t.key, label: t.label })));
+    if (mt.ok) {
+      const t = tabs0.find((x) => x.label === mt.label && x.key === mt.key) || tabs0.find((x) => x.label === mt.label);
+      t.el.click();
+      await sleep(150);
+      const act = activeTab();
+      const sec = t.key ? (view() || document).querySelector('[data-sec="' + t.key + '"]') : null;
+      const okv = (act && normTxt(act) === normTxt(t.label)) || (sec && visible(sec));
+      return { demandee: want, trouvee: !!okv, via: "onglet", label: t.label, active: act };
+    }
+    const fr = findRow(want);
+    if (fr.row && await revealRow(fr.row)) { try { fr.row.el.scrollIntoView({ block: "center" }); } catch (e) {} return { demandee: want, trouvee: true, via: "ligne", label: fr.row.label, active: activeTab() }; }
+    const v = view(); const hs = v ? [...v.querySelectorAll("h1,h2,h3,.tt")].filter(visible) : [];
+    const mh = matchLabel(want, hs.map((e, i) => ({ key: String(i), label: txt(e).slice(0, 80) })));
+    if (mh.ok) { try { hs[parseInt(mh.key, 10)].scrollIntoView({ block: "start" }); } catch (x) {} return { demandee: want, trouvee: true, via: "titre", label: mh.label, active: activeTab() }; }
+    return { demandee: want, trouvee: false, ambigu: mt.ambigu || fr.ambigu || mh.ambigu || undefined, disponibles: [...new Set([...tabs0.map((t) => t.label), ...headings()])].slice(0, 20) };
+  }
+  function rowValue(rowEl) {
+    const ctl = rowEl && rowEl.querySelector(".set-ctl"); if (!ctl) return undefined;
+    const sw = ctl.querySelector("[role='switch']"), sg = ctl.querySelector(".seg"), se = ctl.querySelector("select"), inp = ctl.querySelector("input:not([type='password'])");
+    if (sw) return sw.getAttribute("aria-checked") === "true" ? "activé" : "désactivé";
+    if (sg) { const on = sg.querySelector("button.on"); return on ? txt(on) : "(aucun)"; }
+    if (se) return se.options && se.selectedIndex >= 0 ? se.options[se.selectedIndex].text : se.value;
+    if (inp) return String(inp.value || "").slice(0, 60);
+    return undefined;
+  }
+  function controlsState() {
+    const v = view(); if (!v) return [];
+    const out = [];
+    for (const r of settingRows(false)) {
+      const val = rowValue(r.el); if (val === undefined) continue;
+      const sg = r.el.querySelector(".set-ctl .seg");
+      out.push({ ligne: r.label.slice(0, 60), valeur: val, options: sg ? [...sg.querySelectorAll("button")].map(txt).slice(0, 8) : undefined });
+      if (out.length >= 30) break;
+    }
+    if (!out.length) {
+      for (const el of [...v.querySelectorAll("[role='switch'], select")].filter(visible).slice(0, 20)) {
+        out.push({ ligne: (el.getAttribute("aria-label") || el.name || "").slice(0, 60), valeur: el.tagName === "SELECT" ? el.value : (el.getAttribute("aria-checked") === "true" ? "activé" : "désactivé") });
+      }
+    }
+    return out;
+  }
+  function screenState() {
+    const v = view();
+    const m = modules.find((x) => x.id === currentId());
+    return { ecran: currentId() || "", label: m ? m.label : "", section_active: activeTab(), sections: sectionTabs().map((t) => t.label).slice(0, 16), titres: headings().slice(0, 8),
+             controles: controlsState(), champs: v ? [...v.querySelectorAll("input,textarea,select")].filter(visible).length : 0, boutons: clickables().length,
+             conversation: currentId() === "conversations" ? (lastConvCid || "") : undefined };
+  }
+  /* Réglages modifiés par le moteur (app set / nova_self set) : appliqués tout de suite à la fenêtre, puis relus. */
+  function applySettings(patch) {
+    const d = document.documentElement, applied = {}, refus = {};
+    for (const [k, v] of Object.entries(patch || {})) {
+      if (k === "theme") { const t = applyTheme(String(v)); if (t) applied.theme = d.dataset.themeChoice || String(v); else refus.theme = "thème inconnu"; continue; }
+      if (k === "avatar_mode") { try { localStorage.setItem("nova2_avatar", String(v)); } catch (e) {} bus.emit("nova:avatar-mode", { mode: String(v) }); applied.avatar_mode = String(v); continue; }
+      const c = CLIENT_SETTINGS[k]; if (!c) continue;
+      if (c.bool) { const on = v === true || v === "true" || v === 1 || v === "1"; try { localStorage.setItem(c.ls, on ? "1" : "0"); } catch (e) {} if (on) d.dataset[c.ds] = "1"; else delete d.dataset[c.ds]; applied[k] = d.dataset[c.ds] === "1"; continue; }
+      const sv = String(v); if (c.values && !c.values.includes(sv)) { refus[k] = "valeur hors liste : " + c.values.join(", "); continue; }
+      try { localStorage.setItem(c.ls, sv); } catch (e) {}
+      if (sv === c.neutral) delete d.dataset[c.ds]; else d.dataset[c.ds] = sv;
+      applied[k] = d.dataset[c.ds] || c.neutral;
+    }
+    return { applied, refus };
   }
   function paneEval(paneId, js, timeoutMs = 15000) {
     return new Promise((resolve) => {
@@ -1137,17 +1253,34 @@ export function initUIBridge({ api, bus, modules, navigate, currentId, watch }) 
     if (!id || !op) return;
     try {
       if (op === "go") {
-        const q = norm(d.q);
-        const m = modules.find((x) => norm(x.id) === q || norm(x.label) === q || norm(x.label).includes(q) || q.includes(norm(x.id)));
-        if (!m) { reply(id, { ok: false, erreur: "écran introuvable : " + (d.q || "") + " — voir « onglets »" }); return; }
-        navigate(m.id);
-        if (d.section) setTimeout(() => { const els = [...(view() || document).querySelectorAll("h1,h2,h3,.tt")]; const t = els.find((e) => norm(e.textContent).includes(norm(d.section))); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 500);
-        reply(id, { ok: true, ecran: m.id, label: m.label });
+        const t = resolveScreen(d.q, modules, d.section || "");
+        if (!t.ok) { reply(id, { ok: false, erreur: t.erreur + " — choisis un id parmi les candidats", candidats: t.candidats }); return; }
+        if (currentId() !== t.id) await navigate(t.id);
+        const actif = await waitUntil(() => currentId() === t.id, 2500);
+        if (!actif) { reply(id, { ok: false, ecran: t.id, label: t.label, erreur: "navigation demandée vers « " + t.label + " », écran actif relu : « " + (currentId() || "?") + " »" }); return; }
+        const sec = t.section ? await openSection(t.section) : null;
+        const st = screenState();
+        if (sec && !sec.trouvee) { reply(id, { ok: false, ecran: t.id, label: t.label, erreur: "écran « " + t.label + " » ouvert, mais section « " + t.section + " » introuvable", section: sec, etat: st }); return; }
+        reply(id, { ok: true, ecran: t.id, label: t.label, via: t.via, section: sec || undefined, effet: { ecran_actif: st.ecran, section_active: st.section_active }, etat: st });
       }
       else if (op === "onglets") reply(id, { ok: true, ecrans: modules.map((m) => ({ id: m.id, label: m.label, actif: m.id === currentId() })) });
-      else if (op === "etat") {
-        const v = view();
-        reply(id, { ok: true, ecran: currentId() || "", titres: [...(v ? v.querySelectorAll("h1,h2") : [])].slice(0, 8).map((e) => e.textContent.trim().slice(0, 80)), champs: v ? v.querySelectorAll("input,textarea,select").length : 0, boutons: clickables().length });
+      else if (op === "etat") reply(id, { ok: true, ...screenState() });
+      else if (op === "conv") {
+        const cid = String(d.cid || "").trim();
+        if (!cid) { reply(id, { ok: false, erreur: "conv <id de conversation>" }); return; }
+        if (lastConvCid === cid && currentId() === "conversations") { reply(id, { ok: true, conversation: cid, deja: true, effet: { conversation_affichee: cid, ecran_actif: "conversations" } }); return; }
+        try { localStorage.setItem("nova2_pending_conv", cid); } catch (e) {}   // consommée au montage si le module n'existe pas encore
+        if (currentId() !== "conversations") await navigate("conversations");
+        await waitUntil(() => currentId() === "conversations", 2500);
+        bus.emit("nova:open-conv", { id: cid });
+        const ok = await waitUntil(() => lastConvCid === cid, 3500);
+        reply(id, ok ? { ok: true, conversation: cid, effet: { conversation_affichee: lastConvCid, ecran_actif: currentId() } }
+                     : { ok: false, erreur: "conversation " + cid + " demandée, affichée : « " + (lastConvCid || "aucune") + " »", ecran: currentId() || "" });
+      }
+      else if (op === "reglages-appliquer") {
+        const r = applySettings(d.patch || {});
+        if (currentId() === "settings") { try { await navigate("settings", true); } catch (e) {} }   // l'écran Réglages ouvert relit les valeurs
+        reply(id, { ok: true, effet: { applique: r.applied, refus: r.refus, ecran: currentId() || "" } });
       }
       else if (op === "lire") {
         const v = view(); let txt = v ? (v.innerText || "") : "";
@@ -1156,18 +1289,52 @@ export function initUIBridge({ api, bus, modules, navigate, currentId, watch }) 
         reply(id, { ok: true, texte: txt.slice(0, 3000), elements: clickables().slice(0, 40).map(({ n, label, kind }) => ({ n, label, kind })) });
       }
       else if (op === "clic") {
-        const q = String(d.q || "").trim(); if (!q) { reply(id, { ok: false, erreur: "clic <libellé ou n°>" }); return; }
-        let target = null;
-        if (/^#?\d+$/.test(q)) { const c = clickables().find((c) => c.n === parseInt(q.replace("#", ""), 10)); target = c && c.el; if (c) var lbl = c.label; }
-        if (!target) { const list = clickables(); target = (list.find((c) => norm(c.label) === norm(q)) || list.find((c) => norm(c.label).includes(norm(q))) || {}).el; var lbl2 = target ? target.textContent.trim().slice(0, 80) : ""; }
-        const label = (typeof lbl !== "undefined" ? lbl : (typeof lbl2 !== "undefined" ? lbl2 : q));
-        if (!target) { reply(id, { ok: false, erreur: "élément cliquable introuvable : " + q }); return; }
+        const q = String(d.q || "").trim(); if (!q) { reply(id, { ok: false, erreur: "clic <libellé ou n°> — ou « <ligne de réglage> > <option> »" }); return; }
+        let target = null, label = q, rowEl = null, wantSwitch = null;
+        const ro = splitRowOption(q);
+        if (ro) {   // PILOTAGE 01/11 : « Taille du texte des réponses > Grand », « Notifications > off »
+          const fr = findRow(ro.row);
+          if (!fr.row) { reply(id, { ok: false, erreur: fr.ambigu ? "ligne ambiguë : « " + ro.row + " »" : "ligne de réglage introuvable : « " + ro.row + " »", candidats: fr.ambigu || fr.rows.map((r) => r.label).slice(0, 40) }); return; }
+          if (!(await revealRow(fr.row))) { reply(id, { ok: false, erreur: "ligne « " + fr.row.label + " » dans une section que je n'arrive pas à afficher" }); return; }
+          rowEl = fr.row.el;
+          const sw = rowEl.querySelector(".set-ctl [role='switch']");
+          const no = normTxt(ro.opt);
+          if (sw && /^(on|oui|activ|allum|true|1)/.test(no)) wantSwitch = true;
+          else if (sw && /^(off|non|desactiv|eteind|coup|false|0)/.test(no)) wantSwitch = false;
+          if (wantSwitch !== null) {
+            const cur = sw.getAttribute("aria-checked") === "true";
+            if (cur === wantSwitch) { reply(id, { ok: true, deja: true, clique: fr.row.label, effet: { ligne: fr.row.label, valeur_relue: rowValue(rowEl) } }); return; }
+            target = sw; label = fr.row.label + " > " + ro.opt;
+          } else {
+            const btns = [...rowEl.querySelectorAll(".set-ctl button, .set-ctl [role='button']")].filter(visible);
+            const mo = matchLabel(ro.opt, btns.map((b, i) => ({ key: String(i), label: txt(b) })));
+            if (!mo.ok) { reply(id, { ok: false, erreur: "option « " + ro.opt + " » introuvable dans « " + fr.row.label + " »", options: btns.map(txt).filter(Boolean).slice(0, 12), valeur_actuelle: rowValue(rowEl) }); return; }
+            target = btns[parseInt(mo.key, 10)]; label = fr.row.label + " > " + mo.label;
+          }
+        } else {
+          if (/^#?\d+$/.test(q)) { const c = clickables().find((c) => c.n === parseInt(q.replace("#", ""), 10)); if (c) { target = c.el; label = c.label; } }
+          const pick = () => { const list = clickables(); const c = list.find((c) => norm(c.label) === norm(q)) || list.find((c) => norm(c.label).includes(norm(q))); return c || null; };
+          if (!target) { const c = pick(); if (c) { target = c.el; label = c.label; } }
+          if (!target) {   // réessai par une autre voie : la cible vit peut-être dans une section masquée (Réglages)
+            const fr = findRow(q);
+            if (fr.row && await revealRow(fr.row)) { rowEl = fr.row.el; const c = pick(); if (c) { target = c.el; label = c.label; } else { const ctl = rowEl.querySelector(".set-ctl [role='switch'], .set-ctl button"); if (ctl) { target = ctl; label = fr.row.label; } } }
+          }
+        }
+        if (!target) { reply(id, { ok: false, erreur: "élément cliquable introuvable : " + q, ecran: currentId() || "", elements: clickables().slice(0, 30).map(({ n, label, kind }) => ({ n, label, kind })), lignes_reglages: settingRows().map((r) => r.label).slice(0, 30) }); return; }
         if (DANGER.test(label) && !d.confirmed) { reply(id, { ok: false, confirmation: true, label, erreur: "action sensible : confirmation requise" }); return; }
+        if (!rowEl) rowEl = target.closest ? target.closest(".set-row") : null;
+        const avant = rowEl ? rowValue(rowEl) : undefined;
         target.click();
         // PRO-4 : effet RELU après le clic (état de l'élément), pas seulement « j'ai cliqué ».
         const effet = { clique: label, present: document.contains(target) };
         if (target.getAttribute && target.getAttribute("aria-checked") != null) effet.etat = target.getAttribute("aria-checked");
         else if (target.checked != null) effet.etat = String(!!target.checked);
+        if (rowEl) {   // réglage : valeur de la ligne relue après l'enregistrement (onchange asynchrone)
+          await sleep(350);
+          effet.ligne = (settingRows().find((r) => r.el === rowEl) || {}).label || "";
+          effet.valeur_avant = avant; effet.valeur_relue = rowValue(rowEl);
+          if (wantSwitch !== null) effet.conforme = effet.valeur_relue === (wantSwitch ? "activé" : "désactivé");
+        }
         reply(id, { ok: true, clique: label, effet });
       }
       else if (op === "saisir") {

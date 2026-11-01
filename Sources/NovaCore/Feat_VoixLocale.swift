@@ -14,7 +14,16 @@ public final class LocalVoice {
     private let lock: NSLock = NSLock()
     #if canImport(AVFoundation) && os(macOS)
     private var synths: [AVSpeechSynthesizer] = []   // retenus le temps du rendu (sinon libérés en plein write)
+    // 01/11 (voix-test) : synthétiseurs CHAUDS au repos, réutilisés d'une phrase à l'autre (avant : un AVSpeechSynthesizer neuf
+    // par phrase = voix rechargée à froid à chaque phrase) ; voix choisie gardée en cache (avant : speechVoices() énuméré
+    // deux fois par phrase, par voiceInfo puis par render).
+    private var idle: [AVSpeechSynthesizer] = []
+    private var voiceCache: [String: (voice: AVSpeechSynthesisVoice, at: Date)] = [:]
     #endif
+    private var warmedAt: Date? = nil
+    private var lastWarmMs: Int = -1
+    /// Réglage de la réutilisation (tests, retour arrière) : faux = un synthétiseur neuf par phrase, comme avant.
+    public static var reuseSynth: Bool = true
 
     /// Moteur de synthèse vocale : toujours « local » (voix système macOS) dans la version hackathon Meta.
     public static func mode(_ settings: Settings) -> String { "local" }
@@ -22,7 +31,7 @@ public final class LocalVoice {
     /// Voix retenue : id, nom, qualité, langue — nil si aucune voix française n'est installée.
     public func voiceInfo(preferred: String = "") -> [String: String]? {
         #if canImport(AVFoundation) && os(macOS)
-        guard let v: AVSpeechSynthesisVoice = LocalVoice.pickVoice(preferred: preferred) else { return nil }
+        guard let v: AVSpeechSynthesisVoice = cachedVoice(preferred: preferred, language: nil) else { return nil }
         let out: [String: String] = ["id": v.identifier, "nom": v.name, "qualite": LocalVoice.qualityName(v), "langue": v.language]
         return out
         #else
@@ -68,7 +77,8 @@ public final class LocalVoice {
 
     /// fr-FR avant toute autre variante française ; à langue égale, la meilleure qualité ;
     /// à qualité égale, Amélie ou Thomas (voix françaises de référence d'Apple).
-    static func pickVoice(preferred: String) -> AVSpeechSynthesisVoice? {
+    /// 01/11 (voix-test) : `language` = « en » choisit une voix anglaise (en-GB d'abord) ; nil = français, comme avant.
+    static func pickVoice(preferred: String, language: String? = nil) -> AVSpeechSynthesisVoice? {
         if !preferred.isEmpty {
             if let p: AVSpeechSynthesisVoice = AVSpeechSynthesisVoice(identifier: preferred) { return p }
         }
@@ -76,22 +86,43 @@ public final class LocalVoice {
         var best: AVSpeechSynthesisVoice? = nil
         var bestScore: Int = -1
         for v in all {
-            let lang: String = v.language
-            var score: Int = 0
-            if lang == "fr-FR" {
-                score = 100
-            } else if lang.hasPrefix("fr") {
-                score = 50
-            } else {
-                continue
-            }
-            score += qualityRank(v) * 10
-            let n: String = v.name.lowercased()
-            if n.contains("amélie") || n.contains("amelie") || n.contains("thomas") { score += 3 }
+            let score: Int = LocalVoice.voiceScore(language: v.language, qualityRank: qualityRank(v), name: v.name, want: language)
             if score > bestScore { bestScore = score; best = v }
         }
         return best
     }
+
+    /// Voix choisie, gardée 5 min en cache (l'énumération des voix du système coûte à chaque phrase).
+    func cachedVoice(preferred: String, language: String?) -> AVSpeechSynthesisVoice? {
+        let k: String = preferred + "|" + (language ?? "fr")
+        lock.lock()
+        if let c = voiceCache[k], Date().timeIntervalSince(c.at) < 300 { lock.unlock(); return c.voice }
+        lock.unlock()
+        // Aucune voix de la langue demandée : voix française (comportement d'avant) plutôt que le silence.
+        guard let v: AVSpeechSynthesisVoice = LocalVoice.pickVoice(preferred: preferred, language: language) ?? (language == nil ? nil : LocalVoice.pickVoice(preferred: preferred, language: nil)) else { return nil }
+        lock.lock(); voiceCache[k] = (v, Date()); lock.unlock()
+        return v
+    }
+    #endif
+
+    /// Score d'une voix (pur, testé) : -1 = langue écartée. Français par défaut (règle d'avant, inchangée) ;
+    /// want = « en » : en-GB 100, autre anglais 50 ; qualité × 10 ; voix de référence + 3.
+    static func voiceScore(language lang: String, qualityRank: Int, name: String, want: String?) -> Int {
+        var score: Int = 0
+        let w: String = (want ?? "fr").lowercased()
+        if w.hasPrefix("en") {
+            if lang == "en-GB" { score = 100 } else if lang.hasPrefix("en") { score = 50 } else { return -1 }
+        } else {
+            if lang == "fr-FR" { score = 100 } else if lang.hasPrefix("fr") { score = 50 } else { return -1 }
+        }
+        score += qualityRank * 10
+        let n: String = name.lowercased()
+        if w.hasPrefix("en") {
+            if n.contains("daniel") || n.contains("serena") || n.contains("kate") { score += 3 }
+        } else if n.contains("amélie") || n.contains("amelie") || n.contains("thomas") { score += 3 }
+        return score
+    }
+    #if canImport(AVFoundation) && os(macOS)
 
     /// Conversion d'un tampon de synthèse (format quelconque) vers PCM16 mono 24 kHz.
     static func convert(_ inBuf: AVAudioPCMBuffer, state: LocalVoiceRenderState, outFmt: AVAudioFormat, endOfStream: Bool) -> Data? {
@@ -128,17 +159,50 @@ public final class LocalVoice {
     /// BLOQUANT : à appeler hors du fil principal (la synthèse y est lancée, l'appelant attend).
     public func render(text: String, voiceId: String = "", cancel: @escaping () -> Bool = { () -> Bool in false },
                        onPCM: @escaping (Data) -> Bool) -> (ok: Bool, bytes: Int, voice: String, error: String?) {
+        let r: LocalVoiceRender = renderDetailed(text: text, voiceId: voiceId, language: nil, cancel: cancel, onPCM: onPCM)
+        return (r.ok, r.bytes, r.voice, r.error)
+    }
+
+    /// 01/11 (voix-test) : PRÉCHAUFFAGE — une courte phrase rendue (aucun son joué, sortie jetée) pour charger la voix et
+    /// laisser un synthétiseur chaud au repos. Rend la durée (ms) ; -1 si indisponible. BLOQUANT, hors fil principal.
+    @discardableResult
+    public func prewarm(language: String? = nil, voiceId: String = "") -> Int {
+        let t0: Date = Date()
+        let r: LocalVoiceRender = renderDetailed(text: (language ?? "fr").hasPrefix("en") ? "Ready." : "Prête.", voiceId: voiceId, language: language,
+                                                 cancel: { () -> Bool in false }, onPCM: { (_: Data) -> Bool in true })
+        let ms: Int = r.ok ? Int(Date().timeIntervalSince(t0) * 1000) : -1
+        lock.lock(); if r.ok { warmedAt = Date() }; lastWarmMs = ms; lock.unlock()
+        return ms
+    }
+    public func warmState() -> (warm: Bool, ms: Int) {
+        lock.lock(); defer { lock.unlock() }
+        return (warmedAt != nil, lastWarmMs)
+    }
+
+    /// Comme render, avec la mesure : premier tampon (ms), fin naturelle (tampon final reçu) ou par le filet de 2 s,
+    /// synthétiseur chaud réutilisé ou neuf. `language` « en » = voix anglaise ; nil = français (comportement d'avant).
+    public func renderDetailed(text: String, voiceId: String = "", language: String? = nil, cancel: @escaping () -> Bool = { () -> Bool in false },
+                               onPCM: @escaping (Data) -> Bool) -> LocalVoiceRender {
+        let t0: Date = Date()
+        var out: LocalVoiceRender = LocalVoiceRender()
         #if canImport(AVFoundation) && os(macOS)
-        if Thread.isMainThread { return (false, 0, "", "voix locale appelée sur le fil principal (refusé)") }
-        guard let voice: AVSpeechSynthesisVoice = LocalVoice.pickVoice(preferred: voiceId) else {
-            return (false, 0, "", "aucune voix française installée (Réglages Système › Accessibilité › Contenu énoncé › Voix du système)")
+        if Thread.isMainThread { out.error = "voix locale appelée sur le fil principal (refusé)"; return out }
+        guard let voice: AVSpeechSynthesisVoice = cachedVoice(preferred: voiceId, language: language) else {
+            out.error = (language ?? "fr").hasPrefix("en") ? "aucune voix anglaise installée" : "aucune voix française installée (Réglages Système › Accessibilité › Contenu énoncé › Voix du système)"
+            return out
         }
+        out.voice = voice.name
         guard let outFmt: AVAudioFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 24000, channels: 1, interleaved: true) else {
-            return (false, 0, voice.name, "format PCM 24 kHz non construit")
+            out.error = "format PCM 24 kHz non construit"; return out
         }
         let utt: AVSpeechUtterance = AVSpeechUtterance(string: text)
         utt.voice = voice
-        let synth: AVSpeechSynthesizer = AVSpeechSynthesizer()
+        var synth0: AVSpeechSynthesizer? = nil
+        lock.lock()
+        if LocalVoice.reuseSynth, !idle.isEmpty { synth0 = idle.removeLast() }
+        lock.unlock()
+        out.warmSynth = synth0 != nil
+        let synth: AVSpeechSynthesizer = synth0 ?? AVSpeechSynthesizer()
         let wake: DispatchSemaphore = DispatchSemaphore(value: 0)
         let state: LocalVoiceRenderState = LocalVoiceRenderState()
         // Le rappel de synthèse ne fait que convertir et empiler : onPCM (écriture réseau, lecteur natif)
@@ -164,10 +228,11 @@ public final class LocalVoice {
             let chunks: [Data] = state.drain()
             for c in chunks {
                 if state.isStopped() { break }
+                if out.firstBufferMs < 0 { out.firstBufferMs = Int(Date().timeIntervalSince(t0) * 1000) }
                 state.add(c.count)
                 if !onPCM(c) { state.stop() }
             }
-            if fin { break }
+            if fin { out.finishedNaturally = true; break }
             if cancel() || state.isStopped() {
                 state.stop()
                 DispatchQueue.main.async { _ = synth.stopSpeaking(at: .immediate) }
@@ -175,28 +240,66 @@ public final class LocalVoice {
             }
             // Filet : certains systèmes ne livrent pas le tampon final vide — après du son, 2 s de silence = fin.
             let produced: Bool = state.total() > 0
-            let idleLimit: Double = produced ? 2.0 : 10.0
+            let idleLimit: Double = produced ? 2.0 : (out.warmSynth ? 3.0 : 10.0)   // synthétiseur réutilisé muet : repli rapide sur un neuf (plus bas)
             if Date().timeIntervalSince(state.lastActivity()) > idleLimit {
                 if !produced { error = "voix locale muette depuis 10 s (synthèse bloquée)" }
+                out.endedByIdleNet = produced
                 state.stop()
                 DispatchQueue.main.async { _ = synth.stopSpeaking(at: .immediate) }
                 break
             }
         }
-        // Libéré un peu plus tard : un dernier rappel peut encore arriver après stopSpeaking.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
-            self.lock.lock()
-            self.synths.removeAll { (s: AVSpeechSynthesizer) -> Bool in s === synth }
-            self.lock.unlock()
+        // Fin naturelle : le synthétiseur est rendu TOUT DE SUITE au repos (chaud, réutilisé par la phrase suivante).
+        // Arrêt (barge-in, filet) : libéré un peu plus tard, jamais réutilisé — un dernier rappel peut encore arriver après stopSpeaking.
+        let reusable: Bool = LocalVoice.reuseSynth && out.finishedNaturally && !state.isStopped()
+        lock.lock()
+        synths.removeAll { (s: AVSpeechSynthesizer) -> Bool in s === synth }
+        if reusable && idle.count < 2 { idle.append(synth) }
+        lock.unlock()
+        if !reusable {
+            lock.lock(); synths.append(synth); lock.unlock()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                guard let self = self else { return }
+                self.lock.lock()
+                self.synths.removeAll { (s: AVSpeechSynthesizer) -> Bool in s === synth }
+                self.lock.unlock()
+            }
         }
         let total: Int = state.total()
         if error == nil && total == 0 && !cancel() { error = "voix locale : aucun son produit" }
-        return (error == nil && total > 0, total, voice.name, error)
+        out.ok = error == nil && total > 0
+        out.bytes = total
+        out.error = error
+        out.totalMs = Int(Date().timeIntervalSince(t0) * 1000)
+        if out.warmSynth && total == 0 && !cancel() {
+            // Filet : un synthétiseur réutilisé n'a rien rendu — réutilisation coupée pour la session, la phrase est rejouée sur un neuf.
+            LocalVoice.reuseSynth = false
+            lock.lock(); idle.removeAll(); lock.unlock()
+            let again: LocalVoiceRender = renderDetailed(text: text, voiceId: voiceId, language: language, cancel: cancel, onPCM: onPCM)
+            return again
+        }
+        return out
         #else
-        return (false, 0, "", "voix locale indisponible sur ce système")
+        out.error = "voix locale indisponible sur ce système"
+        return out
         #endif
     }
+}
+
+/// 01/11 (voix-test) : résultat mesuré d'un rendu de la voix locale.
+public struct LocalVoiceRender {
+    public var ok: Bool = false
+    public var bytes: Int = 0
+    public var voice: String = ""
+    public var error: String? = nil
+    public var firstBufferMs: Int = -1        // premier tampon PCM livré (depuis l'appel)
+    public var totalMs: Int = -1
+    public var finishedNaturally: Bool = false // tampon final reçu (sinon : arrêt, ou filet de 2 s)
+    public var endedByIdleNet: Bool = false    // fin décidée par le filet « 2 s de silence » (attente perdue)
+    public var warmSynth: Bool = false         // synthétiseur chaud réutilisé
+    /// Durée audio produite (PCM16 mono 24 kHz).
+    public var audioMs: Int { bytes / 48 }
+    public init() {}
 }
 
 /// État partagé d'un rendu (rappels de synthèse ↔ fil qui attend).
@@ -233,12 +336,21 @@ extension NovaApp {
     /// 25/10 : routes de la voix locale + relais du niveau de parole vers le compagnon.
     func voixLocaleRoutes() {
         let s = server
+        // 01/11 (voix-test) : voix locale PRÉCHAUFFÉE 8 s après le lancement (voix chargée, synthétiseur chaud au repos) quand elle
+        // peut parler (meta_only, « local » ou « auto ») — la première phrase ne paie plus le chargement à froid. Aucun son joué.
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 8) { [settings] in
+            if settings.get("voix_locale_prechauffage", true) {
+                _ = LocalVoice.shared.prewarm(voiceId: settings.get("voix_locale_id", ""))
+            }
+        }
         // État de la voix locale (voix retenue, moteur choisi) — pour l'écran Réglages › Voix.
         s.on("GET", "/api/voix/locale") { [self] _, res in
             let vid: String = settings.get("voix_locale_id", "")
             let info: [String: String]? = LocalVoice.shared.voiceInfo(preferred: vid)
             var out: [String: Any] = ["moteur": LocalVoice.mode(settings), "disponible": info != nil, "nature": "voix système macOS (AVSpeechSynthesizer), pas un modèle génératif"]
             if let i: [String: String] = info { out["voix"] = i }
+            let w = LocalVoice.shared.warmState()
+            out["prechauffee"] = w.warm; out["prechauffage_ms"] = w.ms
             res.json(out)
         }
         // Lip-sync du compagnon : la page principale relaie le niveau de SA lecture TTS (voice.js),

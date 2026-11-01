@@ -62,6 +62,13 @@ public final class HTTPStream: NSObject, URLSessionDataDelegate {
         }
         let h = HTTPStream()
         h.onChunk = onChunk
+        // 01/11 (voix-test) : RÉUTILISATION DE CONNEXION pour les hôtes de modèle Meta (api.meta.ai). Avant : une URLSession
+        // éphémère par requête = poignée de main TCP + TLS à CHAQUE dictée et à chaque tour Spark (la dictée puis la réponse
+        // ouvraient deux connexions vers le même hôte). Ici : une session partagée (HTTPPool), la connexion HTTP/2 reste chaude.
+        // Délais, annulation et barrière meta_only identiques. Interrupteur : HTTPStream.poolEnabled (tests) / hôtes : pooledHosts.
+        if HTTPStream.usesPool(req.url) {
+            return HTTPPool.shared.run(req, h: h, firstByteTimeout: firstByteTimeout, idleTimeout: idleTimeout, totalTimeout: totalTimeout, cancel: cancel)
+        }
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = max(firstByteTimeout, idleTimeout) + 5
         cfg.timeoutIntervalForResource = totalTimeout
@@ -71,53 +78,149 @@ public final class HTTPStream: NSObject, URLSessionDataDelegate {
         let s = URLSession(configuration: cfg, delegate: h, delegateQueue: nil)
         h.session = s
         let t = s.dataTask(with: req)
-        h.task = t
-        h.lastActivity = Date()
+        h.lock.lock(); h.task = t; h.lastActivity = Date(); h.lock.unlock()
         let started = Date()
         t.resume()
         // surveillance : délais + annulation
-        while h.sem.wait(timeout: .now() + 0.05) == .timedOut {
-            let idle = Date().timeIntervalSince(h.lastActivity)
-            if cancel?() == true { h.fail(.canceled, "annulé"); break }
-            if !h.gotFirst && idle > firstByteTimeout { h.fail(.timeout, "aucune réponse après \(Int(firstByteTimeout)) s"); break }
-            if h.gotFirst && idle > idleTimeout { h.fail(.timeout, "flux muet depuis \(Int(idleTimeout)) s"); break }
-            if Date().timeIntervalSince(started) > totalTimeout { h.fail(.timeout, "durée maximale dépassée"); break }
-        }
+        h.watch(started: started, firstByteTimeout: firstByteTimeout, idleTimeout: idleTimeout, totalTimeout: totalTimeout, cancel: cancel)
         s.invalidateAndCancel()
-        var r = h.result
+        return h.finalResult()
+    }
+
+    /// Hôtes servis par la session partagée (connexion gardée chaude). Modèles Meta seulement : dictée et chat Spark.
+    final class PoolConfig: @unchecked Sendable { let lock = NSLock(); var hosts: Set<String> = ["api.meta.ai"]; var enabled: Bool = true }
+    static let poolConfig = PoolConfig()
+    public static var pooledHosts: Set<String> {
+        get { poolConfig.lock.lock(); defer { poolConfig.lock.unlock() }; return poolConfig.hosts }
+        set { poolConfig.lock.lock(); poolConfig.hosts = newValue; poolConfig.lock.unlock() }
+    }
+    public static var poolEnabled: Bool {
+        get { poolConfig.lock.lock(); defer { poolConfig.lock.unlock() }; return poolConfig.enabled }
+        set { poolConfig.lock.lock(); poolConfig.enabled = newValue; poolConfig.lock.unlock() }
+    }
+    public static func usesPool(_ url: URL?) -> Bool {
+        guard poolEnabled, let u = url, (u.scheme ?? "").lowercased().hasPrefix("http"), let h = u.host?.lowercased() else { return false }
+        return pooledHosts.contains(h)
+    }
+
+    /// Boucle de surveillance commune (délais + annulation) ; rend quand la tâche est finie ou arrêtée.
+    /// 01/11 (voix-test) : état partagé avec les rappels URLSession lu SOUS VERROU (avant : lu sans verrou — course de données).
+    func watch(started: Date, firstByteTimeout: TimeInterval, idleTimeout: TimeInterval, totalTimeout: TimeInterval, cancel: (() -> Bool)?) {
+        while sem.wait(timeout: .now() + 0.05) == .timedOut {
+            lock.lock(); let last = lastActivity; let first = gotFirst; lock.unlock()
+            let idle = Date().timeIntervalSince(last)
+            if cancel?() == true { fail(.canceled, "annulé"); break }
+            if !first && idle > firstByteTimeout { fail(.timeout, "aucune réponse après \(Int(firstByteTimeout)) s"); break }
+            if first && idle > idleTimeout { fail(.timeout, "flux muet depuis \(Int(idleTimeout)) s"); break }
+            if Date().timeIntervalSince(started) > totalTimeout { fail(.timeout, "durée maximale dépassée"); break }
+        }
+    }
+
+    func finalResult() -> HTTPResult {
+        lock.lock(); var r = result; let eb = errBody; lock.unlock()
         if r.status >= 400 && r.error == nil {
-            let b = String(data: h.errBody, encoding: .utf8) ?? ""
+            let b = String(data: eb, encoding: .utf8) ?? ""
             r.kind = classify(status: r.status, body: b)
             r.error = "HTTP \(r.status) \(shortError(extractMessage(b), 200))"
-            r.body = h.errBody
+            r.body = eb
         }
         return r
     }
 
     func fail(_ k: ErrKind, _ m: String) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
         if result.error == nil { result.error = m; result.kind = k }
         stopped = true
-        task?.cancel()
+        let t = task
+        lock.unlock()
+        t?.cancel()
     }
 
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                            completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        lock.lock()
         if let r = response as? HTTPURLResponse { result.status = r.statusCode }
         lastActivity = Date(); gotFirst = true
+        lock.unlock()
         completionHandler(.allow)
     }
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        lock.lock()
         lastActivity = Date(); gotFirst = true
-        if result.status >= 400 { errBody.append(data); return }
+        let isErr: Bool = result.status >= 400
+        if isErr { errBody.append(data) }
+        lock.unlock()
+        if isErr { return }
         if !onChunk(data) { fail(.canceled, "annulé"); }
     }
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        lock.lock()
         if let e = error as NSError?, result.error == nil, !stopped {
             let k: ErrKind = e.code == NSURLErrorTimedOut ? .timeout : .network
             result.error = e.localizedDescription; result.kind = k
         }
+        lock.unlock()
         sem.signal()
+    }
+}
+
+/// 01/11 (voix-test) : session URLSession PARTAGÉE pour les hôtes de HTTPStream.pooledHosts. Chaque tâche garde son propre
+/// HTTPStream (délais, tampon, annulation) ; le délégué unique aiguille les rappels par identifiant de tâche.
+/// À la fin d'une requête, seule la TÂCHE est annulée (jamais la session) : la connexion reste ouverte pour la suivante.
+final class HTTPPool: NSObject, URLSessionDataDelegate {
+    static let shared = HTTPPool()
+    private let lock = NSLock()
+    private var handlers: [Int: HTTPStream] = [:]
+    private var sessionStore: URLSession? = nil
+    /// Requêtes servies et connexions réutilisées (diagnostic : voix_test.json).
+    private var served: Int = 0
+    func servedCount() -> Int { lock.lock(); defer { lock.unlock() }; return served }
+    func pendingCount() -> Int { lock.lock(); defer { lock.unlock() }; return handlers.count }
+
+    var session: URLSession {
+        lock.lock(); defer { lock.unlock() }
+        if let s = sessionStore { return s }
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 600
+        cfg.timeoutIntervalForResource = 1800
+        cfg.httpMaximumConnectionsPerHost = 6
+        #if os(macOS)
+        cfg.waitsForConnectivity = false
+        #endif
+        let s = URLSession(configuration: cfg, delegate: self, delegateQueue: nil)
+        sessionStore = s
+        return s
+    }
+
+    func run(_ reqIn: URLRequest, h: HTTPStream, firstByteTimeout: TimeInterval, idleTimeout: TimeInterval, totalTimeout: TimeInterval, cancel: (() -> Bool)?) -> HTTPResult {
+        var req = reqIn
+        req.timeoutInterval = max(firstByteTimeout, idleTimeout) + 5
+        let s = session
+        let t = s.dataTask(with: req)
+        h.lock.lock(); h.task = t; h.lastActivity = Date(); h.lock.unlock()
+        lock.lock(); handlers[t.taskIdentifier] = h; served += 1; lock.unlock()
+        let started = Date()
+        t.resume()
+        h.watch(started: started, firstByteTimeout: firstByteTimeout, idleTimeout: idleTimeout, totalTimeout: totalTimeout, cancel: cancel)
+        if t.state == .running || t.state == .suspended { t.cancel() }
+        lock.lock(); handlers.removeValue(forKey: t.taskIdentifier); lock.unlock()
+        return h.finalResult()
+    }
+
+    private func handler(_ t: URLSessionTask) -> HTTPStream? {
+        lock.lock(); defer { lock.unlock() }
+        return handlers[t.taskIdentifier]
+    }
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        guard let h = handler(dataTask) else { completionHandler(.cancel); return }
+        h.urlSession(session, dataTask: dataTask, didReceive: response, completionHandler: completionHandler)
+    }
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        handler(dataTask)?.urlSession(session, dataTask: dataTask, didReceive: data)
+    }
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        handler(task)?.urlSession(session, task: task, didCompleteWithError: error)
     }
 }
 

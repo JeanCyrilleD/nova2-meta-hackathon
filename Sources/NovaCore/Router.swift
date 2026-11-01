@@ -48,6 +48,11 @@ public final class Router {
         withCfg { c in if off { c.disabled.insert(id) } else { c.disabled.remove(id) }; return c.disabled.sorted() }
     }
     public var firstTokenTimeout: TimeInterval { get { withCfg { $0.firstTokenTimeout } } set { withCfg { $0.firstTokenTimeout = newValue } } }   // défaut 9 s : voir RouterConfig
+    /// 01/11 (chat abouti) : sortie RÉALISTE d'un appel pour la réservation (journal cerveaux du 01/11 : 60 appels de chat Spark 1.3,
+    /// sortie max 1 872 jetons, médiane < 300) — marge ×2. Le pire cas (plafond complet) reste contrôlé sous les plafonds.
+    public static let realisticOut: Int = 4000
+    /// Cerveaux réservés au coût réaliste (usage toujours rapporté par le fournisseur) : Meta Muse (api.meta.ai).
+    public static func reservesRealistic(_ s: BrainSpec) -> Bool { s.model.hasPrefix("muse-") && (URL(string: s.baseURL)?.host ?? "") == "api.meta.ai" }
     public var globalDeadline: TimeInterval = 75     // AUDIT-24/10: 25 → 75 s, sinon [tiers] n'était jamais atteint après un [tiers] lent — NOVA2-DEADLINE : budget total d'une requête chat, tous replis confondus
     public var maxChain: Int = 6                     // NOVA2-PLAFOND : nombre maximal de cerveaux essayés par requête (le local reste ajouté en filet)
     let creditLock = NSLock(); var creditDeadUntil: [String: Date] = [:]
@@ -490,8 +495,15 @@ public final class Router {
             var v2Res: String? = nil   // PHASE2-V2 : réservation atomique AVANT l'envoi (plafonds mois / jour / tâche)
             var v1Ticket: SpendTicket? = nil   // WP2 : réservation v1 AVANT l'envoi — suites automatiques (≤ 2) et repli protocole texte compris
             if !v2On {
+                // 01/11 (chat abouti) : réservation au coût RÉALISTE d'un appel (sortie ≤ Router.realisticOut, un seul appel) — avant :
+                // pire cas engagé (plafond de sortie 12 000–32 000 jetons × 4 appels), ~0,54 $ réservés pour ~0,04 $ réels sur Spark 1.3,
+                // et gardés tels quels à chaque annulation. Le pire cas reste EXIGÉ sous les plafonds (worstMaxOut / worstCalls).
+                // Limité aux cerveaux Meta (muse-*) : leur usage est TOUJOURS rapporté (60/60 appels du journal du 01/11 avec in/out),
+                // donc le solde suit le mesuré ; un fournisseur sans usage rapporté garde la réservation au pire cas (jamais sous-compté).
                 let calls: Int = (maxTokens > 600 ? 3 : 1) + (toolCtx != nil ? 1 : 0)
-                switch LLMSpend.preflight(spec: s, estIn: v2EstIn, maxOut: brainMaxFor(s), calls: calls, lane: spendLane) {
+                let realistic: Bool = Router.reservesRealistic(s)
+                switch LLMSpend.preflight(spec: s, estIn: v2EstIn, maxOut: realistic ? min(brainMaxFor(s), Router.realisticOut) : brainMaxFor(s), calls: realistic ? 1 : calls,
+                                          lane: spendLane, worstMaxOut: realistic ? brainMaxFor(s) : nil, worstCalls: realistic ? calls : nil) {
                 case .refused(let why):
                     v1Refused = "Budget : " + why + " — rien n'est envoyé (aucune recharge automatique)."
                     journal.add(["depense": "reservation_refusee", "brain": s.id, "why": shortError(why, 300)])

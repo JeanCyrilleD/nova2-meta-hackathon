@@ -541,6 +541,7 @@ extension NovaApp {
         notifyTimer.schedule(deadline: .now() + 90, repeating: 60)
         notifyTimer.setEventHandler {
             NovaNotifier.checkPendingConfirms()
+            AttentionNotif.refreshBadge()   // 01/11 : pastille du Dock recalculée chaque minute (filet des événements manqués)
             EngState.shared.lock.lock()
             let tick: Int = EngState.shared.notifyTicks
             EngState.shared.notifyTicks = tick + 1

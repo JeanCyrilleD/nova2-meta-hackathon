@@ -75,10 +75,14 @@ public enum ToolCapabilities {
             return v == "soumettre" ? [.screen, .communication] : [.screen]
         case "mail_envoyer", "mail_brouillon", "phone":
             return [.communication]
-        case "ask_assistant", "nova_ui":
+        case "ask_assistant":
             return []
+        case "nova_ui":   // PILOTAGE 01/11 : ouvrir une conversation passe par conv-ouvrir (écran) — même exigence que l'outil app
+            return ["conversation", "conv", "chat"].contains(firstWord(arg)) ? [.screen] : []
         case "app":
             let v = firstWord(arg)
+            if v == "conv-liste" || v == "conv-lire" { return [.fileRead] }   // PILOTAGE 01/11 : lecture des conversations de Nova
+            if v == "conv-ouvrir" { return [.screen] }                         // change l'écran : jamais pour un run sans surveillance
             let pilotRead: Set<String> = ["ui-etat", "ui-lire", "page-etat", "page-lire", "page-messages", "page-absence", "ax-lire", "ax-chercher"]
             if (v.hasPrefix("page-") || v.hasPrefix("ui-") || v.hasPrefix("ax-")) && !pilotRead.contains(v) { return [.screen] }
             return []

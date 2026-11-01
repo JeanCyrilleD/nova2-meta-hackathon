@@ -1,0 +1,52 @@
+{
+  "id": "format_json_seul",
+  "titre": "Consigne : JSON seul, sans texte ni bloc",
+  "categorie": "instruction",
+  "donnees": "faits publics stables",
+  "origine": "usage réel d'Ahadi (journaux releves/diag et règles du 29/10), anonymisé ou fictif",
+  "entree": {
+    "prompt": "Ahadi : « Réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans bloc de code, sans salutation : clés pays, capitale, monnaie, pour le Niger. Les valeurs en français. »"
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "regex",
+      "motif": "^\\s*\\{[\\s\\S]*\\}\\s*$",
+      "note": "le JSON seul"
+    },
+    {
+      "type": "json",
+      "champs": [
+        "pays",
+        "capitale",
+        "monnaie"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "capitale",
+      "valeurs": [
+        "Niamey"
+      ]
+    },
+    {
+      "type": "un_de",
+      "champ": "monnaie",
+      "valeurs": [
+        "CFA",
+        "XOF"
+      ]
+    },
+    {
+      "type": "absent",
+      "valeurs": [
+        "```",
+        "nova-suites",
+        "Bonjour",
+        "BLUF"
+      ]
+    }
+  ],
+  "grille": "exactitude : Niamey, franc CFA (XOF) ; completude : 3 clés ; forme : JSON seul, aucun texte, aucun bloc de code, aucune salutation ; concision : une ligne.",
+  "seuil_grille": 3.5
+}

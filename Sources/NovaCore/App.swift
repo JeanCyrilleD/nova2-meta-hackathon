@@ -584,9 +584,9 @@ public final class NovaApp {
                 let dotId: String = (d["dot"] as? String) ?? ""
                 // FLOTTE V1 (25/10) : notify == false (compte rendu sans décision) → au Fil direct sans sonner ; absent (rappel « Plus tard ») ou vrai → notification.
                 let wantsNotif: Bool = (d["notify"] as? Bool) ?? true
-                if wantsNotif {
-                    NovaNotifier.send(source: "dot:" + dotId, title: "Nova — " + nm, body: sum, target: ["module": "dots", "id": dotId], enabled: settings.get("notify", true), quiet: briefs.inQuietHours())   // V5-H : notification native cliquable (repli osascript inchangé)
-                }
+                // 01/11 (Ahadi) : un GO attendu notifie (comme avant) ; un Éclat terminé sans décision notifie aussi, SANS son,
+                // regroupé (source « dot:fin ») et sous plafond — NovaNotifier+Attention.swift (réglages notify + notif_conversations, heures calmes).
+                _ = AttentionNotif.eclatReady(dotId: dotId, name: nm, summary: sum, decision: wantsNotif)
             }
             if ev == "brief", let b = o as? [String: Any] {
                 ProactiveFeed.append(kind: "brief", box: "", title: (b["title"] as? String) ?? "Brief", text: (b["text"] as? String) ?? (b["summary"] as? String) ?? "")
@@ -1257,7 +1257,7 @@ public final class NovaApp {
         // failover, usage, error, done, stamp. MÉMOIRE SOUVERAINE (24/10) : + « memory » (provenance
         // {items:[{id, kind: memoire|profil|rappel, text, ts, source}], count, incognito}) juste avant « done ».
         routesChat(s)
-        Tools.confirmHook = { [bus] e in Amplitude.track("approval_gate_presented"); bus.publish("confirm", e) }   // AMPLITUDE (CRÉDITS 23/10) : carte présentée — aucun détail de l'action
+        Tools.confirmHook = { [bus] e in Amplitude.track("approval_gate_presented"); bus.publish("confirm", e); _ = AttentionNotif.authorizationRequested(e) }; attentionRoutes(s)   // 01/11 : + notification native immédiate ; visibilité signalée par l'interface, pastille du Dock (NovaNotifier+Attention.swift)   // AMPLITUDE (CRÉDITS 23/10) : carte présentée — aucun détail de l'action
         routesSuite(s)
     }
 

@@ -11,6 +11,7 @@ extension Tools {
     static let ckLock: NSLock = NSLock()
     nonisolated(unsafe) static var pendingConfirms: [String: DispatchSemaphore] = [:]
     nonisolated(unsafe) static var confirmAnswers: [String: Bool] = [:]
+    nonisolated(unsafe) static var earlyAnswers: [String: Bool] = [:]   // 01/11 : décision rendue avant l'inscription de l'attente (sous pcLock)
     static let pcLock: NSLock = NSLock()
     /// Outils affichés dans Système › Réglages › « Ce que Nova peut faire ».
     static let policyTools: [String] = ["web_search", "web_fetch", "mail_unread", "mail_week", "teams_read", "calendar", "reminders", "read_file", "transcribe", "know", "recall", "remember", "system", "processes", "nova_self", "flux_titres", "brvm_cours", "notes", "contacts", "find", "clipboard", "today", "draft_reply", "write_file", "edit_file", "calendar_add", "reminder_add", "note_add", "cafu_format_document", "cafu_format_email", "cafu_format_docx", "cafu_format_deck", "cafu_format_pdf", "cafu_format_table", "forge_tool", "shortcut", "momo", "phone", "ui", "shell", "applescript", "open", "ask_assistant", "app", "media", "nova_ui", "formulaire"]
@@ -185,7 +186,7 @@ extension Tools {
         apLock.lock(); defer { apLock.unlock() }
         return (pendingConfirm[id]?["cmd"] as? String) ?? ""
     }
-    static func dropPending(_ id: String) { apLock.lock(); pendingConfirm.removeValue(forKey: id); apLock.unlock() }
+    static func dropPending(_ id: String) { apLock.lock(); pendingConfirm.removeValue(forKey: id); apLock.unlock(); AttentionNotif.refreshBadgeSoon() }
     /// Lit puis efface l'id de la dernière confirmation demandée sur ce fil (posé par needConfirm).
     static func takeThreadConfirm() -> String? {
         let td: NSMutableDictionary = Thread.current.threadDictionary
@@ -201,10 +202,20 @@ extension Tools {
     /// le registre de fiabilité ne compte un refus que s'il vient d'Ahadi.
     static func waitConfirmDetailed(_ id: String, cancel: () -> Bool, announce: () -> Void) -> (answered: Bool, ok: Bool) {
         let sem: DispatchSemaphore = DispatchSemaphore(value: 0)
-        pcLock.lock(); pendingConfirms[id] = sem; pcLock.unlock()
+        pcLock.lock(); pendingConfirms[id] = sem
+        // 01/11 (chat abouti) : un clic arrivé AVANT l'inscription du sémaphore (carte globale posée par confirmHook dès la création
+        // de la demande) n'est plus perdu — la décision déjà rendue est reprise ici au lieu d'attendre jusqu'au délai.
+        let early: Bool? = earlyAnswers.removeValue(forKey: id)
+        pcLock.unlock()
+        if let e = early { return (true, e) }
         announce()
+        // 01/11 (chat abouti) : pendant l'attente, le plafond par demande ne coupe pas le run (Tools.awaitingApproval) — seul « Stop »
+        // l'interrompt ; délai porté à 180 s (avant : 60 s, l'« Approuver » cliqué après tombait sur « Demande expirée »).
+        let td: NSMutableDictionary = Thread.current.threadDictionary
+        td["nova.attente_go"] = true
+        defer { td.removeObject(forKey: "nova.attente_go") }
         var answered: Bool = false
-        for _ in 0..<120 {
+        for _ in 0..<Int(Tools.confirmWaitSeconds * 2) {
             if sem.wait(timeout: .now() + 0.5) == .success { answered = true; break }
             if cancel() { break }
         }
@@ -218,14 +229,19 @@ extension Tools {
     static func signalConfirm(_ id: String, ok: Bool) {
         pcLock.lock()
         let sem: DispatchSemaphore? = pendingConfirms[id]
-        if sem != nil { confirmAnswers[id] = ok }
+        if sem != nil { confirmAnswers[id] = ok } else { earlyAnswers[id] = ok; if earlyAnswers.count > 64 { earlyAnswers.removeAll() } }
         pcLock.unlock()
         sem?.signal()
     }
+    /// 01/11 (chat abouti) : vrai pendant qu'un run attend la décision d'Ahadi sur une carte d'approbation (fil courant).
+    public static func awaitingApproval() -> Bool { (Thread.current.threadDictionary["nova.attente_go"] as? Bool) == true }
+    /// Délai d'attente d'une carte d'approbation dans un run (secondes) : 180 s quand Ahadi est là (run ordonné du chat, interactif),
+    /// 60 s inchangés pour le banc et le fond (aucune carte n'y attend un humain).
+    public static var confirmWaitSeconds: Double { (LLMSpend.isInteractive() && !LLMSpend.isBench()) ? 180 : 60 }
 }
 
 extension Agent {
-    static let refusedMsg: String = "refusé par Ahadi (ou sans réponse sous 60 s) : l'action n'a PAS été exécutée. N'insiste pas et ne relance pas le même appel ; propose une autre voie ou dis-lui ce qui reste à faire."
+    static let refusedMsg: String = "refusé par Ahadi (ou sans réponse sous 3 min) : l'action n'a PAS été exécutée. N'insiste pas et ne relance pas le même appel ; propose une autre voie ou dis-lui ce qui reste à faire."
     /// Exécute un outil sous la politique par outil, avec carte de confirmation en ligne si l'outil le demande.
     /// DIAG2-FLUX P3 : stepId/stepIndex/argShort identifient l'étape « run » déjà émise par l'appelant — le battement
     /// la réémet en « run » avec un compteur « beat » (secondes écoulées) que le web affiche sur la même ligne.

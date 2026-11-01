@@ -623,3 +623,44 @@ html[data-identite] .mod.fx .fx-sources .ds-h2 { font: var(--type-title-2); lett
 /* 30/10 (intégration) : les lignes de la liste des conversations ne se compriment jamais (sans motion.js, 401 lignes
    tombaient à ~7 px chacune dans un conteneur flex). */
 .cs-row-wrap, .cs-list > .cs-row, .cs-list > button.cs-row { flex-shrink: 0; }
+
+/* 01/11 (fenêtre étroite) : sous 760 px de largeur utile, la liste des conversations devient un TIROIR.
+   Cause du chevauchement : la règle d'identité « html[data-identite] .cs-layout > .cs-side » (plus haut, §3) pose
+   un fond --ly-list-bg (dégradés translucides) et l'emportait en spécificité sur le fond opaque du mode tiroir
+   (app.css « .cs-layout.side-peek .cs-side ») : la liste flottait sans fond sur le fil et sur l'en-tête.
+   Ici : fond opaque, ombre, au-dessus d'un voile ; le fil garde toute la largeur. Pleine largeur inchangée. */
+.cs-scrim { display: none; }
+@container cs (max-width: 760px) {
+  .cs-layout.side-peek > .cs-scrim { display: block; position: absolute; inset: 0; z-index: 34; border-radius: inherit; background: rgb(var(--shadow-rgb, 0 0 0) / .34); cursor: pointer; }
+  .cs-layout.side-peek > .cs-side,
+  html[data-identite] .cs-layout.side-peek > .cs-side {
+    display: flex; position: absolute; z-index: 35; top: 0; bottom: 0; left: 0; width: min(300px, 86%);
+    background: var(--pane-solid); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 0 0 1px var(--hairline), 0 18px 48px -12px rgb(var(--shadow-rgb, 0 0 0) / .55);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @container cs (max-width: 760px) {
+    .cs-layout.side-peek > .cs-side { animation: cs-drawer-in .18s ease-out; }
+    .cs-layout.side-peek > .cs-scrim { animation: cs-scrim-in .18s ease-out; }
+  }
+}
+@keyframes cs-drawer-in { from { transform: translateX(-12px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes cs-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* 01/11 (fenêtre étroite) — autres volets.
+   Messages : « Côte à côte » posé sur la barre du volet (z-index 3) restait SOUS la barre collante (--z-float) :
+   visible mais non cliquable, à toutes les largeurs. Il passe au-dessus, sans changer de place. */
+html[data-identite] .mod[data-mod="messages"] .ms-tools:has(> .browser-bars[hidden]) { z-index: calc(var(--z-float, 40) + 1); }
+/* Messages côte à côte, volets empilés (≤ 1020 px) : deux volets de 320 px minimum débordaient de la zone et le
+   second recouvrait la note de bas de page. La zone prend la hauteur des deux volets et l'écran défile. */
+@media (max-width: 1020px) {
+  .mod[data-mod="messages"] .pane-host.is-split { flex-shrink: 0; }
+}
+/* Conversations très étroites : le champ de saisie tombait à ~36 px (texte vertical). Il passe sur sa propre ligne
+   au-dessus des outils. */
+@container cs (max-width: 400px) {
+  .cs-composer .composer-row { flex-wrap: wrap; row-gap: 2px; }
+  .cs-composer .composer-row > textarea, .cs-composer .composer-row > .fld { order: -1; flex: 1 1 100%; min-width: 0; }
+  .cs-composer .composer-row > .composer-tools.right { margin-left: auto; }
+}

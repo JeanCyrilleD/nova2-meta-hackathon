@@ -80,7 +80,8 @@ extension NovaApp {
     public static let pilotVerbs: Set<String> = ["go", "onglet", "onglets", "ui-etat", "ui-lire", "ui-clic", "ui-saisir", "ui-touche", "ui-defiler",
                                                  "page-aller", "page-etat", "page-lire", "page-messages", "page-clic", "page-saisir", "page-touche", "page-absence", "media-radio", "media-stop", "media-etat", "media-volume",
                                                  "relais", "relais-liste", "relais-etat", "relais-stop",
-                                                 "ax-lire", "ax-chercher", "ax-cliquer", "ax-saisir", "ax-menu"]   // VAGUE 3 : pilotage des apps du Mac en arrière-plan par l'Accessibilité (AXPilot.swift)
+                                                 "ax-lire", "ax-chercher", "ax-cliquer", "ax-saisir", "ax-menu",
+                                                 "conv-liste", "conv-lire", "conv-ouvrir"]   // PILOTAGE 01/11 : conversations de Nova (Pilotage.swift) ; VAGUE 3 : pilotage des apps du Mac en arrière-plan par l'Accessibilité (AXPilot.swift)
     static var relaisFile: JSONFile { JSONFile("relais.json") }
     static let relaisLock = NSLock()
     nonisolated(unsafe) static var relaisStopped: Set<String> = []   // PHASE 1 (relu, protégé) : sous NovaApp.relaisLock
@@ -149,9 +150,14 @@ extension NovaApp {
         case "go", "onglet":
             guard !arg.isEmpty else { return "go <onglet ou réglage> [| section] — ex. « go systeme | Connexions ». Liste : onglets." }
             let p = parts(); log("go " + arg)
-            return UIPilot.render(call("go", ["q": p[0], "section": p.count > 1 ? p[1] : ""]))
+            // PILOTAGE 01/11 : constat relu (écran actif, section, valeurs) ; un second essai sur l'id résolu si la fenêtre n'a pas suivi.
+            var r = call("go", ["q": p[0], "section": p.count > 1 ? p[1] : ""])
+            if let rr = r, (rr["ok"] as? Bool) != true, rr["candidats"] == nil, rr["section"] == nil, let e = rr["ecran"] as? String, !e.isEmpty {
+                Thread.sleep(forTimeInterval: 0.5); r = call("go", ["q": e, "section": p.count > 1 ? p[1] : ""])
+            }
+            return NovaPilot.renderNav(r)
         case "onglets": return UIPilot.render(call("onglets"))
-        case "ui-etat": return UIPilot.render(call("etat"))
+        case "ui-etat": return NovaPilot.renderState(call("etat"))
         case "ui-lire": return UIPilot.render(call("lire", ["q": arg]))
         case "ui-clic":
             guard !arg.isEmpty else { return "ui-clic <libellé ou index de ui-lire>" }
@@ -242,6 +248,7 @@ extension NovaApp {
         if verb.hasPrefix("page-"), arg.hasPrefix("@") { let t = arg.dropFirst().split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true).map(String.init); pane = t.first ?? pane; parg = t.count > 1 ? t[1] : "" }
         // VAGUE 3 : verbes AX — apps tierces lues et pilotées SANS activation ; journal « ax » tenu par AXPilot (app, rôle, titre, effet).
         if AXPilot.verbs.contains(verb) { return AXPilot.run(verb, arg, actor: "Assistant") }
+        if let r = pilotageConv(verb, arg) { return r }
         if verb.hasPrefix("page-") { return pilotagePage(verb, arg, pane, parg, raw) }
         if let r = pilotageUI(verb, arg, raw) { return r }
         if let r = pilotageMedia(verb, arg) { return r }

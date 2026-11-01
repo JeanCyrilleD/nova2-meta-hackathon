@@ -150,7 +150,7 @@ public enum MetaSpecialites {
         AffectationSpecialite(specialite: .voixLive, nature: "inchange", chaine: [],
             modele: "voix classique : SFSpeechRecognizer + AVSpeechSynthesizer (macOS) + muse-spark-1.3", endpoint: "https://api.meta.ai/v1/chat/completions", effort: "minimal",
             prix: "1,25 $ / 4,25 $ par M (Spark) ; reconnaissance et synthèse vocales système gratuites",
-            preuve: "version hackathon : aucun moteur de voix non Meta ; le cerveau de la voix est Spark (Meta), effort « none » pour la latence",
+            preuve: "version hackathon : aucun moteur de voix non Meta ; le cerveau de la voix est Spark (Meta), effort « minimal » pour la latence (« none » refusé en HTTP 400 par l API Meta)",
             sources: []),
         AffectationSpecialite(specialite: .relectureOpenWeight, nature: "cerveau", chaine: ["spark-open-baseten"],
             modele: "meta-models/muse-spark-open (Baseten)", endpoint: "https://inference.baseten.co/v1/chat/completions", effort: nil,
@@ -197,7 +197,7 @@ public enum MetaSpecialites {
     public static func effort(mode: String) -> String {
         switch mode {
         case "deep", "code": return "high"
-        case "voice": return "minimal"   // 01/11 : « none » refusé (HTTP 400) par l API Meta pour Spark 1.3
+        case "voice": return "minimal"   // 01/11 : « none » refusé par l API Meta (HTTP 400, banc voix réel 08:18) — valeurs admises minimal…max
         case "juge", "verify": return "medium"
         default: return "low"
         }
@@ -287,7 +287,7 @@ public enum MetaSpecialites {
             return (nil, 0, "saute", why.isEmpty ? "indisponible" : why)
         }
         let user: String = relectureUser(note: note)
-        let maxOut: Int = 4096
+        let maxOut: Int = 16_000   // 01/11 : 4 096 épuisés par le raisonnement (réel 06:10, « raisonnement sans texte ») — pire cas 0,07 $
         let pf: Preflight = LLMSpend.preflight(spec: spec, estIn: TokenEst.of(relectureSys) + TokenEst.of(user), maxOut: maxOut, lane: LLMSpend.currentLane(background: false))
         guard let tk = pf.ticket else {
             var why: String = "réservation impossible"

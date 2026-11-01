@@ -1,0 +1,61 @@
+{
+  "id": "calcul_outil_en_echec",
+  "titre": "Outil de calcul en échec : finir autrement",
+  "categorie": "replanification",
+  "donnees": "portefeuille BRVM FICTIF",
+  "origine": "usage réel d'Ahadi (journaux releves/diag et règles du 29/10), anonymisé ou fictif",
+  "entree": {
+    "prompt": "Ahadi : « Donne-moi le poids de chaque titre dans mon portefeuille BRVM d'exercice (fictif) : TITRE A (fictif) 10 titres à 25 000 FCFA, TITRE B (fictif) 30 titres à 14 500 FCFA, TITRE C (fictif) 5 titres à 28 000 FCFA. »\n\n[Résultat d'outil du tour précédent] shell `python3 -c \"...\"` → erreur : « zsh: command not found: python3 »\n\nAucun autre outil n'est disponible dans ce mode : termine la tâche quand même."
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "contient",
+      "valeurs": [
+        "825 000",
+        "250 000",
+        "435 000",
+        "140 000"
+      ]
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "30,30",
+        "30.30",
+        "30,3",
+        "30.3"
+      ]
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "52,73",
+        "52.73",
+        "52,7",
+        "52.7"
+      ]
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "16,97",
+        "16.97",
+        "16,9",
+        "17,0"
+      ]
+    },
+    {
+      "type": "absent",
+      "valeurs": [
+        "je ne peux pas calculer",
+        "impossible de calculer",
+        "je te conseille",
+        "tu devrais vendre",
+        "tu devrais acheter"
+      ]
+    }
+  ],
+  "grille": "exactitude : valeurs 250 000 / 435 000 / 140 000, total 825 000 FCFA, poids 30,30 % / 52,73 % / 16,97 % ; completude : calcul posé faute d'outil, somme = 100 % ; forme : résultat d'abord, aucun conseil d'investissement ; concision : court.",
+  "seuil_grille": 3.5
+}

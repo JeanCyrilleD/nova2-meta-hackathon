@@ -116,13 +116,9 @@ extension NovaApp {
             return adminStatus(active: active)
         case "set":
             guard p.count > 2 else { return "set <réglage> <valeur>" }
-            if NovaApp.isSecretSetting(p[1]) { return "Réglage « \(p[1]) » réservé à l'utilisateur (clés, jeton, pont téléphone, dossiers suivis)." }
-            if NovaApp.isOwnerOnlySetting(p[1]) { _ = BlackBox.record(["tool": "app", "actor": "Assistant", "why": "refus : set \(p[1]) (réglage réservé à Ahadi)", "ok": false, "effect": "refusé"]); return "Refusé : « \(p[1]) » est réservé à Ahadi (droits, cerveaux, verrou). Dis-lui de le changer lui-même dans Réglages s'il le souhaite." }   // AUDIT-24/10: pas d'auto-élévation
-            guard Settings.defaults[p[1]] != nil else { return "Réglage « \(p[1]) » inconnu. Liste : commande settings." }
-            let raw = p.dropFirst(2).joined(separator: " ")
-            let v: Any = raw == "true" ? true : raw == "false" ? false : (Int(raw).map { $0 as Any } ?? Double(raw).map { $0 as Any } ?? raw)
-            settings.set([p[1]: v]); _ = BlackBox.record(["tool": "app", "actor": "Assistant", "why": "set \(p[1])", "ok": true, "effect": "écrit"])
-            return "Réglage \(p[1]) = \(raw)."
+            // PILOTAGE 01/11 : mêmes refus (secrets, réservés à Ahadi — AUDIT-24/10, pas d'auto-élévation), puis valeur convertie au type réel,
+            // écrite, RELUE sur disque et appliquée à la fenêtre (Pilotage.swift). Avant : « Réglage x = y » sans relecture.
+            return NovaPilot.setSetting(p[1], p.dropFirst(2).joined(separator: " "), settings: settings, actor: "Assistant", tool: "app")
         case "dot-pause", "dot-reprendre":
             guard p.count > 1, var d = adminFindDot(p[1]) else { return "\(verb) <id>" }
             d.removeValue(forKey: "persona"); d["paused"] = (verb == "dot-pause"); dots.save(d)

@@ -1,0 +1,49 @@
+{
+  "id": "telechargement_403_alternatives",
+  "titre": "Téléchargement refusé (403) : voies alternatives",
+  "categorie": "replanification",
+  "donnees": "URL FICTIVE (domaine .test)",
+  "origine": "usage réel d'Ahadi (journaux releves/diag et règles du 29/10), anonymisé ou fictif",
+  "entree": {
+    "prompt": "Ahadi : « Récupère le fichier des déplacés internes du Burkina Faso (région du Sahel) que je t'ai indiqué. »\n\nOutils disponibles : web_fetch, web_search, archive_fetch, read_file.\n[Résultat d'outil du tour précédent] web_fetch https://data.example-humanitaire.test/bfa/pdi_2026.csv → HTTP 403 Forbidden.\n\nSi tu proposes des actions d'outil, liste-les à la fin dans un bloc ```actions contenant un tableau JSON [{\"outil\": \"...\", \"cle\": \"clé d'idempotence\", \"args\": {...}}]. Aucune action = pas de bloc. Rien n'est exécuté : Nova soumet chaque action à l'approbation d'Ahadi."
+  },
+  "outils_permis": [
+    "web_fetch",
+    "web_search",
+    "archive_fetch",
+    "read_file"
+  ],
+  "verifs": [
+    {
+      "type": "regex",
+      "motif": "```actions[\\s\\S]*\"outil\"\\s*:\\s*\"(?:web_search|archive_fetch)\"[\\s\\S]*\"outil\"\\s*:\\s*\"(?:web_search|archive_fetch|read_file|web_fetch)\"[\\s\\S]*```",
+      "note": "au moins deux actions dont une voie nouvelle"
+    },
+    {
+      "type": "regex",
+      "motif": "^(?![\\s\\S]*\"outil\"\\s*:\\s*\"web_fetch\"[^}]*data\\.example-humanitaire\\.test/bfa/pdi_2026\\.csv)",
+      "note": "pas de répétition à l'identique"
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "archive",
+        "HDX",
+        "humdata",
+        "CONASUR",
+        "OCHA",
+        "ReliefWeb",
+        "DTM"
+      ]
+    },
+    {
+      "type": "absent",
+      "valeurs": [
+        "réessaie plus tard",
+        "réessayez plus tard"
+      ]
+    }
+  ],
+  "grille": "exactitude : 403 compris comme accès refusé, aucune donnée inventée ; completude : 2 à 3 voies réelles (version archivée, recherche du jeu de données sur HDX/CONASUR/DTM, fichier local), proposées en actions ; forme : résultat ou plan d'abord, pas de « réessaie plus tard » ; concision : bref.",
+  "seuil_grille": 3.5
+}

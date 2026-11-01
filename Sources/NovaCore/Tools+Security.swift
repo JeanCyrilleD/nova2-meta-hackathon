@@ -63,6 +63,7 @@ extension Tools {
     public static func decide(id: String, ok: Bool, freeMinutes: Int = 0, workspace: String? = nil) -> String {
         apLock.lock(); defer { apLock.unlock() }
         guard let p = pendingConfirm.removeValue(forKey: id), let cmd = p["cmd"] as? String else { return "Demande expirée." }
+        DispatchQueue.global(qos: .utility).async { _ = AttentionNotif.refreshBadge() }   // 01/11 : pastille du Dock (hors verrou)
         GoDelais.note(created: p["ts"] as? String, ok: ok, kind: (p["kind"] as? String) ?? "")   // V5-P : délai jusqu'au GO, mesuré (Feat_Boucle.swift)
         // WP3-M : une demande posée par needConfirm porte sa PORTÉE (ExecContext : conversation ou Dot) ; WP5-M : et son RUN
         // (RunScope). L'accord n'est consommable que dans cette portée ET par ce run. Une demande sans portée (Tools.registerAsk,

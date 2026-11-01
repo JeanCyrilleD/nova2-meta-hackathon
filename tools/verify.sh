@@ -211,6 +211,8 @@ else
 fi
 echo "── 12. PHASE 5 : présence 3D optionnelle (chargement à la demande, aucun réseau, 5 états) ──"
 node tools/test_presence3d.mjs || FAIL=1
+echo "── 13. PILOTAGE (01/11) : navigation interne déterministe (résolution des écrans, sections, lignes) ──"
+node tools/test_pilotage.mjs || FAIL=1
 echo
 [ $FAIL -eq 0 ] && echo "✅ VÉRIFICATION NOVA 2 : TOUT PASSE" || echo "❌ VÉRIFICATION NOVA 2 : ÉCHECS (voir ci-dessus)"
 exit $FAIL

@@ -187,14 +187,17 @@ public struct PriceBook {
         PriceVersion(provider: prov, endpoint: host, model: model, novaId: id, version: "feat_depense-v1#\(id)@\(verified ?? "non-verifie")", rate: r,
                      longContext: lc, verified: verified, source: "Feat_Depense.price (grille historique) — " + note)
     }
+    // 01/11 (chat abouti, journal cerveaux du 01/11 : 1 391 220 jetons de cache lus par Spark 1.3 comptés à 1,25 $ au lieu de 0,15 $) :
+    // la grille historique Meta n'avait pas de tarif « cache lu » ; la règle « deux grilles : le plus cher retenu » facturait donc le
+    // cache au prix plein, 8,3 × le tarif publié du registre. Le tarif cache lu est repris du registre (même date, même source).
     public static let legacyV1: [PriceVersion] = {
         let meta: String = "api.meta.ai"
         return [
-            v1("wonder-1.0", "meta", meta, "muse-wonder-1.0", usd(4.0, 20.0), verified: "2026-10-31", note: "grille Meta publiée"),
-            v1("spark-1.3", "meta", meta, "muse-spark-1.3", usd(1.25, 4.25), verified: "2026-10-31", note: "grille Meta publiée"),
+            v1("wonder-1.0", "meta", meta, "muse-wonder-1.0", usd(4.0, 20.0, cr: 0.20), verified: "2026-10-31", note: "grille Meta publiée ; cache lu 0,20 (Config/brains.json, dev.meta.ai/docs/pricing-rate-limits, 31/10)"),
+            v1("spark-1.3", "meta", meta, "muse-spark-1.3", usd(1.25, 4.25, cr: 0.15), verified: "2026-10-31", note: "grille Meta publiée ; cache lu 0,15 (Config/brains.json, dev.meta.ai/docs/pricing-rate-limits, 31/10)"),
             v1("spark-1.2", "meta", meta, "muse-spark-1.2", usd(1.25, 4.25), verified: "2026-10-31", note: "grille Meta publiée"),
             v1("spark-1.1", "meta", meta, "muse-spark-1.1", usd(1.25, 4.25), verified: "2026-10-31", note: "grille Meta publiée"),
-            v1("spark-1.3-contributor", "meta", meta, "muse-spark-1.3-contributor", usd(0.10, 0.20), verified: "2026-10-31", note: "grille Meta publiée"),
+            v1("spark-1.3-contributor", "meta", meta, "muse-spark-1.3-contributor", usd(0.10, 0.20, cr: 0.002), verified: "2026-10-31", note: "grille Meta publiée ; cache lu 0,002 (Config/brains.json, 31/10)"),
             v1("spark-1.2-contributor", "meta", meta, "muse-spark-1.2-contributor", usd(0.10, 0.20), verified: "2026-10-31", note: "grille Meta publiée"),
         ]
     }()
@@ -308,11 +311,25 @@ public enum SpendPolicy {
     }
 
     /// Réserve AVANT l'envoi. Gratuité vérifiée : rien à réserver. Grand livre absent : refus (aucun envoi payant).
+    ///
+    /// 01/11 (chat abouti) : `worstMaxOut` / `worstCalls` = pire cas de l'appel (plafond de sortie complet, suites automatiques).
+    /// Quand ils sont donnés, la réservation ENGAGÉE est l'estimation réaliste (`maxOut`, `calls`), mais l'envoi n'est accepté que
+    /// si le PIRE CAS tient sous chaque plafond (marge exigée = pire cas − réaliste, retirée des plafonds pour ce seul contrôle).
+    /// Le plafond dur et l'échec fermé sont donc inchangés ; seul l'argent immobilisé (et gardé en cas d'annulation) suit le vrai coût.
     public static func preflight(ledger: CostLedger?, book: PriceBook, spec s: BrainSpec, estIn: Int, maxOut: Int, calls: Int = 1, lane: SpendLane,
-                                 caps: CostLedger.Caps, floorMonth: Micros = 0, floorDay: Micros = 0, overrideId: String? = nil,
-                                 task: String? = nil, reserveEnabled: Bool = true, now: Date = Date()) -> Preflight {
+                                 caps capsIn: CostLedger.Caps, floorMonth: Micros = 0, floorDay: Micros = 0, overrideId: String? = nil,
+                                 task: String? = nil, reserveEnabled: Bool = true, worstMaxOut: Int? = nil, worstCalls: Int? = nil,
+                                 now: Date = Date()) -> Preflight {
         let b: Billing = book.billing(s)
         let est: Micros = b.isVerifiedFree ? 0 : estimate(book: book, billing: b, estIn: estIn, maxOut: maxOut, calls: calls, at: now)
+        var caps: CostLedger.Caps = capsIn
+        if !b.isVerifiedFree, worstMaxOut != nil || worstCalls != nil {
+            let worst: Micros = estimate(book: book, billing: b, estIn: estIn, maxOut: max(maxOut, worstMaxOut ?? maxOut), calls: max(calls, worstCalls ?? calls), at: now)
+            let margin: Micros = max(0, worst - est)
+            caps = CostLedger.Caps(monthHard: max(0, capsIn.monthHard - margin), dayForeground: max(0, capsIn.dayForeground - margin),
+                                   dayBackground: max(0, capsIn.dayBackground - margin), perTask: capsIn.perTask,
+                                   dayBench: capsIn.dayBench.map { max(0, $0 - margin) })
+        }
         if b.isUnknown && lane == .background {   // même règle que decide() : une facturation inconnue n'est jamais engagée par le fond
             return .refused("\(s.label) : facturation inconnue — jamais en tâche de fond (aucun prix versionné)")
         }

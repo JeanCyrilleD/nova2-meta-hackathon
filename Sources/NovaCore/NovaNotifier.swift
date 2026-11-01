@@ -134,7 +134,7 @@ public enum NovaNotifier {
         Tools.apLock.lock()
         let pend: [String: [String: Any]] = Tools.pendingConfirm
         Tools.apLock.unlock()
-        var due: [(String, String, Int)] = []
+        var due: [(String, String, Int, String)] = []
         lock.lock()
         goNotified = goNotified.intersection(Set(pend.keys))
         for (id, e) in pend where !goNotified.contains(id) {
@@ -142,13 +142,14 @@ public enum NovaNotifier {
             let age: TimeInterval = now.timeIntervalSince(d)
             if age < 120 || age > 6 * 3600 { continue }
             goNotified.insert(id)
-            due.append((id, (e["kind"] as? String) ?? "action", Int(age / 60)))
+            due.append((id, (e["kind"] as? String) ?? "action", Int(age / 60), (e["scope"] as? String) ?? ""))
         }
         lock.unlock()
-        for (id, kind, mins) in due {
+        for (_, kind, mins, scope) in due {
+            let t = AttentionNotif.target(forScope: scope)   // 01/11 : le clic ouvre LA conversation (ou l'Éclat) qui attend
             send(source: "go", title: "Nova — un GO t'attend",
                  body: "Autorisation demandée (" + kind + ") en attente depuis " + String(mins) + " min. Rien ne part sans ton clic.",
-                 target: ["module": "conversations", "id": "confirm:" + id], urgent: false)
+                 target: ["module": t.module, "id": t.id, "attn": "1", "thread": t.module == "conversations" && !t.id.isEmpty ? "conv:" + t.id : t.module], urgent: false)
         }
     }
 }

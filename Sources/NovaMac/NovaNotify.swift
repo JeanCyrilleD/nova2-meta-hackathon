@@ -29,6 +29,8 @@ final class NovaNotify: NSObject, UNUserNotificationCenterDelegate {
     /// À appeler une fois, dans applicationDidFinishLaunching, après buildMain().
     /// `open(module, id)` est appelé sur la file principale quand Ahadi clique la notification ou « Voir ».
     static func install(open: @escaping (_ module: String, _ id: String) -> Void) {
+        // 01/11 : pastille du Dock = demandes en attente (autorisations, envois à approuver, GO d'Éclats) — AttentionNotif.
+        AttentionNotif.badge = { (n: Int) in DispatchQueue.main.async { NSApp.dockTile.badgeLabel = n > 0 ? String(n) : nil } }
         guard Bundle.main.bundleIdentifier != nil, Bundle.main.bundlePath.hasSuffix(".app") else { return }
         let me: NovaNotify = shared
         me.openHandler = open
@@ -64,7 +66,10 @@ final class NovaNotify: NSObject, UNUserNotificationCenterDelegate {
             // VEILLE-MAIL (24/10 soir) : un NOUVEAU MAIL s'affiche aussi quand Nova est au premier plan (bannière sans son,
             // comme Muse) — Ahadi l'attend ; les autres notifications restent muettes quand Nova est active.
             let isMail: Bool = (target["module"] ?? "") == "messages"
-            if NSApp.isActive && !isMail { return }
+            // 01/11 : « attn » = le cœur (AttentionNotif) a déjà vérifié que la cible n'est PAS affichée — une conversation qui
+            // attend Ahadi ou un travail fini ailleurs s'affiche aussi quand Nova est au premier plan (bannière, sans son).
+            let isAttn: Bool = target["attn"] == "1"
+            if NSApp.isActive && !isMail && !isAttn { return }
             let snd: Bool = sound && !NSApp.isActive
             let center: UNUserNotificationCenter = UNUserNotificationCenter.current()
             center.getNotificationSettings { (s: UNNotificationSettings) in
@@ -91,7 +96,7 @@ final class NovaNotify: NSObject, UNUserNotificationCenterDelegate {
         c.title = title
         c.body = body
         c.categoryIdentifier = NovaNotify.categoryId
-        c.threadIdentifier = target["module"] ?? "nova"
+        c.threadIdentifier = target["thread"] ?? target["module"] ?? "nova"   // 01/11 : regroupées par conversation
         var info: [AnyHashable: Any] = [:]
         for (k, v) in target { info[k] = v }
         c.userInfo = info
@@ -105,7 +110,8 @@ final class NovaNotify: NSObject, UNUserNotificationCenterDelegate {
     // Nova au premier plan au moment où une notification arrive (rappel « Plus tard » compris) : rien n'est affiché.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let mail: Bool = notification.request.content.threadIdentifier == "messages"
-        if mail { completionHandler([.banner, .list]) } else { completionHandler([]) }
+        let attn: Bool = (notification.request.content.userInfo["attn"] as? String) == "1"   // 01/11 : cible hors de vue (décidé par AttentionNotif)
+        if mail || attn { completionHandler([.banner, .list]) } else { completionHandler([]) }
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -116,8 +122,10 @@ final class NovaNotify: NSObject, UNUserNotificationCenterDelegate {
         let action: String = response.actionIdentifier
         if action == NovaNotify.actionLater {
             var target: [String: String] = [:]
+            for (k, v) in info { if let ks = k as? String, let vs = v as? String { target[ks] = vs } }   // 01/11 : garde attn / thread
             if !module.isEmpty { target["module"] = module }
             if !id.isEmpty { target["id"] = id }
+            target.removeValue(forKey: "attn")   // le rappel d'1 h ne connaît plus la visibilité : règle d'avant (rien si Nova est active)
             add(title: content.title, body: content.body, target: target, sound: content.sound != nil, after: 3600)
         } else if action == NovaNotify.actionView || action == UNNotificationDefaultActionIdentifier {
             let h: ((String, String) -> Void)? = openHandler

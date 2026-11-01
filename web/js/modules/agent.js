@@ -351,7 +351,10 @@ export async function mount(root, ctx) {
       h("div", { class: "cs-side-label" }, "Historique — clique pour ouvrir, la pastille dit l'état en direct")),
     archFilter, listEl);
   const main = h("div", { class: "cs-main" });
-  layout.append(side, main);
+  /* 01/11 (fenêtre étroite) : sous 760 px la liste est un TIROIR (fond opaque) posé sur un VOILE ; un clic sur le
+     voile la referme. Le voile n'existe visuellement qu'en mode tiroir (CSS @container cs), jamais en pleine largeur. */
+  const scrim = h("div", { class: "cs-scrim", "aria-hidden": "true", onclick: () => { layout.classList.remove("side-peek"); } });
+  layout.append(side, scrim, main);
   root.append(layout);
   try { if (localStorage.getItem(SIDE_KEY) === "0") layout.classList.add("side-hidden"); else if (window.innerWidth <= 1150 && localStorage.getItem(SIDE_KEY) === null) layout.classList.add("side-hidden"); } catch (e) {}
   /* DS §2.4 : les régimes (liste réduite / volet superposé) sont pilotés par le CSS
@@ -1056,7 +1059,7 @@ export async function mount(root, ctx) {
     const detailsBtn = h("button", { class: "btn cs-hbtn", title: "Trace d'exécution, outils, plan, notices — replié par défaut, hors du fil",
       onclick: () => s.setDetails(!s.detailsOpen) }, "Détails", detailBadge);
     const sideBtn = h("button", { class: "btn cs-iconbtn", title: "Afficher / masquer la liste des conversations",
-      onclick: () => { if (layout.clientWidth <= 760) { layout.classList.toggle("side-peek"); return; } layout.classList.toggle("side-hidden"); try { localStorage.setItem(SIDE_KEY, layout.classList.contains("side-hidden") ? "0" : "1"); } catch (e) {} } },
+      onclick: () => { if (layout.clientWidth <= 760) { layout.classList.toggle("side-peek"); if (layout.classList.contains("side-peek")) { try { const on = listEl.querySelector(".cs-row.on") || newBtn; on.focus({ preventScroll: true }); } catch (e) {} } return; } layout.classList.toggle("side-hidden"); try { localStorage.setItem(SIDE_KEY, layout.classList.contains("side-hidden") ? "0" : "1"); } catch (e) {} } },
       h("span", { html: ic("list", 16) }));
     /* MÉMOIRE SOUVERAINE : « Hors mémoire » — pastille d'en-tête (visible
        seulement si actif, clic = désactiver) + bascule dans le tiroir Détails. */
@@ -1788,7 +1791,7 @@ export async function mount(root, ctx) {
         d.preview ? h("div", { class: "tt", style: "white-space:normal" }, String(d.preview)) : null,
         d.cmd ? h("div", { class: "appr-cmd" }, String(d.cmd)) : (d.arg ? h("div", { class: "appr-cmd" }, trunc(d.arg, 300)) : null),
         scope,
-        h("div", { class: "ss", style: "color:var(--ink-2);margin-top:6px" }, "Sans réponse sous 60 s, l'agent considère que c'est refusé."));
+        h("div", { class: "ss", style: "color:var(--ink-2);margin-top:6px" }, "Sans réponse sous 3 min, l'agent considère que c'est refusé."));
       const status = h("div", { class: "ss", style: "margin-top:8px" }, "");
       const okBtn = h("button", { class: "btn lg acc", onclick: () => decide(true) }, "Approuver");
       const hourBtn = h("button", { class: "btn", title: "Le moteur cesse de demander pour les commandes courantes pendant 1 h (jamais les actions destructrices)", onclick: () => decide(true, 60) }, "Autoriser 1 h");
@@ -1815,7 +1818,7 @@ export async function mount(root, ctx) {
           else status.textContent = ok ? (freeMinutes ? "Envoyé : approuvé + passe 1 h pour les commandes courantes." : "Envoyé : approuvé.") : "Envoyé : refusé" + (motif ? " avec motif." : ".");
           audit(ok ? "approbation" : "refus", tool + (freeMinutes ? " (+1 h)" : ""), motif || (ok ? "approuvé" : "refusé"));
           if (!ok && motif) sendMotif(tool, motif);
-        } catch (e) { status.textContent = "Échec de l'envoi de ta décision — l'agent refusera seul après 60 s."; }
+        } catch (e) { status.textContent = "Échec de l'envoi de ta décision — l'agent refusera seul après 3 min."; }
       }
       async function decideAlways() {
         if (decided) return;
@@ -2270,10 +2273,9 @@ export async function mount(root, ctx) {
                 localStorage.setItem(K, JSON.stringify(st8));
                 ctx.bus.emit("nova:unseen-done", { cid: s.cid });
               } catch (e) {}
-              try {
-                const p9 = api.post("/api/notify/taskdone", { cid: s.cid || "", tache: trunc(s.lastTask, 90), extrait: trunc(acc.replace(/\s+/g, " "), 180) });
-                if (p9 && p9.catch) p9.catch(() => {});
-              } catch (e) {}
+              /* 01/11 : la notification macOS part désormais du MOTEUR à la fin du tour (NovaNotifier+Attention.swift :
+                 fenêtre inactive OU autre conversation affichée, tour ≥ 8 s, heures calmes, débit) — plus d'appel
+                 /api/notify/taskdone d'ici, qui ratait le cas « Nova en arrière-plan sur la conversation ouverte ». */
             }
             if (watchMode) { ctx.toast("Watch : tâche terminée — « " + trunc(s.lastTask, 60) + " »"); audit("watch", "Tâche terminée : " + s.lastTask, "notification Watch"); }
             if (s.lastTask && !emptyRun) {   // DIAG2-FLUX P5 : « a abouti » seulement si le run a produit une réponse
@@ -2324,6 +2326,9 @@ export async function mount(root, ctx) {
         if (dead || s.dead) { s.historyLoading = false; return; }
         s.cid = id;
         sessionsByCid.set(id, s);
+        /* PILOTAGE 01/11 : un fil ouvert par son id n'avait pas de cid au moment d'activate() — « nova:conv-active » partait vide
+           et ni le shell ni le pilotage (conv-ouvrir) ne savaient quel fil était affiché. Signalé ici, une fois l'id adopté. */
+        if (!sameCid) { try { if (activeSession() === s) bus.emit("nova:conv-active", { cid: id }); } catch (e) {} }
         const meta = convIndex.get(id);
         /* Point 2 du diagnostic : une session qui adopte un fil existant reprend son
            « updated » stocké comme activité — « maintenant » seulement pour un brouillon. */

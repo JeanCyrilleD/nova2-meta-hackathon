@@ -2,7 +2,7 @@ import XCTest
 @testable import NovaCore
 
 /// PHASE 6 — banc d'essai des modèles (eval/). Tout est SIMULÉ : fournisseur mock, aucun appel réseau, aucun coût.
-/// Prouve : chargement des 7 cas, vérifications automatiques (références bonnes/mauvaises), calcul des métriques
+/// Prouve : chargement des 7 cas de la Phase 6 (+ 11 cas de fiabilité, FiabiliteTests), vérifications automatiques (références bonnes/mauvaises), calcul des métriques
 /// (réussite, citations, violations, coût µ$ relances et raisonnement compris, délai, corrections), règle de remplacement,
 /// règle « aucun correcteur de la même famille », disjoncteur du plafond.
 final class BancEvalTests: XCTestCase {
@@ -15,7 +15,10 @@ final class BancEvalTests: XCTestCase {
     static let ids: Set<String> = ["tri_mails_fr_en", "synthese_contradictoire", "brief_cafu_public", "correctif_swift",
                                    "correctif_ui", "mail_injection_cachee", "reprise_interrompue"]
 
-    func cas() -> [BancEval.Cas] { BancEval.chargerCas(dossier: BancEvalTests.dossier) }
+    /// Les 7 cas de la Phase 6 (les métriques ci-dessous sont calibrées dessus) ; les 11 cas de fiabilité du 01/11 sont
+    /// couverts par FiabiliteTests (chargement, références, vérifications).
+    func cas() -> [BancEval.Cas] { BancEval.chargerCas(dossier: BancEvalTests.dossier).filter { BancEvalTests.ids.contains($0.id) } }
+    func casTous() -> [BancEval.Cas] { BancEval.chargerCas(dossier: BancEvalTests.dossier) }
 
     func modele(_ id: String, statut: String = "en_service", prix: BancEval.Prix? = BancEval.Prix(entree: 1_000_000, sortie: 4_000_000),
                 verifie: Bool = true, profils: [String] = ["fast"]) -> BancEval.Modele {
@@ -35,7 +38,7 @@ final class BancEvalTests: XCTestCase {
     }
 
     func testReferencesBonnesPassentMauvaisesEchouent() {
-        for c in cas() {
+        for c in casTous() {
             guard let ref = BancEval.chargerReference(dossier: BancEvalTests.dossier, id: c.id) else { XCTFail(c.id); continue }
             let b = BancEval.evaluer(cas: c, texte: ref.bonne, externes: ["swift_test": true])
             XCTAssertTrue(b.autoOK, c.id + " (bonne) : " + b.verdicts.filter { $0.ok != true }.map { $0.type + " " + $0.detail }.joined(separator: " | "))

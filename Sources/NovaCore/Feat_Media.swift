@@ -481,28 +481,21 @@ public enum NovaMedia {
             if page.isEmpty { return "nova_ui : ouvrir|<écran> [| section] — liste : nova_ui pages." }
             let section: String = p.count > 2 ? p[2] : ""
             _ = BlackBox.record(["tool": "nova_ui", "actor": "Assistant", "why": "ouvrir " + page, "ok": true, "effect": "interface"])
-            let r: [String: Any]? = UIPilot.shared.request("go", ["q": page, "section": section], timeout: 10)
-            guard let rr = r else { return UIPilot.render(nil) }
-            if (rr["ok"] as? Bool) != true { return UIPilot.render(rr) }
-            let label: String = (rr["label"] as? String) ?? page
-            let wantId: String = (rr["ecran"] as? String) ?? ""
-            // 27/10 : ne plus annoncer « ouvert » sur la seule navigation demandée —
-            // relire l'écran ACTIF réel (cas « c'est fait » alors que rien n'avait bougé,
-            // ou mauvais panneau visé par la résolution floue).
-            var actifId: String = ""
-            for _ in 0..<5 {
-                if let o = UIPilot.shared.request("onglets", [:], timeout: 6), let items = o["ecrans"] as? [[String: Any]] {
-                    if let a = items.first(where: { ($0["actif"] as? Bool) == true }) { actifId = (a["id"] as? String) ?? "" }
-                }
-                if !wantId.isEmpty && actifId == wantId { break }
-                Thread.sleep(forTimeInterval: 0.45)
+            // PILOTAGE 01/11 : la fenêtre résout l'écran (alias, section déduite), navigue, ATTEND le rendu, ouvre la
+            // section ou la ligne demandée et renvoie l'état relu. Écart → un second essai sur l'id résolu, puis échec précis.
+            var r: [String: Any]? = UIPilot.shared.request("go", ["q": page, "section": section], timeout: 12)
+            if let rr = r, (rr["ok"] as? Bool) != true, rr["candidats"] == nil, rr["section"] == nil, let e = rr["ecran"] as? String, !e.isEmpty {
+                Thread.sleep(forTimeInterval: 0.5)
+                r = UIPilot.shared.request("go", ["q": e, "section": section], timeout: 12)
             }
-            if !wantId.isEmpty && actifId == wantId {
-                return "Écran « " + label + " » affiché dans la fenêtre de Nova — VÉRIFIÉ actif à l'écran (navigation interne ; la fenêtre de Nova n'est pas passée au premier plan : clique sa fenêtre pour la voir si tu regardes ailleurs)."
-            }
-            return "Ouverture NON confirmée : navigation vers « " + label + " » demandée, mais l'écran actif relu est « " + (actifId.isEmpty ? "inconnu" : actifId) + " ». Ne dis pas que c'est ouvert : réessaie une fois par nova_ui ouvrir|" + (wantId.isEmpty ? page : wantId) + ", sinon rapporte cet écart tel quel."
+            return NovaPilot.renderNav(r)
+        case "etat", "état", "ecran", "écran":
+            return NovaPilot.renderState(UIPilot.shared.request("etat", [:], timeout: 8))
+        case "conversation", "conv", "chat":
+            let q: String = p.count > 1 ? p.dropFirst().joined(separator: "|") : ""
+            return Tools.appHook?("conv-ouvrir " + q) ?? "Commande interne indisponible."
         default:
-            return "nova_ui : pages · ouvrir|<écran> [| section]. Pour un réglage : nova_self set|clé|valeur. Jamais de clic dans une autre app (voir app ax-*)."
+            return "nova_ui : pages · ouvrir|<écran> [| section ou ligne de réglage] · etat · conversation|<id, titre ou épinglée>. Pour CHANGER un réglage : app set <clé> <valeur>. Jamais de clic dans une autre app (voir app ax-*)."
         }
     }
 }

@@ -70,8 +70,40 @@ public enum ChatTasks {
 public enum DeliveryGate {
     static let promiseRx: NSRegularExpression? = try? NSRegularExpression(
         pattern: "(?i)(je (vais|m['’]en occupe|te reviens|te prépare|te détaille|creuse|lance|relève|récupère|corrige|m['’]occupe)|je (t['’]|te )?(l['’])?envoie|dans un instant|tout de suite|je reviens vers toi|je te pr[ée]viens|je surveille|je garde un [œo]e?il|je te rappelle)")   // 29/10 (recette, cas A) : « je te l'envoie / je t'envoie » est une promesse comme les autres
+    // 01/11 (chat abouti) : « ok » / « d'accord » ne sont plus des salutations — ce sont des ACCORDS (voir confirmRx) : « ok » à
+    // « je peux créer le fichier ? » suivi de « Je m'en occupe. » laissait Nova muet (aucune continuation).
     static let greetRx: NSRegularExpression? = try? NSRegularExpression(
-        pattern: "(?i)^\\s*(bonjour|bonsoir|salut|hello|merci|ok|d['’]accord|test|ca va|ça va|cava|hi)\\b")
+        pattern: "(?i)^\\s*(bonjour|bonsoir|salut|hello|merci|test|ca va|ça va|cava|hi)\\b")
+    /// 01/11 (chat abouti) : message d'Ahadi qui n'est qu'un ACCORD (« oui », « ok vas-y », « approuvé », « envoie », « go »…) :
+    /// traité comme une demande d'action courte — la réponse doit être l'action faite, jamais une promesse.
+    static let confirmRx: NSRegularExpression? = try? NSRegularExpression(
+        pattern: "(?i)^\\s*(oui|ouais|ok|okay|d['’]accord|go|vas[- ]y|fais[- ]le|fais[- ]la|fais[- ]les|approuv[ée]e?s?|j['’]approuve|valid[ée]e?s?|je valide|c['’]est bon|parfait|envoie|envoie[- ]le|envoie[- ]la|lance|lance[- ]toi|ex[ée]cute|continue|confirm[ée]e?|je confirme|yes)([\\s,.!]+(oui|ok|vas[- ]y|go|fais[- ]le|merci|nova|stp|s['’]il te pla[iî]t|c['’]est bon|envoie|lance|maintenant))*[\\s.!]*$")
+    public static func isConfirmation(_ q: String) -> Bool {
+        let t = q.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, t.count <= 60, let rx = confirmRx else { return false }
+        return rx.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)) != nil
+    }
+    /// 01/11 (chat abouti) : la DERNIÈRE phrase de la réponse n'est qu'une promesse (« Je lance l'envoi maintenant. », « Je m'en occupe »)
+    /// — sans attente déclarée d'Ahadi (« dès que tu confirmes », « ton accord »…) ni question. Après des outils comme sans outil, une telle
+    /// fin n'est PAS un résultat : le filet de sortie continue une fois.
+    static let tailPromiseRx: NSRegularExpression? = try? NSRegularExpression(
+        pattern: "(?i)(^|[\\s,;:—–-])(et\\s+)?(maintenant,?\\s+|ensuite,?\\s+|alors,?\\s+)?(je\\s+(vais|m['’]en\\s+occupe|m['’]occupe|lance|te\\s+reviens|reviens\\s+vers\\s+toi|m['’]y\\s+mets|proc[èe]de|passe\\s+[àa]|encha[îi]ne|commence|d[ée]marre|te\\s+pr[ée]pare|pr[ée]pare|(te\\s+|t['’])?(l['’]|les\\s+)?envoie|cr[ée]e|r[ée]dige|corrige|relance|ex[ée]cute|ouvre|lis|v[ée]rifie)|j['’](encha[îi]ne|envoie|ouvre|ex[ée]cute|appelle|attaque)|dans\\s+un\\s+instant|tout\\s+de\\s+suite|c['’]est\\s+parti)")
+    static let waitUserRx: NSRegularExpression? = try? NSRegularExpression(
+        pattern: "(?i)(d[èe]s\\s+que\\s+tu|quand\\s+tu|si\\s+tu|ton\\s+(accord|go|feu\\s+vert|ok)|ta\\s+(validation|confirmation|r[ée]ponse)|confirme|valides?\\b|j['’]attends|en\\s+attente|attends\\s+ton|apr[èe]s\\s+ton|veux[- ]tu|souhaites[- ]tu)")
+    public static func endsOnPromise(_ answer: String) -> Bool {
+        let a = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !a.isEmpty, !a.hasSuffix("?") else { return false }
+        let segs = a.components(separatedBy: CharacterSet(charactersIn: ".!\n…"))
+        guard let last = segs.last(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })?.trimmingCharacters(in: .whitespaces) else { return false }
+        if last.count > 220 || last.contains("?") { return false }
+        if let w = waitUserRx, w.firstMatch(in: last, range: NSRange(last.startIndex..., in: last)) != nil { return false }
+        guard let rx = tailPromiseRx, let m = rx.firstMatch(in: last, range: NSRange(last.startIndex..., in: last)) else { return false }
+        // la promesse ouvre la phrase (≤ 40 caractères avant) : « Le fichier est créé ; je vérifie… » compte, une incise lointaine non
+        return m.range.location <= 40
+    }
+    /// Note moteur posée à la fin d'un tour qui s'arrête ENCORE sur une annonce après la continuation unique (anti-boucle) :
+    /// l'écran dit l'état réel au lieu d'un silence.
+    public static let unfinishedNote: String = "\n\n⚠️ Annonce non suivie d'exécution : cette dernière étape n'a pas encore été faite. Dis « continue » pour que je l'exécute."
 
     /// Demande d'action courte (« Transcription », « analyse ça ») : 1 à 6 mots
     /// contenant un nom d'action ou un objet — pas une salutation ni un accusé.
@@ -83,19 +115,22 @@ public enum DeliveryGate {
         let a: String = answer.trimmingCharacters(in: .whitespacesAndNewlines)
         let q: String = ask.trimmingCharacters(in: .whitespacesAndNewlines)
         if a.isEmpty || q.isEmpty { return false }
-        if let gr = greetRx, gr.firstMatch(in: q, range: NSRange(q.startIndex..., in: q)) != nil { return false }
+        let confirm: Bool = isConfirmation(q)
+        if !confirm, let gr = greetRx, gr.firstMatch(in: q, range: NSRange(q.startIndex..., in: q)) != nil { return false }
         // 29/10 (Ahadi : « arrêter les questions inutiles et dont la réponse est évidente, livrer directement au lieu de
         // poser des mini-questions à chaque tour ») : une réponse qui se termine sur une OFFRE (« tu veux que je… ? »)
         // ou qui n'est qu'une courte question sans contenu livré est continuée une fois — Nova tranche et livre.
         if isQuestionInsteadOfDelivery(answer: a, ask: q, toolCount: toolCount) { return true }
         // 29/10 (recette, cas B) : une annonce APRÈS de vrais outils — le travail existe,
         // le filet ne continue jamais dessus (le livrable suit dans le même tour).
-        if toolCount > 0 { return false }
+        // 01/11 (chat abouti) : …sauf quand la réponse FINIT sur la promesse (« Je lance maintenant l'envoi. ») : le livrable n'a pas
+        // suivi, le tour se terminait muet. Une seule continuation (le moteur ne rappelle jamais ce filet deux fois).
+        if toolCount > 0 { return endsOnPromise(a) }
         let qWords: [String] = q.split(whereSeparator: { (c: Character) -> Bool in c.isWhitespace }).map { String($0) }
         let shortAction: Bool = qWords.count < 3 && qWords.count >= 1 && qWords.contains { (w: String) -> Bool in
             actionWords.contains(w.lowercased().trimmingCharacters(in: .punctuationCharacters))
         }
-        if qWords.count < 3 && !shortAction { return false }
+        if qWords.count < 3 && !shortAction && !confirm { return false }
         let words: Int = a.split(whereSeparator: { (c: Character) -> Bool in c.isWhitespace }).count
         // Réponse courte + promesse + AUCUN outil réellement exécuté : annonce pure,
         // quelle que soit sa longueur exacte sous 120 mots.
@@ -187,5 +222,60 @@ public final class StreamDedup {
             i = s.index(after: i)
         }
         return nil
+    }
+}
+
+// MARK: - 01/11 (chat abouti) : plafonds par demande selon le cerveau
+
+/// Plafonds d'UNE demande du chat (étapes d'outils, dépense). Les cerveaux Meta coûtent peu (Spark 1.3 : 1,25 $ / 4,25 $ par M,
+/// cache lu 0,15 $) : avec 0,40 $ et 12 étapes, une recherche ordinaire (16–23 appels de ~30 000 jetons dans le journal du 01/11)
+/// s'arrêtait au milieu avec « ⏸ Plafond par demande atteint ». Pour Meta : 24 étapes et 1,50 $ par défaut (≈ 1,4 % du budget
+/// mensuel de 110 $), réglages « etapes_max_par_demande_meta » / « plafond_par_demande_meta_usd ». 0 dans le réglage général =
+/// sans plafond (inchangé). Le plafond MENSUEL dur et l'échec fermé ne dépendent pas d'ici (SpendPolicy, réservation avant envoi).
+public enum ChatCaps {
+    public static let metaStepsDefault: Int = 24
+    public static let metaUSDDefault: Double = 1.50
+    public static func isMeta(_ s: BrainSpec?) -> Bool {
+        guard let s = s else { return false }
+        let m = s.model.lowercased()
+        return m.hasPrefix("muse-") || m.contains("muse-spark")
+    }
+    static func num(_ settings: Settings, _ k: String) -> Double? { (settings.all()[k] as? NSNumber)?.doubleValue }
+    public static func steps(settings: Settings, meta: Bool) -> Int {
+        let base: Int = Int(num(settings, "etapes_max_par_demande") ?? 12)
+        guard meta else { return base }
+        return max(base, Int(num(settings, "etapes_max_par_demande_meta") ?? Double(metaStepsDefault)))
+    }
+    public static func perTurnUSD(settings: Settings, meta: Bool) -> Double {
+        perTurnUSD(base: num(settings, "plafond_par_demande_usd") ?? 0.40, metaSetting: num(settings, "plafond_par_demande_meta_usd"), meta: meta)
+    }
+    public static func perTurnUSD(base: Double, metaSetting: Double?, meta: Bool) -> Double {
+        if base <= 0 { return 0 }   // « sans plafond » choisi par Ahadi : inchangé
+        guard meta else { return base }
+        return max(base, metaSetting ?? metaUSDDefault)
+    }
+    /// Passe de conclusion autorisée quand le plafond est franchi : une seule, et seulement sous 1,5 × le plafond.
+    public static func finishAllowed(spent: Double, cap: Double) -> Bool { cap > 0 && spent < cap * 1.5 }
+    public static func finishNote(tools: [String]) -> String {
+        let t: String = tools.isEmpty ? "" : " Outils déjà exécutés : " + Array(tools.suffix(8)).joined(separator: ", ") + "."
+        return "[MOTEUR NOVA — PLAFOND PAR DEMANDE] Le plafond de dépense de cette demande est atteint : plus aucun outil." + t + " Rédige MAINTENANT la réponse finale complète avec ce qui a déjà été rassemblé : le résultat d'abord, puis ce qui est fait, ce qui a échoué et ce qui reste (une ligne). N'annonce aucune action future."
+    }
+}
+
+/// 01/11 (chat abouti) : envoi approuvé exécuté par le MOTEUR dès le message d'accord d'Ahadi (route /api/chat).
+public enum EngineSend {
+    /// Seulement quand l'outil serait parti SANS carte : politique « auto » (ni « ask » ni « block ») et Confiance « run ».
+    /// Sinon le chemin habituel (cerveau → runGuarded → carte) s'applique tel quel.
+    public static func directAllowed(policy: String, verdict: String) -> Bool { policy == "auto" && verdict == "run" }
+    public static func reportNote(result: String) -> String {
+        "\n\n[NOTE MOTEUR] Ahadi a approuvé l'envoi affiché ; le MOTEUR l'a exécuté (mail_envoyer). Résultat réel : « " + String(result.prefix(600)) + " ». Rapporte ce résultat tel quel en une ou deux phrases (envoyé, ou échec et motif). N'appelle PAS mail_envoyer à nouveau."
+    }
+    /// Ligne ajoutée à la fin si la réponse du cerveau ne rapporte pas l'envoi (vide, promesse, sujet ailleurs).
+    public static func missingReport(answer: String, result: String) -> String? {
+        let a = answer.lowercased()
+        if !a.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !DeliveryGate.endsOnPromise(answer)
+            && (a.contains("envoy") || a.contains("échec") || a.contains("echec") || a.contains("refus") || a.contains("incertain")) { return nil }
+        let first: String = result.split(separator: "\n").first.map(String.init) ?? result
+        return "\n\n📤 Envoi : " + String(first.prefix(300))
     }
 }

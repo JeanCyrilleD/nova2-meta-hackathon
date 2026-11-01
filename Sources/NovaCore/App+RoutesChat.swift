@@ -179,7 +179,7 @@ extension NovaApp {
             }
 
             // 3) Cerveau du tour (inchangé : démo, verrou, choix par message, rejet annoncé).
-            let stepsMax: Int = settings.get("etapes_max_par_demande", 12)   // 31/10 (Ahadi : plafond par demande) — avant : 30 en autonomie totale, 18 sinon (jusqu'à 18 outils, 5 min, ~0,5 $ mesurés)
+            var stepsMax: Int = settings.get("etapes_max_par_demande", 12)   // 31/10 (Ahadi : plafond par demande) — avant : 30 en autonomie totale, 18 sinon (jusqu'à 18 outils, 5 min, ~0,5 $ mesurés)
             let agent = Agent(router: router, tools: tools)
             let demoBrain: String = settings.get("demo_brain", "spark-1.3")   // FIX-DEMO 22/10
             let pref0: String = demoOn ? demoBrain : ((j["brain"] as? String) ?? settings.get("brain", "spark-1.3"))   // FIX-DEMO 22/10 : en mode démo, le cerveau de démo prime ; sinon choix par message, sinon défaut verrouillé
@@ -223,6 +223,10 @@ extension NovaApp {
             let servingId: String = plan0.first?.id ?? pref
             let firstKind: BrainKind? = plan0.first?.kind
             let servingLocal: Bool = (firstKind.map { $0 == .local } ?? false) || servingId == "local"
+            // 01/11 (chat abouti) : cerveau Meta (Spark 1.3 : 1,25 $ / 4,25 $ par M) → plafonds par demande RELEVÉS (étapes et dépense,
+            // voir ChatCaps) : une réponse complète ne s'arrête plus à la 10e étape (~0,40 $ au tarif du cache surfacturé).
+            let metaTurn: Bool = ChatCaps.isMeta(router.spec(servingId))
+            stepsMax = ChatCaps.steps(settings: settings, meta: metaTurn)
             let winServing: Int = ContextWindow.tokens(for: servingId)
             let winStable: Int = servingLocal ? winServing : min(winServing, ContextWindow.tokens(for: "spark-open-baseten"))
             // 30/10 (GO historique d'Ahadi, dépense) : l'historique verbatim est plafonné (réglage « historique_max_jetons »,
@@ -273,7 +277,22 @@ extension NovaApp {
             if let note = ChatTasks.note(for: cid), let li = histRun.lastIndex(where: { $0.role == "user" }) {
                 histRun[li].content += note
             }
-            if let sn = sendMint.engineNote, let li = histRun.lastIndex(where: { $0.role == "user" }) { histRun[li].content += sn }   // WP3 : note moteur, jamais une autorisation en soi
+            // 01/11 (chat abouti) : « envoie » / « go » d'Ahadi a APPROUVÉ l'envoi affiché → le MOTEUR l'exécute tout de suite (mêmes gardes
+            // que l'outil : politique, Confiance, approbation liée à l'instantané) et le cerveau ne fait que rapporter le résultat. Avant :
+            // tout dépendait d'un appel mail_envoyer du cerveau ; « Je l'envoie. » sans appel laissait le tour muet, l'envoi jamais fait.
+            var engineSendOut: String? = nil
+            if case .minted(_, let draftId) = sendMint, EngineSend.directAllowed(policy: Tools.policy(for: "mail_envoyer"),
+                                                                                 verdict: Trust.verdict(tool: "mail_envoyer", arg: draftId, actor: "Nova", why: askText).action) {
+                let sid: String = String(UUID().uuidString.prefix(8)).lowercased()
+                res.sse("step", ["id": sid, "index": 1, "tool": "mail_envoyer", "arg": draftId, "state": "run", "ts": nowISO()])
+                let t0s: Date = Date()
+                let out: String = tools.run("mail_envoyer", draftId, why: askText, actor: "Nova")
+                let failedS: Bool = Tools.toolFailed("mail_envoyer", out)
+                res.sse("step", ["id": sid, "index": 1, "tool": "mail_envoyer", "arg": draftId, "state": failedS ? "err" : "ok", "ms": Int(Date().timeIntervalSince(t0s) * 1000), "ts": nowISO()])
+                res.sse("tool", ["name": "mail_envoyer", "input": draftId, "output": String(out.prefix(600))])
+                engineSendOut = out
+            }
+            if let sn = (engineSendOut.map { EngineSend.reportNote(result: $0) } ?? sendMint.engineNote), let li = histRun.lastIndex(where: { $0.role == "user" }) { histRun[li].content += sn }   // WP3 : note moteur, jamais une autorisation en soi
 
             // 5) Run unique.
             var answer = ""; var brainLabel = ""; var lastCk = Date.distantPast; var toolNotes: [String] = []; var missionSteps: [MissionGate.Step] = []
@@ -282,6 +301,8 @@ extension NovaApp {
             var afterTool: Bool = false   // 25/10 : frontière d'outil — le texte suivant part en nouveau paragraphe (fini « …fin.Je lance… »)
             var runFailure = ""   // DIAG2-CONTEXTE P-CTX-1 : première erreur vue — nomme la cause d'un tour sans réponse
             let ledger = ChatLedgerBox()
+            let factSeen = FactGate.Seen()   // 01/11 : sorties d'outils du tour, pour la vérification des sources (VerifFaits.swift)
+            if let so = engineSendOut { toolNotes.append("mail_envoyer"); missionSteps.append(MissionGate.Step(name: "mail_envoyer", failed: Tools.toolFailed("mail_envoyer", so))); ledger.add("mail_envoyer", "", so) }
             // Contrat agent (24/10) : quand Agent.run expose `onLedger:`, passer `onLedger: ledgerSink`
             // (entre `cancel:` et `onEvent:`). En attendant, le grand livre est reconstruit
             // à l'identique depuis les événements .step/.tool ; s'il arrive par onLedger, il fait foi.
@@ -299,7 +320,7 @@ extension NovaApp {
                     let emit: String = dedup.push(t)
                     answer += emit; if !emit.isEmpty { res.sse("delta", ["t": emit]) }; ckp(false)
                 case .failover(let f, let t, let r, _): res.sse("failover", ["from": f, "to": t, "reason": r])
-                case .tool(let n, let i, let o): afterTool = true; toolNotes.append(n); missionSteps.append(MissionGate.Step(name: n, failed: Tools.toolFailed(n, o))); ledger.add(n, i, o); ckp(true); res.sse("tool", ["name": n, "input": String(i.prefix(300)), "output": String(o.prefix(bancTurn ? 12000 : 600))])   // 31/10 : sortie complète pour les correcteurs du banc agent
+                case .tool(let n, let i, let o): afterTool = true; toolNotes.append(n); missionSteps.append(MissionGate.Step(name: n, failed: Tools.toolFailed(n, o))); ledger.add(n, i, o); factSeen.add(o); ckp(true); res.sse("tool", ["name": n, "input": String(i.prefix(300)), "output": String(o.prefix(bancTurn ? 12000 : 600))])   // 31/10 : sortie complète pour les correcteurs du banc agent
                 case .step(let k, let info):
                     if k == "step", let stt = info["state"] as? String, stt == "ok" || stt == "err" { ledger.noteState(stt == "ok") }
                     if k == "steer", let stx = info["text"] as? String, !stx.isEmpty { ledger.noteSteer(stx) }
@@ -320,10 +341,14 @@ extension NovaApp {
             }
             // 31/10 (Ahadi : « plafond par demande ») — au-delà de « plafond_par_demande_usd » (0,40 $ par défaut, 0 = sans plafond),
             // la demande s'arrête à l'étape suivante et le DIT ; « continue » relance une nouvelle demande avec son propre plafond.
-            let capTurn: Double = settings.get("plafond_par_demande_usd", 0.40)
+            // 01/11 (chat abouti) : plafond propre aux cerveaux Meta (ChatCaps.perTurnUSD) ; une attente d'approbation n'est JAMAIS coupée
+            // par le plafond (seul « Stop » l'arrête) — sinon le clic « Approuver » arrivait sur une demande déjà abandonnée.
+            let capTurn: Double = ChatCaps.perTurnUSD(settings: settings, meta: metaTurn)
             var capHit: Bool = false
+            let userStop: () -> Bool = { Tools.isStopped(cid, since: chatT0) }
             let stopCheck: () -> Bool = {
-                if Tools.isStopped(cid, since: chatT0) { return true }
+                if userStop() { return true }
+                if Tools.awaitingApproval() { return false }
                 if capTurn > 0 && LLMSpend.turnSpent() >= capTurn { capHit = true; return true }
                 return false
             }
@@ -371,6 +396,28 @@ extension NovaApp {
                 if answer.trimmingCharacters(in: .whitespacesAndNewlines).count < 40 { answer = missionPrev; res.sse("final", ["t": missionPrev]) }   // passe vide → la version précédente revient
             }
 
+            // 01/11 (Ahadi : « le moins hallucinant ») : VÉRIFICATION DES SOURCES hors CAFU — une URL citée qu'aucun outil du tour n'a
+            // renvoyée (ni le fil, ni le prompt système) → UNE passe de vérification si les outils sont là ; le reste est marqué
+            // [[NON CONFIRMÉ]] juste avant la finition. Réglage « verif_faits » (défaut true). Zéro appel quand la réponse est propre.
+            let factAllowed: () -> [String] = { factSeen.all + histRun.map { $0.content } + [sys] }
+            if !stopCheck() && !spoken && FactGate.enabled(settings),
+               let fnote: String = FactGate.check(answer: answer, allowed: factAllowed(), toolsAvailable: useTools) {
+                histRun.append(ChatMsg("assistant", answer))
+                histRun.append(ChatMsg("user", fnote))
+                if !answer.hasSuffix("\n") { answer += "\n\n" }
+                dedup.reset()
+                let factPrev: String = answer
+                res.sse("reset", ["scope": "draft"]); answer = ""
+                _ = agent.run(messages: histRun, system: sys, mode: mode, preferred: prefFinal, exemptBrain: demoExempt, maxTokens: maxTok, useTools: useTools, maxSteps: min(stepsMax, 6), ordered: true, cancel: stopCheck, onLedger: ledgerSink, steerKey: cid, onEvent: onEv)
+                let tailF: String = dedup.flush()
+                if !tailF.isEmpty { answer += tailF; res.sse("delta", ["t": tailF]) }
+                if answer.trimmingCharacters(in: .whitespacesAndNewlines).count < 40 { answer = factPrev; res.sse("final", ["t": factPrev]) }
+            }
+            if !spoken && FactGate.enabled(settings) {
+                let marked: String = FactGate.annotate(answer: answer, allowed: factAllowed())
+                if marked != answer { answer = marked; res.sse("final", ["t": marked]) }
+            }
+
             // 29/10 (Ahadi) : CONTRÔLE QUALITÉ — [tiers] relit les réponses de fond ; un manque ou une erreur concrète → un complément, une fois.
             if !stopCheck() && AutoEval.eligible(answer: answer, simple: prefPlanned != prefFinal, spoken: spoken, settings: settings),
                let qnote: String = AutoEval.review(router: router, ask: askText, answer: answer) {
@@ -384,12 +431,38 @@ extension NovaApp {
                 let tail3: String = dedup.flush()
                 if !tail3.isEmpty { answer += tail3; res.sse("delta", ["t": tail3]) }
             }
+            // 01/11 (chat abouti) : le tour finit ENCORE sur une annonce après la continuation unique → l'état réel est dit (anti-silence),
+            // jamais une seconde continuation (anti-boucle). Un envoi exécuté par le moteur rapporte toujours son résultat.
+            if !capHit, !userStop(), !spoken, DeliveryGate.endsOnPromise(answer) {
+                answer += DeliveryGate.unfinishedNote; res.sse("delta", ["t": DeliveryGate.unfinishedNote])
+                _ = BlackBox.record(["tool": "filet_sortie", "actor": "Nova", "effect": "lecture", "ok": false, "why": "annonce finale non suivie d'exécution — état dit à l'écran", "result": String(answer.suffix(160))])
+            }
+            if let so = engineSendOut, let line = EngineSend.missingReport(answer: answer, result: so) {
+                answer += line; res.sse("delta", ["t": line])
+            }
             if capHit {
+                // 01/11 (chat abouti) : plafond VRAIMENT atteint → Nova CONCLUT au lieu de couper : une passe de rédaction, sans outil,
+                // à partir de ce qui a été rassemblé (une seule, bornée par ChatCaps.finishAllowed ; seul « Stop » l'interrompt). Le
+                // plafond mensuel dur reste appliqué par la réservation avant envoi (LLMSpend.preflight).
+                var concluded: Bool = false
+                if !userStop(), ChatCaps.finishAllowed(spent: LLMSpend.turnSpent(), cap: capTurn) {
+                    histRun.append(ChatMsg("assistant", answer.isEmpty ? "(étapes en cours)" : answer))
+                    histRun.append(ChatMsg("user", ChatCaps.finishNote(tools: toolNotes)))
+                    if !answer.isEmpty && !answer.hasSuffix("\n") { answer += "\n\n" }
+                    dedup.reset()
+                    let before: Int = answer.count
+                    _ = agent.run(messages: histRun, system: sys, mode: mode, preferred: prefFinal, exemptBrain: demoExempt, maxTokens: min(maxTok, 6000), useTools: false, maxSteps: 0, ordered: true, cancel: userStop, onLedger: ledgerSink, steerKey: nil, onEvent: onEv)
+                    let tailF: String = dedup.flush()
+                    if !tailF.isEmpty { answer += tailF; res.sse("delta", ["t": tailF]) }
+                    concluded = answer.count - before >= 40
+                }
                 let spent: String = String(format: "%.2f", LLMSpend.turnSpent()).replacingOccurrences(of: ".", with: ",")
                 let capS: String = String(format: "%.2f", capTurn).replacingOccurrences(of: ".", with: ",")
-                let note: String = "\n\n⏸ Plafond par demande atteint (" + spent + " $ sur " + capS + " $) : je me suis arrêté ici. Dis « continue » pour que je poursuive."
+                let note: String = concluded
+                    ? "\n\n⏸ Plafond par demande atteint (" + spent + " $ sur " + capS + " $) : réponse conclue avec ce qui était rassemblé. Dis « continue » pour approfondir."
+                    : "\n\n⏸ Plafond par demande atteint (" + spent + " $ sur " + capS + " $) : je me suis arrêté ici. Dis « continue » pour que je poursuive."
                 answer += note; res.sse("delta", ["t": note])
-                _ = BlackBox.record(["tool": "plafond_demande", "actor": "Nova", "effect": "lecture", "ok": true, "why": "plafond par demande atteint", "result": spent + " $"])
+                _ = BlackBox.record(["tool": "plafond_demande", "actor": "Nova", "effect": "lecture", "ok": true, "why": "plafond par demande atteint" + (concluded ? " — réponse conclue" : ""), "result": spent + " $"])
             }
 
             // WP3 : toute demande d'envoi née dans ce tour est AFFICHÉE par le moteur (carte exacte : destinataires,
@@ -403,6 +476,9 @@ extension NovaApp {
             let finalText: String = spoken ? Persona.stripBiChannel(answerClean) : answerClean
             var finalTs: String? = nil
             if !answer.isEmpty { finalTs = convs.checkpoint(cid, content: finalText, brain: brainLabel, final: true, tools: ledgerFinal) }
+            if !answer.isEmpty && !internalTurn && !Tools.isStopped(cid, since: chatT0) {   // 01/11 : réponse finie hors de vue (fenêtre inactive ou autre conversation) → notification
+                _ = AttentionNotif.responseDone(cid: cid, ask: text, excerpt: finalText, durationS: Date().timeIntervalSince(chatT0))
+            }
             if !answer.isEmpty && !spoken && finalText != answer { res.sse("final", ["t": finalText]) }   // 29/10 : l'écran montre la version finie (sans annonces d'étape)
             else if !toolNotes.isEmpty { finalTs = convs.checkpoint(cid, content: "(interrompu avant la réponse — outils lancés : " + toolNotes.suffix(6).joined(separator: ", ") + ")", brain: brainLabel, final: true, tools: ledgerFinal) }
             else {

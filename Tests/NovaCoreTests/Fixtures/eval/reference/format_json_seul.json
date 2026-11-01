@@ -1,0 +1,4 @@
+{
+  "bonne": "{\"pays\": \"Niger\", \"capitale\": \"Niamey\", \"monnaie\": \"franc CFA (XOF)\"}",
+  "mauvaise": "Bonjour Ahadi 👋\n\n```json\n{\"pays\": \"Niger\", \"capitale\": \"Niamey\", \"monnaie\": \"franc CFA\"}\n```\n\n```nova-suites\n- Ajouter la population\n```"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "demande_ambigue_reunion",
+  "titre": "Demande ambiguë : livrer sans dix questions",
+  "categorie": "autonomie",
+  "donnees": "contexte de travail réel d'Ahadi, aucun chiffre fourni",
+  "origine": "usage réel d'Ahadi (journaux releves/diag et règles du 29/10), anonymisé ou fictif",
+  "entree": {
+    "prompt": "Ahadi : « Prépare-moi quelque chose pour ma réunion de lundi avec Fatou (prénom fictif) sur le GHO 2027. »\n\nAucun autre détail. Aucun outil n'est disponible dans ce mode et aucune donnée n'est fournie en dehors de ce message."
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "regex",
+      "motif": "^(?![\\s\\S]*\\?[\\s\\S]*\\?)",
+      "note": "au plus une question"
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "ordre du jour",
+        "points à aborder",
+        "agenda",
+        "déroulé",
+        "trame"
+      ]
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "hypothèse",
+        "j'ai supposé",
+        "je pars sur",
+        "j'ai choisi",
+        "je suppose",
+        "par défaut"
+      ]
+    },
+    {
+      "type": "regex",
+      "motif": "^(?![\\s\\S]*\\d[\\d ,.]*\\s?(?:millions|milliards|M\\$|M USD|%))",
+      "note": "aucun chiffre de besoins inventé"
+    }
+  ],
+  "grille": "exactitude : aucun chiffre ni date de calendrier GHO inventés (marqués à vérifier) ; completude : un livrable utilisable (ordre du jour ou trame) + l'hypothèse choisie ; forme : livrable d'abord, au plus une question finale ; concision : une page.",
+  "seuil_grille": 3.5
+}
