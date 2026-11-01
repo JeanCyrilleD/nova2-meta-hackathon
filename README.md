@@ -1,5 +1,7 @@
 # Nova — the augmented humanitarian analyst · 100% Meta models
 
+**▶ Demo video (3 min):** https://youtu.be/TSjw5fsBKsM
+
 Nova is a native macOS companion (Swift + a local web UI) for a humanitarian foresight analyst: it drafts sourced
 context notes (CAFU format: BLUF, tagged evidence, scenarios, recommendations), reviews them with an open-weight
 model, triages mail and agenda, dictates, generates images and talks back — **and every model it calls at runtime is
