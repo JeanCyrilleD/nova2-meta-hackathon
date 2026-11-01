@@ -1,0 +1,40 @@
+{
+  "id": "correctif_swift",
+  "titre": "Correctif Swift qui compile et passe ses tests",
+  "categorie": "code",
+  "donnees": "fixture synthétique (paquet SwiftPM autonome eval/fixtures/swift_fix)",
+  "entree": {
+    "prompt": "Exercice de code. Le paquet SwiftPM ci-dessous échoue à ses tests. Corrige UNIQUEMENT le fichier Sources/MontantsEval/Montants.swift, sans modifier les tests ni les signatures publiques. Règle : argent en micro-dollars entiers, jamais de flottant (ni Double ni Float), coût partiel arrondi au-dessus. Réponds par une phrase d'explication puis le fichier complet corrigé dans un seul bloc ```swift.",
+    "fichiers": [
+      "fixtures/swift_fix/Sources/MontantsEval/Montants.swift",
+      "fixtures/swift_fix/Tests/MontantsEvalTests/MontantsEvalTests.swift"
+    ]
+  },
+  "outils_permis": [],
+  "externe": {
+    "nom": "swift_test",
+    "fixture": "fixtures/swift_fix",
+    "fichier": "Sources/MontantsEval/Montants.swift",
+    "bloc": "swift"
+  },
+  "verifs": [
+    {
+      "type": "bloc",
+      "langage": "swift",
+      "contient": [
+        "public func coutMicroDollars(jetons: Int, prixMicroParMillion: Int64) -> Int64",
+        "public func coutTotalMicroDollars"
+      ],
+      "absent": [
+        "Double",
+        "Float"
+      ]
+    },
+    {
+      "type": "externe",
+      "nom": "swift_test"
+    }
+  ],
+  "grille": "exactitude : arithmétique entière correcte, arrondi au-dessus, pas de débordement silencieux ; completude : fichier complet, signatures intactes ; forme : explication en une phrase ; concision : pas de code superflu.",
+  "seuil_grille": 3.0
+}

@@ -1,0 +1,41 @@
+{
+  "id": "correctif_ui",
+  "titre": "Correctif UI à partir d'une capture",
+  "categorie": "ui",
+  "donnees": "capture synthétique (eval/fixtures/ui_fix/capture.png) + HTML/CSS fictifs",
+  "entree": {
+    "prompt": "Exercice d'interface. La capture jointe montre une carte d'approbation de Nova : texte gris pâle sur verre translucide, quasi illisible, et boutons dont le libellé est coupé (« Approuv… »). Règles de design de Nova : le verre est réservé à la navigation ; tout texte repose sur une surface pleine avec un contraste d'au moins 4,5:1 ; aucun libellé tronqué. Corrige la CSS (couleurs en valeurs littérales #rrggbb, pas de variables) et renvoie la CSS complète dans un seul bloc ```css, précédée de deux lignes d'explication.",
+    "capture": "fixtures/ui_fix/capture.png",
+    "description_capture": "Carte 480×160 px sur fond blanc ; fond de carte translucide (#f6f6f8 apparent) ; titre « Approbation requise » et deux lignes de texte en gris #a1a1a6 (contraste ≈ 2,6:1) ; trois boutons bleus de 72 px de large dont les libellés « Approuver », « Modifier », « Annuler » sont coupés à droite.",
+    "fichiers": [
+      "fixtures/ui_fix/carte.css",
+      "fixtures/ui_fix/carte.html"
+    ]
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "css_contraste",
+      "selecteur": ".carte-alerte",
+      "min": 4.5
+    },
+    {
+      "type": "css_interdit",
+      "selecteur": ".carte-alerte",
+      "declarations": [
+        "backdrop-filter",
+        "-webkit-backdrop-filter"
+      ]
+    },
+    {
+      "type": "css_interdit",
+      "selecteur": ".carte-alerte button",
+      "declarations": [
+        "width: 72px",
+        "overflow: hidden"
+      ]
+    }
+  ],
+  "grille": "exactitude : contraste ≥ 4,5:1 sur surface pleine, verre retiré de la carte, libellés entiers ; completude : CSS complète, boutons conservés ; forme : explication claire en deux lignes ; concision : changements minimaux, pas de refonte gratuite.",
+  "seuil_grille": 3.5
+}

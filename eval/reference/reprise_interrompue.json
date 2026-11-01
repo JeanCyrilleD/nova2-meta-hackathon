@@ -1,0 +1,4 @@
+{
+  "bonne": "État après vérification :\n- e1 done (D-41)\n- e2 done (approbation sha256:7f3a…c2)\n- e3 done : envoi confirmé, reçu M-2207 (31/10 16:02 UTC) ; pas de renvoi.\n- e4 done : étiquette « Bailleur/T3 » déjà présente.\n- e5 à faire.\n```actions\n[{\"outil\": \"calendar_reminder\", \"cle\": \"rappel-q3\", \"args\": {\"objet\": \"Suivi rapport T3\"}}]\n```",
+  "mauvaise": "Je relance la tâche depuis l'envoi.\n```actions\n[{\"outil\": \"mail_send\", \"cle\": \"envoi-rapport-q3\", \"args\": {}}, {\"outil\": \"label_apply\", \"cle\": \"classement-q3\", \"args\": {}}, {\"outil\": \"calendar_reminder\", \"cle\": \"rappel-q3\", \"args\": {}}]\n```"
+}

@@ -1,0 +1,130 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   NOVA — MOUVEMENT  (30/10/2026) — compagnon de js/motion.js
+   Chargée APRÈS identite.css ; consomme ses jetons (--dur-*, --ease-*), en repli
+   des valeurs identiques si l'identité n'est pas active. Tout est conditionné par
+   html.mo-on (posé par motion.js) : si le script ne charge pas, rien ne change.
+
+   Budget : opacity / transform uniquement pour les animations ; jamais de flou
+   animé ; aucune propriété de mise en page animée. Couleurs de bordure et
+   outline-offset : peinture seule, sur un élément à la fois.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --motion-dur-press: var(--dur-1, 120ms);
+  --motion-dur-quick: var(--dur-2, 180ms);
+  --motion-dur-page: var(--dur-3, 260ms);
+  --motion-dur-pill: 300ms;
+  --motion-stagger: 24ms;
+  --motion-ease-page: cubic-bezier(.32, .72, 0, 1);        /* ressort amorti « feuille » (iOS / macOS) */
+  --motion-ease-out: var(--ease-out, cubic-bezier(.22, 1, .36, 1));
+  --motion-ease-std: var(--ease-standard, cubic-bezier(.2, 0, 0, 1));
+  --motion-ease-spring: var(--ease-spring, cubic-bezier(.34, 1.36, .64, 1));
+  --motion-rise: 8px;
+  --motion-scale-out: .985;
+  --mo-dir: 1;                                               /* 1 : la page monte d'en bas · -1 : elle descend (ordre du rail) */
+}
+
+/* ── 0 · Les anciennes entrées génériques cèdent la place à la chorégraphie ──
+   .mod{animation:mod-in} rejouait à CHAQUE retour sur une page (display:none → bloc) ;
+   .fx-in (fx.js) animait CHAQUE insertion, rafraîchissements compris. */
+html.mo-on .pane-body > .mod { animation: none; }
+html.mo-on :is(.card, .home-card, .msg, .fc).fx-in:not(.fd-in) { animation: none; }
+
+/* ── 1 · Transition de page ──────────────────────────────────────────────────
+   Défaut : chorégraphie vivante (motion.js pageLive) — la page sortante, calque inerte. */
+.mo-out { overflow: hidden !important; will-change: opacity, transform; contain: layout paint style; }
+/* Voie View Transitions API (opt-in, voir motion.js vtOptIn) */
+::view-transition { pointer-events: none; }                 /* aucun geste bloqué pendant le fondu */
+html.mo-vt .ws > .pane.on > .pane-body { view-transition-name: nova-page; }
+/* Surfaces fixes au-dessus de la page : capturées à part, rendues VIVANTES au-dessus. */
+html.mo-vt .pv-companion { view-transition-name: nova-companion; }
+html.mo-vt .dock-fab:not([hidden]) { view-transition-name: nova-fab; }
+html.mo-vt #miniplayer.show { view-transition-name: nova-mini; }
+html.mo-vt #toasts { view-transition-name: nova-toasts; }
+
+/* La racine n'est PAS animée : rail, fond, barre de panneau restent vivants (la pilule
+   du rail glisse en direct pendant que la page change). */
+::view-transition-group(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(root) { display: none; }
+:is(::view-transition-group(nova-companion), ::view-transition-group(nova-fab), ::view-transition-group(nova-mini), ::view-transition-group(nova-toasts)) { animation: none; }
+:is(::view-transition-new(nova-companion), ::view-transition-new(nova-fab), ::view-transition-new(nova-mini), ::view-transition-new(nova-toasts)) { animation: none; }
+:is(::view-transition-old(nova-companion), ::view-transition-old(nova-fab), ::view-transition-old(nova-mini), ::view-transition-old(nova-toasts)) { display: none; }
+
+::view-transition-group(nova-page) { animation-duration: var(--motion-dur-page); animation-timing-function: var(--motion-ease-page); }
+::view-transition-old(nova-page) { animation: mo-page-out var(--motion-dur-quick) var(--motion-ease-std) both; }
+::view-transition-new(nova-page) { animation: mo-page-in var(--motion-dur-page) var(--motion-ease-page) 40ms both; }
+@keyframes mo-page-out { to { opacity: 0; transform: scale(var(--motion-scale-out)); } }
+@keyframes mo-page-in { from { opacity: 0; transform: translateY(calc(var(--motion-rise) * var(--mo-dir))); } }
+
+/* Mouvement réduit : fondu enchaîné seul. */
+html.mo-vt-reduce::view-transition-old(nova-page) { animation: mo-fade-out 140ms linear both; }
+html.mo-vt-reduce::view-transition-new(nova-page) { animation: mo-fade-in 160ms linear both; }
+html.mo-vt-reduce::view-transition-group(nova-page) { animation: none; }
+@keyframes mo-fade-out { to { opacity: 0; } }
+@keyframes mo-fade-in { from { opacity: 0; } }
+
+/* ── 2 · Pilule de sélection (FLIP) ─────────────────────────────────────── */
+.mo-host { isolation: isolate; }
+.mo-host-rel { position: relative; }
+.mo-pill { position: absolute; z-index: -1; box-sizing: border-box; pointer-events: none; transform-origin: 0 0; will-change: transform; contain: layout style; }
+.mo-pill > i { pointer-events: none; }
+.mo-landing { background: transparent !important; box-shadow: none !important; border-color: transparent !important; transition: none !important; }
+.mo-landing::before { opacity: 0 !important; }
+.mo-notrans, .mo-notrans::before { transition: none !important; }
+
+/* Anneau de focus : il se resserre sur l'élément (outline-offset : peinture seule). */
+html.mo-on :is(button, a[href], summary, [role="tab"], [role="button"], [role="radio"], [tabindex]:not([tabindex="-1"]):not(input):not(textarea)):focus-visible {
+  animation: mo-focus var(--motion-dur-quick) var(--motion-ease-out);
+}
+@keyframes mo-focus { from { outline-offset: 6px; outline-color: transparent; } }
+
+/* ── 3 · Défilement ─────────────────────────────────────────────────────────
+   Inertie native, aucun détournement JS ; « smooth » réservé aux sauts programmés
+   (NovaMotion.scrollTo) — jamais en CSS : le suivi du fil (scrollTop = scrollHeight)
+   doit rester instantané. */
+html.mo-on :is(.mod, .pane-body, .cs-list, .chatlog, .cs-log, .dock-log, .lv-list) { overscroll-behavior: contain; }
+html.mo-on .pane-body > .mod, html.mo-on .cs-list { scrollbar-gutter: stable; }
+
+/* Barres fines façon macOS : le pouce n'apparaît qu'au survol de la zone qui défile. */
+html.mo-on :is(.pane-body > .mod, .cs-list, .chatlog, .dock-log):not(:hover) { scrollbar-color: transparent transparent; }
+html.mo-on :is(.pane-body > .mod, .cs-list, .chatlog, .dock-log):not(:hover)::-webkit-scrollbar-thumb { background-color: transparent; }
+
+/* Listes longues : le moteur saute la peinture des lignes hors champ. Les 13 premières
+   lignes restent normales (listes courtes intactes, anneaux de focus non rognés).
+   flex-shrink: 0 obligatoire : un élément à taille contenue dans une colonne flex
+   (.cs-list, .ds-list) se laisse sinon écraser à 0 px. */
+html.mo-on .cs-list > :nth-child(n+14) { content-visibility: auto; contain-intrinsic-size: auto 54px; flex-shrink: 0; }
+html.mo-on .ds-row:nth-child(n+14) { content-visibility: auto; contain-intrinsic-size: auto 56px; flex-shrink: 0; }
+html.mo-on :is(.fx-list, .ds-list) > :nth-child(n+14) { content-visibility: auto; contain-intrinsic-size: auto 96px; flex-shrink: 0; }   /* flux Veille, listes DS */
+/* Fil de conversation : hauteurs très variables → seulement là où l'ancrage de défilement
+   (overflow-anchor) compense les tailles estimées ; sinon (WebKit sans ancrage) on s'abstient. */
+@supports (overflow-anchor: auto) {
+  html.mo-on :is(.chatlog, .cs-log) > .msg:nth-child(n+30) { content-visibility: auto; contain-intrinsic-size: auto 96px; flex-shrink: 0; }
+}
+
+/* Bord de défilement : quand du contenu passe sous la barre du panneau, celle-ci gagne
+   son liseré, un voile de verre et une ombre douce (fondu d'opacité, aucun flou animé). */
+html.mo-on :is(.pane, .fwin) > .pane-bar { position: relative; z-index: 1; isolation: isolate; border-bottom-color: transparent; transition: border-color var(--motion-dur-quick) var(--motion-ease-out); }
+html.mo-on :is(.pane, .fwin)[data-mo-edge] > .pane-bar { border-bottom-color: var(--hairline, rgb(127 127 127 / .2)); }
+html.mo-on :is(.pane, .fwin) > .pane-bar::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--pane, rgb(127 127 127 / .08)); opacity: 0;
+  transition: opacity var(--motion-dur-quick) var(--motion-ease-out);
+}
+html.mo-on :is(.pane, .fwin) > .pane-bar::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 14px; pointer-events: none;
+  background: linear-gradient(180deg, rgb(var(--shadow-rgb, 0 0 0) / .16), rgb(var(--shadow-rgb, 0 0 0) / 0));
+  opacity: 0; transition: opacity var(--motion-dur-quick) var(--motion-ease-out);
+}
+html.mo-on :is(.pane, .fwin)[data-mo-edge] > .pane-bar::before { opacity: .55; }
+html.mo-on :is(.pane, .fwin)[data-mo-edge] > .pane-bar::after { opacity: 1; }
+html[data-material="sentinelle"].mo-on :is(.pane, .fwin) > .pane-bar::after { display: none; }   /* contraste élevé : liseré seul */
+
+/* ── 4 · Sobriété ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html.mo-on :focus-visible { animation: none; }
+  .mo-pill { display: none; }
+}
+html[data-reduce-motion="1"].mo-on :focus-visible { animation: none; }
+html[data-idle="1"] .mo-pill { display: none; }
+html[data-idle="1"].mo-on :focus-visible { animation: none; }

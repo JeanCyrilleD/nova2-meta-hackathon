@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "format": "png",
+  "size": 1024,
+  "background": "transparent",
+  "note": "Assets HD pour l'intégration Nova 2 (1024x1024 PNG fond transparent)",
+  "species": {
+    "panda": {
+      "dir": "panda/",
+      "states": {
+        "idle": "repos.png",
+        "listening": "casque.png",
+        "thinking": "reflexion.png",
+        "speaking": "vis_MBP.png",
+        "tool": "portable.png",
+        "typing": "portable.png",
+        "reading": "lunettes.png",
+        "approval": "approbation.png",
+        "done": "celebration.png",
+        "celebrate": "celebration.png",
+        "error": "error_resolve.png",
+        "error_resolve": "error_resolve.png",
+        "sleep": "sommeil.png",
+        "wink": "clin_d_oeil.png",
+        "blink": "clignement.png"
+      },
+      "visemes": {
+        "vis_A": "vis_A.png",
+        "vis_E": "vis_E.png",
+        "vis_I": "vis_I.png",
+        "vis_O": "vis_O.png",
+        "vis_U": "vis_U.png",
+        "vis_MBP": "vis_MBP.png",
+        "vis_FV": "vis_FV.png"
+      },
+      "smile": "smileDuchenne.png",
+      "wink": "clin_d_oeil.png",
+      "blink": "clignement.png"
+    },
+    "pandaroux": {
+      "dir": "pandaroux/",
+      "states": {
+        "idle": "repos.png",
+        "listening": "casque.png",
+        "thinking": "reflexion.png",
+        "speaking": "vis_MBP.png",
+        "tool": "portable.png",
+        "typing": "portable.png",
+        "reading": "lunettes.png",
+        "approval": "approbation.png",
+        "done": "celebration.png",
+        "celebrate": "celebration.png",
+        "error": "error_resolve.png",
+        "error_resolve": "error_resolve.png",
+        "sleep": "sommeil.png",
+        "wink": "clin_d_oeil.png",
+        "blink": "clignement.png"
+      },
+      "visemes": {
+        "vis_A": "vis_A.png",
+        "vis_E": "vis_E.png",
+        "vis_I": "vis_I.png",
+        "vis_O": "vis_O.png",
+        "vis_U": "vis_U.png",
+        "vis_MBP": "vis_MBP.png",
+        "vis_FV": "vis_FV.png"
+      },
+      "smile": "smileDuchenne.png",
+      "wink": "clin_d_oeil.png",
+      "blink": "clignement.png"
+    }
+  },
+  "icones_ceramique": {
+    "dir": "icones_ceramique/",
+    "items": [
+      { "id": "accueil", "fichier": "01_accueil.png", "symbole": "House" },
+      { "id": "nova", "fichier": "02_nova.png", "symbole": "ChatCircleDots" },
+      { "id": "feeds", "fichier": "03_feeds.png", "symbole": "Radar" },
+      { "id": "messages", "fichier": "04_messages.png", "symbole": "Tray" },
+      { "id": "dots", "fichier": "05_dots.png", "symbole": "Robot" },
+      { "id": "finance", "fichier": "06_finance.png", "symbole": "ChartLineUp" },
+      { "id": "conseil", "fichier": "07_conseil.png", "symbole": "UsersThree" },
+      { "id": "livrables", "fichier": "08_livrables.png", "symbole": "FileText" },
+      { "id": "agenda", "fichier": "09_agenda.png", "symbole": "CalendarDots" },
+      { "id": "projets", "fichier": "10_projets.png", "symbole": "Kanban" },
+      { "id": "savoir", "fichier": "11_savoir.png", "symbole": "Books" },
+      { "id": "coffre", "fichier": "12_coffre.png", "symbole": "Vault" }
+    ]
+  }
+}

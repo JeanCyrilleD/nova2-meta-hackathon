@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="fr" data-theme="harmattan-nuit">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="same-origin"><!-- PHASE 1 : Referer interne seulement (preuve de provenance nova://app), jamais vers l extérieur -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova — Assistant</title>
+<link rel="stylesheet" href="css/app.css?v=29.10">
+<link rel="stylesheet" href="css/identite.css?v=30.10k">  <!-- 30/10 : identité « Promesse » -->
+<link rel="stylesheet" href="css/tokens.css?v=30.10a">  <!-- 30/10 09:16 : jetons Gemini « NOVA Liquid Glass » + pont vers les variables Nova -->
+<script src="js/appearance-boot.js"></script>
+</head>
+<body class="panel-body">
+<div class="panel-wrap">
+  <div class="panel-head" id="p-head"></div>
+  <div class="panel-log" id="p-log"></div>
+  <div class="composer" id="p-composer"></div>
+</div>
+<script type="module" src="js/panel.js"></script>
+</body>
+</html>

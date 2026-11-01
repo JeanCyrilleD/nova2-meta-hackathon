@@ -1,0 +1,942 @@
+{
+ "version": 2,
+ "format": "webp",
+ "size": 768,
+ "sizes": {
+  "large": 768,
+  "small": 384,
+  "smallDir": "384/",
+  "smallMaxCss": 200
+ },
+ "sr": "x4plus",
+ "species": {
+  "panda": {
+   "dir": "panda/",
+   "dirSmall": "panda/384/",
+   "states": {
+    "idle": "hd_repos.webp",
+    "listening": "hd_casque.webp",
+    "thinking": "hd_reflexion.webp",
+    "speaking": "hd_repos.webp",
+    "tool": "typing.webp",
+    "typing": "typing.webp",
+    "reading": "hd_lunettes.webp",
+    "approval": "hd_approbation.webp",
+    "done": "hd_celebration.webp",
+    "celebrate": "hd_celebration.webp",
+    "error": "error_resolve.webp",
+    "error_resolve": "error_resolve.webp",
+    "sleep": "hd_sommeil.webp",
+    "wink": "hd_clin_d_oeil.webp"
+   },
+   "visemes": {
+    "vis_A": "hd_vis_A.webp",
+    "vis_E": "hd_vis_E.webp",
+    "vis_I": "hd_vis_I.webp",
+    "vis_O": "hd_vis_O.webp",
+    "vis_U": "hd_vis_U.webp",
+    "vis_MBP": "hd_vis_MBP.webp",
+    "vis_FV": "hd_vis_FV.webp"
+   },
+   "smile": "hd_smileDuchenne.webp",
+   "wink": "hd_clin_d_oeil.webp",
+   "blink": "hd_clignement.webp",
+   "files": [
+    "approval.webp",
+    "error_resolve.webp",
+    "hd_approbation.webp",
+    "hd_casque.webp",
+    "hd_celebration.webp",
+    "hd_clignement.webp",
+    "hd_clin_d_oeil.webp",
+    "hd_lunettes.webp",
+    "hd_reflexion.webp",
+    "hd_repos.webp",
+    "hd_smileDuchenne.webp",
+    "hd_sommeil.webp",
+    "hd_vis_A.webp",
+    "hd_vis_E.webp",
+    "hd_vis_FV.webp",
+    "hd_vis_I.webp",
+    "hd_vis_MBP.webp",
+    "hd_vis_O.webp",
+    "hd_vis_U.webp",
+    "listening.webp",
+    "reading.webp",
+    "sleep.webp",
+    "smileDuchenne.webp",
+    "thinking.webp",
+    "typing.webp",
+    "vis_A.webp",
+    "vis_E.webp",
+    "vis_FV.webp",
+    "vis_I.webp",
+    "vis_MBP.webp",
+    "vis_O.webp",
+    "vis_U.webp",
+    "wink.webp"
+   ],
+   "bytes": 687820,
+   "bytes_small": 215236,
+   "sources": {
+    "vis_A": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      40,
+      1010,
+      315,
+      1410
+     ],
+     "align": [
+      1.01,
+      -1.03,
+      74
+     ]
+    },
+    "vis_E": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      332,
+      1010,
+      607,
+      1410
+     ],
+     "align": [
+      1.023,
+      -0.15,
+      132
+     ]
+    },
+    "vis_I": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      624,
+      1010,
+      899,
+      1410
+     ],
+     "align": [
+      1.006,
+      0.09,
+      173
+     ]
+    },
+    "vis_O": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      916,
+      1010,
+      1191,
+      1410
+     ],
+     "align": [
+      1.014,
+      0.22,
+      96
+     ]
+    },
+    "vis_U": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      1208,
+      1010,
+      1483,
+      1410
+     ],
+     "align": [
+      1.002,
+      -0.09,
+      182
+     ]
+    },
+    "vis_MBP": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      1500,
+      1010,
+      1775,
+      1410
+     ],
+     "align": [
+      1,
+      0,
+      -1
+     ]
+    },
+    "vis_FV": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      1792,
+      1010,
+      2067,
+      1410
+     ],
+     "align": [
+      1.001,
+      0.11,
+      205
+     ]
+    },
+    "smileDuchenne": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      2084,
+      1010,
+      2359,
+      1410
+     ],
+     "align": [
+      1.002,
+      0.07,
+      65
+     ]
+    },
+    "idle": {
+     "board": "fb98f00b-image.png",
+     "cell": [
+      1500,
+      1010,
+      1775,
+      1410
+     ],
+     "align": [
+      1,
+      0,
+      -1
+     ]
+    },
+    "listening": {
+     "board": "fb98f00b-image.png",
+     "medallion_circle": [
+      1854.8,
+      365.6,
+      152.6
+     ],
+     "patched_from": "05_d42d5aea.jpg",
+     "patch_inliers": 256
+    },
+    "typing": {
+     "board": "fb98f00b-image.png",
+     "medallion_circle": [
+      2157.6,
+      528.8,
+      149.5
+     ],
+     "patched_from": "06_667b6599.jpg",
+     "patch_inliers": 178
+    },
+    "reading": {
+     "board": "fb98f00b-image.png",
+     "medallion_circle": [
+      1908.9,
+      781.8,
+      157.4
+     ],
+     "patched_from": "07_7b828b81.jpg",
+     "patch_inliers": 340
+    },
+    "approval": {
+     "board": "fb98f00b-image.png",
+     "view_head": [
+      310,
+      225,
+      262
+     ]
+    },
+    "thinking": {
+     "board": "fb98f00b-image.png",
+     "view_head": [
+      1378,
+      225,
+      272
+     ]
+    },
+    "error_resolve": {
+     "board": "fb98f00b-image.png",
+     "view_head": [
+      955,
+      220,
+      300
+     ]
+    },
+    "wink": {
+     "clip": "ef542a36-clips_nova_panda.mp4",
+     "frame_s": 5.5,
+     "fused_frames": 9,
+     "cell": [
+      450,
+      571,
+      715,
+      763
+     ]
+    },
+    "sleep": {
+     "clip": "ef542a36-clips_nova_panda.mp4",
+     "frame_s": 5.5,
+     "fused_frames": 14,
+     "cell": [
+      722,
+      805,
+      987,
+      997
+     ]
+    }
+   },
+   "labels_inpainted": [
+    [
+     2071,
+     176,
+     2315,
+     205
+    ],
+    [
+     2071,
+     421,
+     2315,
+     450
+    ],
+    [
+     2071,
+     681,
+     2315,
+     710
+    ]
+   ],
+   "hd": {
+    "dir": "/tmp/claude-0/-home-claude/cf13de1f-a427-5d1e-b2e0-d1fc77ead02b/scratchpad/hd_sel2",
+    "complete_mouth_series": true,
+    "used_for_idle": true,
+    "defringe_px": 1,
+    "head_box": [
+     512.0,
+     148,
+     686.0
+    ],
+    "files": {
+     "approbation": {
+      "src": "panda/approbation.png",
+      "align": null,
+      "bytes": 71540
+     },
+     "casque": {
+      "src": "panda/casque.png",
+      "align": null,
+      "bytes": 184460
+     },
+     "celebration": {
+      "src": "panda/celebration.png",
+      "align": null,
+      "bytes": 87552
+     },
+     "clignement": {
+      "src": "panda/clignement.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 67788
+     },
+     "clin_d_oeil": {
+      "src": "panda/clin_d_oeil.png",
+      "align": null,
+      "bytes": 98928
+     },
+     "lunettes": {
+      "src": "panda/lunettes.png",
+      "align": null,
+      "bytes": 82606
+     },
+     "reflexion": {
+      "src": "panda/reflexion.png",
+      "align": null,
+      "bytes": 71176
+     },
+     "repos": {
+      "src": "panda/repos.png",
+      "align": null,
+      "bytes": 69170
+     },
+     "smileDuchenne": {
+      "src": "panda/smileDuchenne.png",
+      "align": {
+       "scale": 0.9867,
+       "rot": 0.87,
+       "dx": 0.81,
+       "dy": 34.01,
+       "inliers": 46
+      },
+      "bytes": 82436
+     },
+     "sommeil": {
+      "src": "panda/sommeil.png",
+      "align": null,
+      "bytes": 70840
+     },
+     "vis_A": {
+      "src": "panda/vis_A.png",
+      "align": {
+       "scale": 1.0,
+       "rot": -0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 68786
+     },
+     "vis_E": {
+      "src": "panda/vis_E.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 69554
+     },
+     "vis_FV": {
+      "src": "panda/vis_FV.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 69138
+     },
+     "vis_I": {
+      "src": "panda/vis_I.png",
+      "align": {
+       "scale": 1.0,
+       "rot": -0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 68818
+     },
+     "vis_MBP": {
+      "src": "panda/vis_MBP.png",
+      "align": {
+       "scale": 1.0,
+       "rot": -0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 69170
+     },
+     "vis_O": {
+      "src": "panda/vis_O.png",
+      "align": {
+       "scale": 1.0,
+       "rot": -0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 69150
+     },
+     "vis_U": {
+      "src": "panda/vis_U.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 69098
+     }
+    }
+   }
+  },
+  "pandaroux": {
+   "dir": "pandaroux/",
+   "dirSmall": "pandaroux/384/",
+   "states": {
+    "idle": "hd_repos.webp",
+    "listening": "listening.webp",
+    "thinking": "hd_reflexion.webp",
+    "speaking": "hd_repos.webp",
+    "tool": "typing.webp",
+    "typing": "typing.webp",
+    "reading": "hd_lunettes.webp",
+    "approval": "approval.webp",
+    "done": "smileDuchenne.webp",
+    "celebrate": "smileDuchenne.webp",
+    "error": "error_resolve.webp",
+    "error_resolve": "error_resolve.webp",
+    "sleep": "hd_sommeil.webp",
+    "wink": "hd_clin_d_oeil.webp"
+   },
+   "visemes": {
+    "vis_A": "hd_vis_A.webp",
+    "vis_E": "hd_vis_E.webp",
+    "vis_I": "hd_vis_I.webp",
+    "vis_O": "hd_vis_O.webp",
+    "vis_U": "hd_vis_U.webp",
+    "vis_MBP": "hd_vis_MBP.webp",
+    "vis_FV": "hd_vis_FV.webp"
+   },
+   "smile": "smileDuchenne.webp",
+   "wink": "hd_clin_d_oeil.webp",
+   "blink": "hd_clignement.webp",
+   "files": [
+    "approval.webp",
+    "error_resolve.webp",
+    "hd_clignement.webp",
+    "hd_clin_d_oeil.webp",
+    "hd_lunettes.webp",
+    "hd_reflexion.webp",
+    "hd_repos.webp",
+    "hd_sommeil.webp",
+    "hd_vis_A.webp",
+    "hd_vis_E.webp",
+    "hd_vis_FV.webp",
+    "hd_vis_I.webp",
+    "hd_vis_MBP.webp",
+    "hd_vis_O.webp",
+    "hd_vis_U.webp",
+    "listening.webp",
+    "reading.webp",
+    "sleep.webp",
+    "smileDuchenne.webp",
+    "thinking.webp",
+    "typing.webp",
+    "vis_A.webp",
+    "vis_E.webp",
+    "vis_FV.webp",
+    "vis_I.webp",
+    "vis_MBP.webp",
+    "vis_O.webp",
+    "vis_U.webp",
+    "wink.webp"
+   ],
+   "bytes": 937818,
+   "bytes_small": 311960,
+   "sources": {
+    "vis_A": {
+     "board": "502996a9-image.png",
+     "cell": [
+      40,
+      1003,
+      315,
+      1410
+     ],
+     "align": [
+      1.016,
+      0.0,
+      177
+     ]
+    },
+    "vis_E": {
+     "board": "502996a9-image.png",
+     "cell": [
+      332,
+      1003,
+      607,
+      1410
+     ],
+     "align": [
+      1.013,
+      0.16,
+      194
+     ]
+    },
+    "vis_I": {
+     "board": "502996a9-image.png",
+     "cell": [
+      624,
+      1003,
+      899,
+      1410
+     ],
+     "align": [
+      1.013,
+      0.15,
+      210
+     ]
+    },
+    "vis_O": {
+     "board": "502996a9-image.png",
+     "cell": [
+      916,
+      1003,
+      1191,
+      1410
+     ],
+     "align": [
+      1.017,
+      -0.16,
+      164
+     ]
+    },
+    "vis_U": {
+     "board": "502996a9-image.png",
+     "cell": [
+      1208,
+      1003,
+      1483,
+      1410
+     ],
+     "align": [
+      0.998,
+      0.09,
+      279
+     ]
+    },
+    "vis_MBP": {
+     "board": "502996a9-image.png",
+     "cell": [
+      1500,
+      1003,
+      1775,
+      1410
+     ],
+     "align": [
+      1,
+      0,
+      -1
+     ]
+    },
+    "vis_FV": {
+     "board": "502996a9-image.png",
+     "cell": [
+      1792,
+      1003,
+      2067,
+      1410
+     ],
+     "align": [
+      0.997,
+      -0.11,
+      246
+     ]
+    },
+    "smileDuchenne": {
+     "board": "502996a9-image.png",
+     "cell": [
+      2084,
+      1003,
+      2359,
+      1410
+     ],
+     "align": [
+      1.0,
+      0.24,
+      101
+     ]
+    },
+    "idle": {
+     "board": "502996a9-image.png",
+     "cell": [
+      1500,
+      1003,
+      1775,
+      1410
+     ],
+     "align": [
+      1,
+      0,
+      -1
+     ]
+    },
+    "listening": {
+     "board": "502996a9-image.png",
+     "box": [
+      1816,
+      196,
+      2077,
+      428
+     ],
+     "patched_from": "09_eaa39622.jpg",
+     "patch_inliers": 498
+    },
+    "typing": {
+     "board": "502996a9-image.png",
+     "box": [
+      2005,
+      432,
+      2314,
+      672
+     ],
+     "patched_from": "10_510cc7d5.jpg",
+     "patch_inliers": 186
+    },
+    "reading": {
+     "board": "502996a9-image.png",
+     "box": [
+      2043,
+      689,
+      2314,
+      885
+     ],
+     "patched_from": "11_5da9ba73.jpg",
+     "patch_inliers": 240
+    },
+    "approval": {
+     "board": "502996a9-image.png",
+     "view_head": [
+      305,
+      218,
+      292
+     ]
+    },
+    "thinking": {
+     "board": "502996a9-image.png",
+     "view_head": [
+      1512,
+      212,
+      262
+     ]
+    },
+    "error_resolve": {
+     "board": "502996a9-image.png",
+     "view_head": [
+      975,
+      205,
+      300
+     ]
+    },
+    "wink": {
+     "clip": "784e98dc-clips_nova_pandaroux.mp4",
+     "frame_s": 5.5,
+     "fused_frames": 8,
+     "cell": [
+      450,
+      571,
+      715,
+      763
+     ]
+    },
+    "sleep": {
+     "clip": "784e98dc-clips_nova_pandaroux.mp4",
+     "frame_s": 5.5,
+     "fused_frames": 14,
+     "cell": [
+      722,
+      805,
+      987,
+      997
+     ]
+    }
+   },
+   "labels_inpainted": [
+    [
+     2071,
+     176,
+     2315,
+     205
+    ],
+    [
+     2071,
+     421,
+     2315,
+     450
+    ],
+    [
+     2071,
+     681,
+     2315,
+     710
+    ]
+   ],
+   "hd": {
+    "dir": "/tmp/claude-0/-home-claude/cf13de1f-a427-5d1e-b2e0-d1fc77ead02b/scratchpad/hd_sel2",
+    "complete_mouth_series": true,
+    "used_for_idle": true,
+    "defringe_px": 2,
+    "head_box": [
+     511.0,
+     144,
+     716.0
+    ],
+    "files": {
+     "clignement": {
+      "src": "pandaroux/clignement.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85576
+     },
+     "clin_d_oeil": {
+      "src": "pandaroux/clin_d_oeil.png",
+      "align": null,
+      "bytes": 86040
+     },
+     "lunettes": {
+      "src": "pandaroux/lunettes.png",
+      "align": null,
+      "bytes": 86162
+     },
+     "reflexion": {
+      "src": "pandaroux/reflexion.png",
+      "align": null,
+      "bytes": 85606
+     },
+     "repos": {
+      "src": "pandaroux/repos.png",
+      "align": null,
+      "bytes": 85530
+     },
+     "sommeil": {
+      "src": "pandaroux/sommeil.png",
+      "align": null,
+      "bytes": 85576
+     },
+     "vis_A": {
+      "src": "pandaroux/vis_A.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85006
+     },
+     "vis_E": {
+      "src": "pandaroux/vis_E.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85286
+     },
+     "vis_FV": {
+      "src": "pandaroux/vis_FV.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85534
+     },
+     "vis_I": {
+      "src": "pandaroux/vis_I.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85428
+     },
+     "vis_MBP": {
+      "src": "pandaroux/vis_MBP.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85530
+     },
+     "vis_O": {
+      "src": "pandaroux/vis_O.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85480
+     },
+     "vis_U": {
+      "src": "pandaroux/vis_U.png",
+      "align": {
+       "scale": 1.0,
+       "rot": 0.0,
+       "dx": 0.0,
+       "dy": 0.0,
+       "inliers": 500
+      },
+      "bytes": 85470
+     }
+    }
+   }
+  },
+  "pandaroux_full": {
+   "dir": "pandaroux_full/",
+   "dirSmall": "pandaroux_full/384/",
+   "aspect": 0.75,
+   "full": true,
+   "states": {
+    "idle": "full_repos.webp",
+    "listening": "full_ecoute.webp",
+    "thinking": "full_reflexion.webp",
+    "speaking": "full_repos.webp",
+    "tool": "full_clavier.webp",
+    "typing": "full_clavier.webp",
+    "reading": "full_lunettes.webp",
+    "approval": "full_approbation.webp",
+    "done": "full_celebration.webp",
+    "celebrate": "full_celebration.webp",
+    "error": "full_souci.webp",
+    "error_resolve": "full_souci.webp",
+    "sleep": "full_sommeil.webp",
+    "wink": "full_clin_d_oeil.webp",
+    "wave": "full_salut.webp"
+   },
+   "visemes": {
+    "vis_A": "full_vis_A.webp",
+    "vis_E": "full_vis_E.webp",
+    "vis_I": "full_vis_I.webp",
+    "vis_O": "full_vis_O.webp",
+    "vis_U": "full_vis_U.webp",
+    "vis_MBP": "full_vis_MBP.webp",
+    "vis_FV": "full_vis_FV.webp"
+   },
+   "smile": "full_sourire.webp",
+   "wink": "full_clin_d_oeil.webp",
+   "blink": "full_clignement.webp",
+   "files": [
+    "full_approbation.webp",
+    "full_celebration.webp",
+    "full_clavier.webp",
+    "full_clignement.webp",
+    "full_clin_d_oeil.webp",
+    "full_ecoute.webp",
+    "full_lunettes.webp",
+    "full_reflexion.webp",
+    "full_repos.webp",
+    "full_salut.webp",
+    "full_sommeil.webp",
+    "full_souci.webp",
+    "full_sourire.webp",
+    "full_vis_A.webp",
+    "full_vis_E.webp",
+    "full_vis_FV.webp",
+    "full_vis_I.webp",
+    "full_vis_MBP.webp",
+    "full_vis_O.webp",
+    "full_vis_U.webp"
+   ],
+   "sources": {
+    "origine": "Gemini, 20 poses corps entier sur fond #00FF00 (25/10), détourées et recomposées (expressions sur l'image maître)"
+   }
+  }
+ },
+ "alias": {
+  "renard": "pandaroux",
+  "red": "pandaroux",
+  "panda-roux": "pandaroux"
+ }
+}

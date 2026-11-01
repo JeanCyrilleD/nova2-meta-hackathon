@@ -1,0 +1,152 @@
+{
+ "fps": 20,
+ "cell": 320,
+ "characters": {
+  "panda": {
+   "states": {
+    "idle": {
+     "atlas": "panda_idle.jpg",
+     "n": 46,
+     "cols": 8,
+     "rows": 6,
+     "pingpong": true,
+     "once": false
+    },
+    "listening": {
+     "atlas": "panda_listening.jpg",
+     "n": 22,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "thinking": {
+     "atlas": "panda_thinking.jpg",
+     "n": 30,
+     "cols": 8,
+     "rows": 4,
+     "pingpong": true,
+     "once": false
+    },
+    "speaking": {
+     "atlas": "panda_speaking.jpg",
+     "n": 20,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "celebrate": {
+     "atlas": "panda_celebrate.jpg",
+     "n": 30,
+     "cols": 8,
+     "rows": 4,
+     "pingpong": true,
+     "once": false
+    },
+    "approval": {
+     "atlas": "panda_approval.jpg",
+     "n": 18,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "sleep": {
+     "atlas": "panda_sleep.jpg",
+     "n": 12,
+     "cols": 8,
+     "rows": 2,
+     "pingpong": true,
+     "once": false
+    },
+    "done": {
+     "atlas": "panda_done.jpg",
+     "n": 20,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": false,
+     "once": true
+    }
+   }
+  },
+  "panda_roux": {
+   "states": {
+    "idle": {
+     "atlas": "panda_roux_idle.jpg",
+     "n": 32,
+     "cols": 8,
+     "rows": 4,
+     "pingpong": true,
+     "once": false
+    },
+    "sleep": {
+     "atlas": "panda_roux_sleep.jpg",
+     "n": 28,
+     "cols": 8,
+     "rows": 4,
+     "pingpong": true,
+     "once": false
+    },
+    "wake": {
+     "atlas": "panda_roux_wake.jpg",
+     "n": 52,
+     "cols": 8,
+     "rows": 7,
+     "pingpong": false,
+     "once": true
+    },
+    "thinking": {
+     "atlas": "panda_roux_thinking.jpg",
+     "n": 22,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "speaking": {
+     "atlas": "panda_roux_speaking.jpg",
+     "n": 20,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "listening": {
+     "atlas": "panda_roux_listening.jpg",
+     "n": 20,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "celebrate": {
+     "atlas": "panda_roux_celebrate.jpg",
+     "n": 18,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "approval": {
+     "atlas": "panda_roux_approval.jpg",
+     "n": 20,
+     "cols": 8,
+     "rows": 3,
+     "pingpong": true,
+     "once": false
+    },
+    "done": {
+     "atlas": "panda_roux_done.jpg",
+     "n": 12,
+     "cols": 8,
+     "rows": 2,
+     "pingpong": false,
+     "once": true
+    }
+   }
+  }
+ },
+ "version": "2026-10-30 23h",
+ "source": "Vidéos Veo d'Ahadi (fond vert) découpées en planches 20 i/s, une par état ; détourage en direct (avatar-video.js)"
+}

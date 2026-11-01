@@ -1,0 +1,1193 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   NOVA — IDENTITÉ « PROMESSE » · SYSTÈME DE DESIGN (v2, 30/10/2026)
+   Nova × Ahadi — « une âme, deux cœurs ». Note de marque : docs/identite/IDENTITE.md.
+   Chargée APRÈS app.css, sans le modifier. Portée : html[data-identite] (posé par
+   core.js applyTheme et appearance-boot.js avant le premier paint).
+
+   Thèmes (chacun avec un vrai Jour et une vraie Nuit) : HARMATTAN (signature),
+   FLEUVE (travail calme), SENTINELLE (contraste élevé, opaque, zéro flou).
+
+   ── JETONS PUBLICS (à consommer par motion.css, layouts.css, modules…) ──────────
+   Typographie — familles système Apple via WebKit (SF Pro / New York / SF Mono,
+   rien d'embarqué) :
+     --f-ui        -apple-system (SF Pro Text/Display, taille optique auto)
+     --f-display   idem (titres) · --f-serif  ui-serif (New York, accents seulement)
+     --f-mono      ui-monospace (SF Mono) · --f-numeric  ui-rounded (SF Pro Rounded, chiffres)
+   Rampe Apple ×1.15 (raccourci font: + interlettrage --ls-*) :
+     --type-hero (34/40 bold) · --type-large-title (30/37) · --type-title-1 (25/31)
+     --type-title-2 (19.5/25) · --type-headline (15/20 semibold) · --type-body (15/22)
+     --type-callout (14/20) · --type-footnote (12.5/16) · --type-caption (11.5/14)
+   Espacement   --space-1..8   4 · 8 · 12 · 16 · 20 · 24 · 32 · 48 px
+   Rayons       --radius-xs 6 · -sm 9 · -md 12 · -lg 16 · -xl 22 · -pill 999 · --radius-tile 28 %
+   Élévation    --elev-1 (posé) … --elev-5 (modale) — piles contact + ambiante, teintées par thème
+   Verre        --glass-1 (carte, simulé) · --glass-2 (flottant fixe, flou) · --glass-3 (menu/modale)
+                --glass-rim (liseré spéculaire en dégradé, à poser en border-box)
+                --glass-blur-fixed (flou autorisé : rail, barre, compositeur, menus SEULEMENT)
+   Mouvement    --dur-1 120 · --dur-2 180 · --dur-3 260 · --dur-4 420 ms
+                --ease-standard · --ease-out · --ease-spring
+   Couleurs     --accent, --accent-ink, --on-accent, --text-1..3, --pane, --pane-solid,
+                --hairline, --ok/--warn/--bad, --id-tint (teinte d'ambiance), --id-star (or)
+   Tuile d'icône  .ri (rail) : 26 px, rayon --radius-tile, ombre --elev-tile ; accepte
+                  background-image OU un <img> enfant (studio d'icônes 3D, icons3d/).
+
+   PERFORMANCE (contrainte dure) : backdrop-filter UNIQUEMENT sur des surfaces fixes
+   (rail, barre, compositeur, menus), rayon modeste, jamais animé. Tout le reste imite
+   le verre (dégradés, liserés, ombres, grain statique). Seuls transform/opacity bougent.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Socle commun : typographie système, géométrie, élévation, mouvement ── */
+html[data-identite] {
+  /* Familles système (macOS : SF Pro, New York, SF Mono, SF Pro Rounded) */
+  --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif;
+  --f-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Helvetica Neue", sans-serif;
+  --f-serif: ui-serif, "New York", "Iowan Old Style", Georgia, serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --f-numeric: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+  --f-editorial: var(--f-display); --f-round: var(--f-numeric);
+  --font: var(--f-ui); --font-mono: var(--f-mono);
+  --fs-body: 15px; --lh-body: 1.47;
+  /* Rampe typographique Apple ×1.15 */
+  --type-hero: 700 34px/40px var(--f-display);          --ls-hero: -.022em;
+  --type-large-title: 700 30px/37px var(--f-display);   --ls-large-title: -.018em;
+  --type-title-1: 700 25px/31px var(--f-display);       --ls-title-1: -.014em;
+  --type-title-2: 600 19.5px/25px var(--f-display);     --ls-title-2: -.01em;
+  --type-headline: 600 15px/20px var(--f-ui);           --ls-headline: -.006em;
+  --type-body: 400 15px/22px var(--f-ui);               --ls-body: -.004em;
+  --type-callout: 400 14px/20px var(--f-ui);            --ls-callout: -.002em;
+  --type-footnote: 400 12.5px/16px var(--f-ui);         --ls-footnote: 0em;
+  --type-caption: 400 11.5px/14px var(--f-ui);          --ls-caption: .006em;
+  /* compat. v1 */
+  --t-hero: var(--type-hero); --t-title: var(--type-large-title); --t-head: var(--type-title-2);
+  --t-label: 600 11px/1.2 var(--f-ui);
+  --display-soft: normal;
+  /* Espacement */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 48px;
+  /* Rayons */
+  --radius-xs: 6px; --radius-sm: 9px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 22px; --radius-pill: 999px; --radius-tile: 28%;
+  --r-sm: var(--radius-sm); --r-md: var(--radius-md); --r-card: 18px; --r-lg: var(--radius-xl);
+  /* Élévation (piles contact + ambiante ; la couleur d'ombre suit le thème) */
+  --elev-1: 0 1px 1px rgb(var(--shadow-rgb) / .22), 0 2px 6px -2px rgb(var(--shadow-rgb) / .28);
+  --elev-2: 0 1px 1px rgb(var(--shadow-rgb) / .3), 0 4px 10px -4px rgb(var(--shadow-rgb) / .4), 0 12px 24px -16px rgb(var(--shadow-rgb) / .5);
+  --elev-3: 0 1px 1px rgb(var(--shadow-rgb) / .35), 0 3px 8px -2px rgb(var(--shadow-rgb) / .38), 0 22px 44px -20px rgb(var(--shadow-rgb) / .7);
+  --elev-4: 0 1px 2px rgb(var(--shadow-rgb) / .35), 0 8px 18px -6px rgb(var(--shadow-rgb) / .45), 0 32px 64px -26px rgb(var(--shadow-rgb) / .8);
+  --elev-5: 0 0 0 .5px rgb(var(--shadow-rgb) / .2), 0 12px 28px -8px rgb(var(--shadow-rgb) / .5), 0 48px 96px -32px rgb(var(--shadow-rgb) / .9);
+  --elev-tile: 0 1px 1.5px rgb(var(--shadow-rgb) / .35), 0 4px 9px -3px rgb(var(--shadow-rgb) / .5);
+  /* Mouvement */
+  --dur-1: 120ms; --dur-2: 180ms; --dur-3: 260ms; --dur-4: 420ms;
+  --ease-standard: cubic-bezier(.2, 0, 0, 1); --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-spring: cubic-bezier(.34, 1.36, .64, 1);
+  --id-ease: var(--ease-out); --id-fast: 140ms; --id-med: 220ms;
+  /* Palette de marque (fixe, tous thèmes) */
+  --id-laterite: #D9552C; --id-ember: #E8643A; --id-gold: #F2B544; --id-indigo: #2A2E7A; --id-sand: #ECE3D3; --id-niger: #1C6B74;
+  /* CAFU : la charte des livrables reste exacte */
+  --cafu-red: #D93226; --cafu-deep: #C00000; --cafu-orange: #F0A22E; --cafu-sand: #ECE9E3;
+  /* Matière liquid glass */
+  --lg-blur-rail: blur(18px) saturate(165%);
+  --lg-blur-float: blur(16px) saturate(170%);
+  --glass-blur-fixed: var(--lg-blur-rail);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 2 · HARMATTAN — Nuit (signature) : ciel indigo, braise de latérite, or d'étoile ── */
+html[data-material="harmattan"][data-mode="nuit"] {
+  --ground: #0A0C1D; --ground-2: #10132B;
+  --glass-rgb: 22 25 52; --glass-a: .6; --glass-strong: rgb(24 27 56 / .9);
+  --glass-edge: inset 0 1px 0 rgb(255 232 205 / .16), inset 0 0 0 .5px rgb(255 232 205 / .1);
+  --pane: rgb(14 17 38 / .88); --pane-solid: #12152E; --paper: #151935;
+  --fill-1: rgb(255 240 220 / .05); --fill-2: rgb(255 240 220 / .085); --fill-3: rgb(255 240 220 / .125);
+  --hairline: rgb(255 232 205 / .1); --border-strong: rgb(255 232 205 / .2);
+  --text-1: #F5EEE3; --text-2: rgb(245 238 227 / .76); --text-3: rgb(245 238 227 / .58);
+  --accent: #C84A23; --accent-ink: #FF9A6E; --on-accent: #FFFFFF;
+  --accent-soft: rgb(232 100 58 / .17); --accent-ring: rgb(255 154 110 / .45); --accent-halo: rgb(232 100 58 / .26);
+  --gold-ink: #F2C46B;
+  --agent: #7B80F0; --agent-ink: #A9ADFF; --agent-soft: rgb(123 128 240 / .2);
+  --ok: #4FD18B; --warn: #F2C46B; --bad: #FF6B5B; --ok-text: #8BE5B3; --warn-text: #F7D58F; --bad-text: #FF9C90;
+  --on-ok: #03160B; --on-warn: #241700; --on-bad: #2B0A06; --on-info: #FFFFFF;
+  --shadow-1: 0 1px 2px rgb(2 3 14 / .4), 0 6px 16px -8px rgb(2 3 14 / .6);
+  --shadow-2: 0 2px 8px rgb(2 3 14 / .42), 0 20px 44px -18px rgb(2 3 14 / .78);
+  --shadow-3: 0 0 0 .5px rgb(255 232 205 / .08), 0 30px 70px -22px rgb(0 0 8 / .86), 0 8px 20px rgb(0 0 8 / .4);
+  --surface-field: rgb(255 240 220 / .055); --surface-dense: #12152E;
+  --shadow-rgb: 2 3 14; --edge-rgb: 255 232 205; --edge-a: .2;
+  --blur-e1: 14px; --blur-e2: 18px; --blur-e3: 22px; --mat-sat: 150%;
+  --scene-glow-1: rgb(214 84 40 / .34); --scene-glow-2: rgb(84 92 220 / .26); --scene-intensity: .75; --scene-floor: .05;
+  --state-soft-a: 16%;
+  --id-tint: #E8643A; --id-tint-2: #5F66E6; --id-star: #F2C46B;
+  --id-pane-sheen: rgb(255 236 214 / .05);
+  --id-glow-top: rgb(95 102 230 / .1); --id-glow-bottom: rgb(232 100 58 / .11);
+  --cafu-red: #EF5A4E; --cafu-deep: #FF7B6B;
+  color-scheme: dark;
+}
+/* ── HARMATTAN — Jour : brume dorée, sable lumineux, encre indigo, latérite ── */
+html[data-material="harmattan"][data-mode="jour"] {
+  --ground: #ECE4D6; --ground-2: #F4EEE4;
+  --glass-rgb: 255 251 244; --glass-a: .66; --glass-strong: rgb(255 252 247 / .9);
+  --glass-edge: inset 0 1px 0 rgb(255 255 255 / .95), inset 0 0 0 .5px rgb(70 44 20 / .1);
+  --pane: rgb(252 249 243 / .9); --pane-solid: #FCF9F3; --paper: #FFFDF8;
+  --fill-1: rgb(60 40 20 / .04); --fill-2: rgb(60 40 20 / .065); --fill-3: rgb(60 40 20 / .095);
+  --hairline: rgb(70 44 20 / .11); --border-strong: rgb(70 44 20 / .2);
+  --text-1: #1B1D36; --text-2: rgb(27 29 54 / .76); --text-3: rgb(27 29 54 / .64);
+  --accent: #BF4220; --accent-ink: #A8381A; --on-accent: #FFFFFF;
+  --accent-soft: rgb(191 66 32 / .1); --accent-ring: rgb(191 66 32 / .3); --accent-halo: rgb(214 150 60 / .24);
+  --gold-ink: #8A5A0C;
+  --agent: #3F45B8; --agent-ink: #353AA0; --agent-soft: rgb(63 69 184 / .1);
+  --ok: #1D7A4D; --warn: #94600B; --bad: #B3261E; --ok-text: #1D7A4D; --warn-text: #8A5808; --bad-text: #A82219;
+  --on-ok: #FFFFFF; --on-warn: #FFFFFF; --on-bad: #FFFFFF; --on-info: #FFFFFF;
+  --shadow-1: 0 1px 2px rgb(74 46 18 / .07), 0 6px 16px -8px rgb(74 46 18 / .16);
+  --shadow-2: 0 2px 8px rgb(74 46 18 / .07), 0 20px 44px -18px rgb(74 46 18 / .26);
+  --shadow-3: 0 0 0 .5px rgb(74 46 18 / .08), 0 30px 70px -22px rgb(74 46 18 / .34), 0 8px 20px rgb(74 46 18 / .1);
+  --surface-field: rgb(255 255 255 / .8); --surface-dense: #FCF9F3;
+  --shadow-rgb: 74 46 18; --edge-rgb: 255 255 255; --edge-a: .95;
+  --blur-e1: 14px; --blur-e2: 18px; --blur-e3: 22px; --mat-sat: 140%;
+  --scene-glow-1: rgb(236 170 80 / .42); --scene-glow-2: rgb(191 66 32 / .16); --scene-intensity: .6; --scene-floor: 0;
+  --state-soft-a: 12%;
+  --id-tint: #E07A45; --id-tint-2: #3F45B8; --id-star: #C98A1B;
+  --id-pane-sheen: rgb(255 255 255 / .6);
+  --id-glow-top: rgb(242 181 68 / .14); --id-glow-bottom: rgb(214 110 70 / .08);
+  color-scheme: light;
+}
+
+/* ── 3 · FLEUVE — Nuit : ardoise profonde, eau du Niger ── */
+html[data-material="fleuve"][data-mode="nuit"] {
+  --ground: #0A1113; --ground-2: #0E171A;
+  --glass-rgb: 18 28 31; --glass-a: .64; --glass-strong: rgb(20 31 34 / .9);
+  --glass-edge: inset 0 1px 0 rgb(220 245 245 / .13), inset 0 0 0 .5px rgb(220 245 245 / .08);
+  --pane: rgb(14 22 25 / .92); --pane-solid: #111B1E; --paper: #131F22;
+  --fill-1: rgb(225 245 245 / .045); --fill-2: rgb(225 245 245 / .075); --fill-3: rgb(225 245 245 / .11);
+  --hairline: rgb(220 245 245 / .09); --border-strong: rgb(220 245 245 / .17);
+  --text-1: #E9F1F0; --text-2: rgb(233 241 240 / .76); --text-3: rgb(233 241 240 / .58);
+  --accent: #5CC4C6; --accent-ink: #86DADB; --on-accent: #04191B;
+  --accent-soft: rgb(92 196 198 / .15); --accent-ring: rgb(134 218 219 / .42); --accent-halo: rgb(92 196 198 / .2);
+  --gold-ink: #E7B65A;
+  --agent: #8FA6E8; --agent-ink: #B3C3F5; --agent-soft: rgb(143 166 232 / .18);
+  --ok: #4CC98A; --warn: #E7B65A; --bad: #F06A5E; --ok-text: #86E0B0; --warn-text: #F0CB84; --bad-text: #FF9C92;
+  --on-ok: #03160B; --on-warn: #221600; --on-bad: #2A0B08; --on-info: #04191B;
+  --shadow-1: 0 1px 2px rgb(0 6 8 / .4), 0 6px 16px -8px rgb(0 6 8 / .55);
+  --shadow-2: 0 2px 8px rgb(0 6 8 / .4), 0 20px 44px -18px rgb(0 6 8 / .72);
+  --shadow-3: 0 0 0 .5px rgb(220 245 245 / .07), 0 30px 70px -22px rgb(0 4 6 / .82), 0 8px 20px rgb(0 4 6 / .36);
+  --surface-field: rgb(225 245 245 / .05); --surface-dense: #111B1E;
+  --shadow-rgb: 0 6 8; --edge-rgb: 220 245 245; --edge-a: .18;
+  --blur-e1: 14px; --blur-e2: 18px; --blur-e3: 22px; --mat-sat: 130%;
+  --scene-glow-1: rgb(40 140 150 / .22); --scene-glow-2: rgb(70 90 160 / .16); --scene-intensity: .45; --scene-floor: .03;
+  --state-soft-a: 16%;
+  --id-tint: #5CC4C6; --id-tint-2: #8FA6E8; --id-star: #E7B65A;
+  --id-pane-sheen: rgb(220 245 245 / .04);
+  --id-glow-top: rgb(143 166 232 / .07); --id-glow-bottom: rgb(92 196 198 / .07);
+  --cafu-red: #EF5A4E; --cafu-deep: #FF7B6B;
+  color-scheme: dark;
+}
+/* ── FLEUVE — Jour : porcelaine, ardoise, sarcelle ── */
+html[data-material="fleuve"][data-mode="jour"] {
+  --ground: #E7ECEB; --ground-2: #F0F3F2;
+  --glass-rgb: 255 255 255; --glass-a: .7; --glass-strong: rgb(255 255 255 / .9);
+  --glass-edge: inset 0 1px 0 rgb(255 255 255 / .96), inset 0 0 0 .5px rgb(16 40 44 / .09);
+  --pane: rgb(255 255 255 / .92); --pane-solid: #FFFFFF; --paper: #FFFFFF;
+  --fill-1: rgb(10 40 44 / .04); --fill-2: rgb(10 40 44 / .065); --fill-3: rgb(10 40 44 / .095);
+  --hairline: rgb(10 40 44 / .1); --border-strong: rgb(10 40 44 / .18);
+  --text-1: #13201F; --text-2: rgb(19 32 31 / .76); --text-3: rgb(19 32 31 / .64);
+  --accent: #1C6B74; --accent-ink: #175C64; --on-accent: #FFFFFF;
+  --accent-soft: rgb(28 107 116 / .1); --accent-ring: rgb(28 107 116 / .3); --accent-halo: rgb(28 107 116 / .16);
+  --gold-ink: #8F6206;
+  --agent: #3D5A99; --agent-ink: #334D85; --agent-soft: rgb(61 90 153 / .1);
+  --ok: #1F7A55; --warn: #8F6206; --bad: #B42E26; --ok-text: #1F7A55; --warn-text: #865B05; --bad-text: #A9271F;
+  --on-ok: #FFFFFF; --on-warn: #FFFFFF; --on-bad: #FFFFFF; --on-info: #FFFFFF;
+  --shadow-1: 0 1px 2px rgb(16 40 44 / .06), 0 6px 16px -8px rgb(16 40 44 / .14);
+  --shadow-2: 0 2px 8px rgb(16 40 44 / .06), 0 20px 44px -18px rgb(16 40 44 / .22);
+  --shadow-3: 0 0 0 .5px rgb(16 40 44 / .07), 0 30px 70px -22px rgb(16 40 44 / .3), 0 8px 20px rgb(16 40 44 / .08);
+  --surface-field: rgb(255 255 255 / .9); --surface-dense: #FFFFFF;
+  --shadow-rgb: 16 40 44; --edge-rgb: 255 255 255; --edge-a: .95;
+  --blur-e1: 14px; --blur-e2: 18px; --blur-e3: 22px; --mat-sat: 130%;
+  --scene-glow-1: rgb(120 190 195 / .3); --scene-glow-2: rgb(150 170 220 / .22); --scene-intensity: .5; --scene-floor: 0;
+  --state-soft-a: 12%;
+  --id-tint: #5CB8BC; --id-tint-2: #8FA6E8; --id-star: #B07A0E;
+  --id-pane-sheen: rgb(255 255 255 / .7);
+  --id-glow-top: rgb(120 190 195 / .08); --id-glow-bottom: rgb(143 166 232 / .07);
+  color-scheme: light;
+}
+
+/* ── 4 · SENTINELLE — contraste élevé, opaque, zéro flou ── */
+
+html[data-material="sentinelle"][data-mode="jour"] {
+  --ground: #FFFFFF; --ground-2: #F2F2F2;
+  --glass-rgb: 255 255 255; --glass-a: 1; --glass: #FFFFFF; --glass-strong: #FFFFFF;
+  --glass-edge: inset 0 0 0 1px rgb(0 0 0 / .6);
+  --pane: #FFFFFF; --pane-solid: #FFFFFF; --paper: #FFFFFF;
+  --fill-1: rgb(0 0 0 / .05); --fill-2: rgb(0 0 0 / .09); --fill-3: rgb(0 0 0 / .14);
+  --hairline: rgb(0 0 0 / .38); --border-strong: rgb(0 0 0 / .75);
+  --text-1: #000000; --text-2: #1C1C1C; --text-3: #3A3A3A;
+  --accent: #A3260F; --accent-ink: #8C1F0B; --on-accent: #FFFFFF;
+  --accent-soft: rgb(163 38 15 / .12); --accent-ring: rgb(0 0 0 / .85); --accent-halo: rgb(163 38 15 / .14);
+  --gold-ink: #6E4300;
+  --agent: #1F2A99; --agent-ink: #1F2A99; --agent-soft: rgb(31 42 153 / .1);
+  --ok: #0A6630; --warn: #6E4300; --bad: #A3150C; --ok-text: #0A6630; --warn-text: #6E4300; --bad-text: #A3150C;
+  --on-ok: #FFFFFF; --on-warn: #FFFFFF; --on-bad: #FFFFFF; --on-info: #FFFFFF;
+  --shadow-1: 0 0 0 1px rgb(0 0 0 / .5); --shadow-2: 0 0 0 1px rgb(0 0 0 / .6), 0 10px 24px -14px rgb(0 0 0 / .4); --shadow-3: 0 0 0 1.5px #000, 0 18px 40px -18px rgb(0 0 0 / .45);
+  --surface-field: #FFFFFF; --surface-dense: #FFFFFF;
+  --shadow-rgb: 0 0 0; --edge-rgb: 0 0 0; --edge-a: 0;
+  --state-soft-a: 14%;
+  --id-tint: #A3260F; --id-tint-2: #1F2A99; --id-star: #6E4300; --id-pane-sheen: transparent; --id-glow-top: transparent; --id-glow-bottom: transparent;
+  --cafu-red: #C0261B; --cafu-deep: #A00000; --cafu-orange: #B86E00;
+  color-scheme: light;
+}
+html[data-material="sentinelle"][data-mode="nuit"] {
+  --ground: #000000; --ground-2: #000000;
+  --glass-rgb: 10 10 10; --glass-a: 1; --glass: #0A0A0A; --glass-strong: #0F0F0F;
+  --glass-edge: inset 0 0 0 1px rgb(255 255 255 / .55);
+  --pane: #050505; --pane-solid: #0A0A0A; --paper: #0A0A0A;
+  --fill-1: rgb(255 255 255 / .07); --fill-2: rgb(255 255 255 / .12); --fill-3: rgb(255 255 255 / .18);
+  --hairline: rgb(255 255 255 / .4); --border-strong: rgb(255 255 255 / .8);
+  --text-1: #FFFFFF; --text-2: #EDEDED; --text-3: #CFCFCF;
+  --accent: #FFC23D; --accent-ink: #FFD36B; --on-accent: #000000;
+  --accent-soft: rgb(255 194 61 / .18); --accent-ring: rgb(255 211 107 / .9); --accent-halo: rgb(255 194 61 / .2);
+  --gold-ink: #FFD36B;
+  --agent: #9AA5FF; --agent-ink: #B9C1FF; --agent-soft: rgb(154 165 255 / .2);
+  --ok: #3EE07F; --warn: #FFC23D; --bad: #FF6E5E; --ok-text: #6EF0A0; --warn-text: #FFD36B; --bad-text: #FF9A8E;
+  --on-ok: #000000; --on-warn: #000000; --on-bad: #000000; --on-info: #000000;
+  --shadow-1: 0 0 0 1px rgb(255 255 255 / .45); --shadow-2: 0 0 0 1px rgb(255 255 255 / .55); --shadow-3: 0 0 0 1.5px #FFFFFF;
+  --surface-field: #000000; --surface-dense: #0A0A0A;
+  --shadow-rgb: 0 0 0; --edge-rgb: 255 255 255; --edge-a: 0;
+  --state-soft-a: 18%;
+  --id-tint: #FFC23D; --id-tint-2: #9AA5FF; --id-star: #FFD36B; --id-pane-sheen: transparent; --id-glow-top: transparent; --id-glow-bottom: transparent;
+  --cafu-red: #FF6B5E; --cafu-deep: #FF8A7E; --cafu-orange: #FFC23D;
+  color-scheme: dark;
+}
+
+/* ── 5 · Ciel : un fond peint, statique (zéro boucle WebGL visible) ───────── */
+html[data-identite] #spatialbg { display: none; }
+html[data-identite], html[data-identite] body { background: var(--ground); }
+html[data-material="harmattan"][data-mode="nuit"] body {
+  background:
+    radial-gradient(130% 60% at 6% 112%, rgb(214 84 40 / .40), transparent 62%),
+    radial-gradient(70% 45% at 96% 104%, rgb(242 180 80 / .14), transparent 62%),
+    radial-gradient(80% 60% at 72% -12%, rgb(84 92 220 / .30), transparent 66%),
+    linear-gradient(180deg, #090B1B 0%, #0D1030 52%, #1A1430 100%);
+}
+/* Les étoiles du Sahel : une couche fixe, peinte une fois. */
+html[data-material="harmattan"][data-mode="nuit"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(1.2px 1.2px at 22% 14%, rgb(255 244 222 / .75), transparent 100%),
+    radial-gradient(1px 1px at 38% 6%, rgb(255 244 222 / .55), transparent 100%),
+    radial-gradient(1.4px 1.4px at 57% 11%, rgb(255 230 190 / .7), transparent 100%),
+    radial-gradient(1px 1px at 66% 22%, rgb(255 244 222 / .45), transparent 100%),
+    radial-gradient(1.6px 1.6px at 81% 8%, rgb(242 196 107 / .8), transparent 100%),
+    radial-gradient(1px 1px at 90% 26%, rgb(255 244 222 / .5), transparent 100%),
+    radial-gradient(1.1px 1.1px at 47% 31%, rgb(255 244 222 / .35), transparent 100%),
+    radial-gradient(1px 1px at 12% 37%, rgb(255 244 222 / .35), transparent 100%),
+    radial-gradient(1.3px 1.3px at 96% 44%, rgb(255 244 222 / .4), transparent 100%),
+    radial-gradient(1px 1px at 29% 46%, rgb(255 244 222 / .25), transparent 100%);
+}
+html[data-material="harmattan"][data-mode="jour"] body {
+  background:
+    radial-gradient(60% 55% at 90% -8%, rgb(255 214 140 / .85), transparent 62%),
+    radial-gradient(120% 60% at 0% 112%, rgb(206 110 70 / .24), transparent 62%),
+    radial-gradient(60% 40% at 40% 0%, rgb(255 246 230 / .7), transparent 70%),
+    linear-gradient(180deg, #F2EADC, #E6DAC6);
+}
+html[data-material="fleuve"][data-mode="nuit"] body {
+  background:
+    radial-gradient(90% 60% at 100% 110%, rgb(40 140 150 / .24), transparent 62%),
+    radial-gradient(70% 50% at 0% -10%, rgb(70 90 160 / .18), transparent 64%),
+    linear-gradient(180deg, #091012, #0C1518);
+}
+html[data-material="fleuve"][data-mode="jour"] body {
+  background:
+    radial-gradient(80% 55% at 100% -10%, rgb(170 215 218 / .55), transparent 62%),
+    radial-gradient(70% 50% at 0% 110%, rgb(170 185 225 / .35), transparent 62%),
+    linear-gradient(180deg, #ECF0EF, #E2E8E7);
+}
+html[data-material="sentinelle"] body { background: var(--ground); }
+html[data-identite] .shell { position: relative; z-index: 1; }
+
+/* ── 6 · Matière LIQUID GLASS — rail (surface fixe : vrai flou, rayon modeste) ── */
+html[data-identite] #rail {
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .28)), transparent 90px),
+    radial-gradient(120% 50% at 0% 0%, color-mix(in srgb, var(--id-tint) 13%, transparent), transparent 70%),
+    radial-gradient(120% 40% at 100% 100%, color-mix(in srgb, var(--id-tint-2) 12%, transparent), transparent 70%),
+    rgb(var(--glass-rgb) / var(--glass-a));
+  -webkit-backdrop-filter: var(--lg-blur-rail); backdrop-filter: var(--lg-blur-rail);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.6)),
+    inset 1px 0 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .45)),
+    inset 0 -1px 0 rgb(var(--shadow-rgb) / .22),
+    inset 0 0 0 .5px rgb(var(--edge-rgb) / calc(var(--edge-a) * .7)),
+    0 1px 2px rgb(var(--shadow-rgb) / .18),
+    0 24px 50px -26px rgb(var(--shadow-rgb) / .7);
+  border: 0;
+}
+html[data-material="sentinelle"] #rail { background: var(--pane-solid); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+
+/* Navigation : entrées du rail */
+html[data-identite] .rail-btn {
+  height: 36px; border-radius: 12px; gap: 11px; padding: 0 8px;
+  font: 500 14px/18px var(--f-ui); letter-spacing: var(--ls-callout); color: var(--text-2);
+  transition: background-color var(--id-fast) var(--id-ease), color var(--id-fast) var(--id-ease), transform var(--id-fast) var(--id-ease);
+}
+html[data-identite] .rail-btn:hover { background: var(--fill-1); color: var(--text-1); }
+html[data-identite] .rail-btn:active { transform: scale(.98); }
+html[data-identite] .rail-btn.on {
+  color: var(--text-1); font-weight: 600;
+  background:
+    linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .55)), rgb(var(--edge-rgb) / calc(var(--edge-a) * .1)) 60%),
+    linear-gradient(90deg, color-mix(in srgb, var(--id-tint) 22%, transparent), color-mix(in srgb, var(--id-tint) 8%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.8)),
+    inset 0 0 0 .5px color-mix(in srgb, var(--id-tint) 40%, transparent),
+    inset 0 -1px 0 rgb(var(--shadow-rgb) / .14),
+    0 6px 16px -8px color-mix(in srgb, var(--id-tint) 55%, transparent);
+}
+/* Flamme d'activité : filet latérite → or, à gauche de la pilule. */
+html[data-identite] .rail-btn.on::before {
+  display: block; content: ""; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px;
+  background: linear-gradient(180deg, var(--id-star), var(--id-tint));
+}
+html[data-material="sentinelle"] .rail-btn.on { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--text-1); }
+html[data-identite] .rail-btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+html[data-identite] .rail-btn .rail-lb { overflow: hidden; text-overflow: ellipsis; }
+html[data-identite] .sb-ghead {
+  font: 600 11px/14px var(--f-ui); text-transform: uppercase; letter-spacing: .06em; color: var(--text-3);
+}
+html[data-identite] .sb-search {
+  border-radius: 12px; background: var(--fill-1); color: var(--text-2);
+  box-shadow: inset 0 1px 1px rgb(var(--shadow-rgb) / .12), inset 0 0 0 .5px var(--hairline), 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .5));
+}
+html[data-identite] .sb-search kbd { font-family: var(--f-mono); font-size: 10.5px; }
+html[data-identite] .sb-preset, html[data-identite] .sb-navbtn {
+  border-radius: 999px; background: var(--fill-1); color: var(--text-2);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .6)), inset 0 0 0 .5px var(--hairline);
+  transition: background-color var(--id-fast) var(--id-ease), color var(--id-fast) var(--id-ease);
+}
+html[data-identite] .sb-preset:hover, html[data-identite] .sb-navbtn:hover { background: var(--fill-2); color: var(--text-1); }
+html[data-identite] .rail-presence .rp-name { font: var(--type-headline); letter-spacing: var(--ls-headline); }
+html[data-identite] .rail-presence .rp-label { font-size: 11.5px; color: var(--text-3); }
+
+/* Icônes 3D de l'identité dans le rail : correspondance par identifiant de page (data-page).
+   Repli : sans identité, ou pour une page non listée, l'icône Phosphor d'origine reste affichée. */
+html[data-identite] .rail-btn:is([data-page="accueil"], [data-page="conversations"], [data-page="attente"], [data-page="messages"], [data-page="veille"], [data-page="temps"], [data-page="reunions"], [data-page="engagements"], [data-page="dossiers"], [data-page="relations"], [data-page="dots"], [data-page="conseil"], [data-page="livrables"], [data-page="studio"], [data-page="finance"], [data-page="fundings"], [data-page="vie"], [data-page="savoir"], [data-page="journal"], [data-page="ame"], [data-page="controle"], [data-page="confiance"], [data-page="outils"], [data-page="systeme"], [data-page="radio"], [data-page="settings"], [data-page="vault"]) .ri {
+  width: 26px; height: 26px; flex: none; align-items: center; justify-content: center;
+  background: center / 26px 26px no-repeat; color: transparent; border-radius: var(--radius-tile);
+  /* v2 : la tuile est posée — ombre de contact + ombre ambiante (statiques) */
+  box-shadow: var(--elev-tile);
+  transition: transform var(--id-med) var(--id-ease);
+}
+html[data-identite] .rail-btn:is([data-page="accueil"], [data-page="conversations"], [data-page="attente"], [data-page="messages"], [data-page="veille"], [data-page="temps"], [data-page="reunions"], [data-page="engagements"], [data-page="dossiers"], [data-page="relations"], [data-page="dots"], [data-page="conseil"], [data-page="livrables"], [data-page="studio"], [data-page="finance"], [data-page="fundings"], [data-page="vie"], [data-page="savoir"], [data-page="journal"], [data-page="ame"], [data-page="controle"], [data-page="confiance"], [data-page="outils"], [data-page="systeme"], [data-page="radio"], [data-page="settings"], [data-page="vault"]) .ri > svg { visibility: hidden; }
+html[data-identite] .rail-btn:hover .ri { transform: translateY(-1px); }
+/* La tuile accueille aussi une icône <img> (rendus 3D du studio d'icônes, icons3d/) : elle la remplit. */
+html[data-identite] .rail-btn .ri > img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+/* Entrée active : la tuile s'allume et se soulève (halo d'accent + liseré clair). */
+html[data-identite] .rail-btn.on .ri {
+  transform: translateY(-1px) scale(1.06);
+  box-shadow: 0 0 0 .5px rgb(255 255 255 / .22), 0 2px 3px rgb(var(--shadow-rgb) / .4), 0 8px 18px -4px color-mix(in srgb, var(--id-tint) 75%, transparent), 0 0 22px -2px color-mix(in srgb, var(--id-tint) 45%, transparent);
+}
+html[data-identite] .rail-btn[data-page="accueil"] .ri { background-image: url(../assets/identite/icons/accueil.svg); }
+html[data-identite] .rail-btn[data-page="conversations"] .ri { background-image: url(../assets/identite/icons/conversations.svg); }
+html[data-identite] .rail-btn[data-page="attente"] .ri { background-image: url(../assets/identite/icons/attente.svg); }
+html[data-identite] .rail-btn[data-page="messages"] .ri { background-image: url(../assets/identite/icons/messages.svg); }
+html[data-identite] .rail-btn[data-page="veille"] .ri { background-image: url(../assets/identite/icons/veille.svg); }
+html[data-identite] .rail-btn[data-page="temps"] .ri { background-image: url(../assets/identite/icons/temps.svg); }
+html[data-identite] .rail-btn[data-page="reunions"] .ri { background-image: url(../assets/identite/icons/reunions.svg); }
+html[data-identite] .rail-btn[data-page="engagements"] .ri { background-image: url(../assets/identite/icons/engagements.svg); }
+html[data-identite] .rail-btn[data-page="dossiers"] .ri { background-image: url(../assets/identite/icons/dossiers.svg); }
+html[data-identite] .rail-btn[data-page="relations"] .ri { background-image: url(../assets/identite/icons/relations.svg); }
+html[data-identite] .rail-btn[data-page="dots"] .ri { background-image: url(../assets/identite/icons/dots.svg); }
+html[data-identite] .rail-btn[data-page="conseil"] .ri { background-image: url(../assets/identite/icons/conseil.svg); }
+html[data-identite] .rail-btn[data-page="livrables"] .ri { background-image: url(../assets/identite/icons/livrables.svg); }
+html[data-identite] .rail-btn[data-page="studio"] .ri { background-image: url(../assets/identite/icons/studio.svg); }
+html[data-identite] .rail-btn[data-page="finance"] .ri { background-image: url(../assets/identite/icons/finance.svg); }
+html[data-identite] .rail-btn[data-page="fundings"] .ri { background-image: url(../assets/identite/icons/fundings.svg); }
+html[data-identite] .rail-btn[data-page="vie"] .ri { background-image: url(../assets/identite/icons/vie.svg); }
+html[data-identite] .rail-btn[data-page="savoir"] .ri { background-image: url(../assets/identite/icons/savoir.svg); }
+html[data-identite] .rail-btn[data-page="journal"] .ri { background-image: url(../assets/identite/icons/journal.svg); }
+html[data-identite] .rail-btn[data-page="ame"] .ri { background-image: url(../assets/identite/icons/ame.svg); }
+html[data-identite] .rail-btn[data-page="controle"] .ri { background-image: url(../assets/identite/icons/controle.svg); }
+html[data-identite] .rail-btn[data-page="confiance"] .ri { background-image: url(../assets/identite/icons/confiance.svg); }
+html[data-identite] .rail-btn[data-page="outils"] .ri { background-image: url(../assets/identite/icons/outils.svg); }
+html[data-identite] .rail-btn[data-page="systeme"] .ri { background-image: url(../assets/identite/icons/systeme.svg); }
+html[data-identite] .rail-btn[data-page="radio"] .ri { background-image: url(../assets/identite/icons/radio.svg); }
+html[data-identite] .rail-btn[data-page="settings"] .ri { background-image: url(../assets/identite/icons/settings.svg); }
+html[data-identite] .rail-btn[data-page="vault"] .ri { background-image: url(../assets/identite/icons/vault.svg); }
+html[data-identite] .shell.sb-mini .rail-btn { width: 44px; height: 40px; }
+html[data-identite] .shell.sb-mini .rail-btn.on::before { left: 2px; }
+
+/* ── 7 · Panneaux : feuille de verre (verre simulé, aucun flou) ───────────── */
+html[data-identite] .pane {
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, var(--id-pane-sheen), transparent 140px),
+    radial-gradient(90% 60% at 100% 0%, var(--id-glow-top), transparent 62%),
+    radial-gradient(80% 55% at 0% 100%, var(--id-glow-bottom), transparent 64%),
+    var(--pane);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.25)),
+    inset 0 0 0 .5px rgb(var(--edge-rgb) / calc(var(--edge-a) * .55)),
+    inset 0 -1px 0 rgb(var(--shadow-rgb) / .16),
+    0 1px 2px rgb(var(--shadow-rgb) / .16),
+    0 26px 60px -32px rgb(var(--shadow-rgb) / .75);
+}
+html[data-identite] .ws[data-layout="2"] .pane.on, html[data-identite] .ws[data-layout="3"] .pane.on {
+  box-shadow: inset 0 0 0 1px var(--accent-ring), inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.25)), 0 26px 60px -32px rgb(var(--shadow-rgb) / .75);
+}
+html[data-material="sentinelle"] .pane { background: var(--pane-solid); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+/* Barre de titre du panneau */
+html[data-identite] .pane-bar {
+  height: 46px; border-bottom: .5px solid var(--hairline);
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .22)), transparent);
+}
+html[data-identite] .pb-title { font: var(--type-headline); letter-spacing: var(--ls-headline); }
+html[data-identite] .pb-ic { color: var(--accent-ink); }
+html[data-identite] .pb-btn { border-radius: 9px; }
+html[data-identite] .pb-btn:hover { background: var(--fill-2); }
+html[data-identite] .fwin {
+  border-radius: 22px; background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--lg-blur-float); backdrop-filter: var(--lg-blur-float);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.4)), inset 0 0 0 .5px rgb(var(--edge-rgb) / calc(var(--edge-a) * .6)), var(--shadow-3);
+}
+
+/* ── 8 · Titres : rampe Apple (SF Pro Display, taille optique) ─────────────── */
+html[data-identite] .hq-title,
+html[data-identite] .mod-head h1,
+html[data-identite] .home-greet,
+html[data-identite] .pe-title,
+html[data-identite] .theme-fam-h b {
+  font-family: var(--f-display); font-optical-sizing: auto;
+}
+html[data-identite] .hq-title { font: var(--type-hero); letter-spacing: var(--ls-hero); }
+html[data-identite] .mod-head h1 { font: var(--type-large-title); letter-spacing: var(--ls-large-title); }
+html[data-identite] .sec-title { font-family: var(--f-ui); font-weight: 600; letter-spacing: -.01em; }
+html[data-identite] .mod > .sub, html[data-identite] .mod-head .sub { font-family: var(--f-ui); }
+/* Chiffres : toujours tabulaires (finance, BRVM, compteurs). */
+html[data-identite] .hq-kpi, html[data-identite] .hq-big, html[data-identite] .md-table, html[data-identite] .kpi-sub,
+html[data-identite] [class*="fin-"], html[data-identite] .np-b, html[data-identite] .bdg, html[data-identite] .ds-chip-n { font-variant-numeric: tabular-nums lining-nums; }
+html[data-identite] code, html[data-identite] kbd, html[data-identite] pre { font-family: var(--f-mono); }
+
+/* ── 9 · Composants : boutons, puces, champs ─────────────────────────────── */
+html[data-identite] .btn {
+  border-radius: 999px; font-family: var(--f-ui); font-weight: 500; color: var(--text-1);
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .35)), transparent), var(--fill-2);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.1)), inset 0 0 0 .5px var(--hairline), 0 1px 2px rgb(var(--shadow-rgb) / .12);
+  transition: background-color var(--id-fast) var(--id-ease), color var(--id-fast) var(--id-ease), transform var(--id-fast) var(--id-ease), box-shadow var(--id-fast) var(--id-ease);
+}
+html[data-identite] .btn:hover { background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .45)), transparent), var(--fill-3); transform: translateY(-1px); }
+html[data-identite] .btn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+/* Le bouton d'action : émail de latérite (relief, liseré spéculaire, ombre colorée). */
+html[data-identite] .btn.acc {
+  color: var(--on-accent); font-weight: 600;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent), #fff 16%) 0%, var(--accent) 55%, color-mix(in srgb, var(--accent), #000 14%) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .38),
+    inset 0 -1px 0 rgb(0 0 0 / .18),
+    inset 0 0 0 .5px color-mix(in srgb, var(--accent), #000 25%),
+    0 6px 16px -6px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 1px 2px rgb(var(--shadow-rgb) / .2);
+}
+html[data-identite] .btn.acc:hover { background: linear-gradient(180deg, color-mix(in srgb, var(--accent), #fff 24%) 0%, color-mix(in srgb, var(--accent), #fff 6%) 55%, color-mix(in srgb, var(--accent), #000 8%) 100%); }
+html[data-identite] .btn.ghost { background: transparent; box-shadow: none; color: var(--text-2); }
+html[data-identite] .btn.ghost:hover { background: var(--fill-1); color: var(--text-1); }
+html[data-material="sentinelle"] .btn { background: var(--pane-solid); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+html[data-material="sentinelle"] .btn.acc { background: var(--accent); box-shadow: inset 0 0 0 1.5px var(--text-1); }
+html[data-identite] .chip { background: var(--fill-2); box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .6)), inset 0 0 0 .5px var(--hairline); }
+html[data-identite] .fld, html[data-identite] .sel {
+  border-radius: 12px; background: var(--surface-field);
+  box-shadow: inset 0 1px 2px rgb(var(--shadow-rgb) / .1), inset 0 0 0 .5px var(--hairline);
+}
+html[data-identite] .fld:focus, html[data-identite] .sel:focus {
+  background: var(--pane-solid); box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-soft);
+}
+html[data-material="sentinelle"] .fld, html[data-material="sentinelle"] .sel { box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+html[data-material="sentinelle"] .fld:focus, html[data-material="sentinelle"] .sel:focus { box-shadow: inset 0 0 0 2px var(--text-1), 0 0 0 3px var(--accent); }
+
+/* ── 10 · Onglets & segments : rail creusé + pilule de verre ────────────── */
+html[data-identite] .seg, html[data-identite] .ds-chips.cs-arch-filter {
+  border-radius: 999px; padding: 3px; border: 0;
+  background: color-mix(in srgb, var(--text-1) 6%, transparent);
+  box-shadow: inset 0 1px 2px rgb(var(--shadow-rgb) / .16), inset 0 0 0 .5px var(--hairline), 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .45));
+}
+html[data-identite] .seg button, html[data-identite] .seg .seg-btn {
+  height: 28px; border-radius: 999px; font: 500 12.5px/1 var(--f-ui); color: var(--text-2);
+  transition: background-color var(--id-fast) var(--id-ease), color var(--id-fast) var(--id-ease);
+}
+html[data-identite] .seg button:hover { color: var(--text-1); }
+html[data-identite] .seg button.on, html[data-identite] .seg .seg-btn.on {
+  color: var(--text-1); font-weight: 600;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .6)), rgb(var(--edge-rgb) / calc(var(--edge-a) * .15))), var(--pane-solid);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.8)), inset 0 0 0 .5px var(--hairline), 0 2px 6px -1px rgb(var(--shadow-rgb) / .3), 0 0 0 .5px color-mix(in srgb, var(--id-tint) 30%, transparent);
+}
+html[data-identite] .seg button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+html[data-identite] .ds-chip {
+  height: 28px; border-radius: 999px; font: 500 12.5px/28px var(--f-ui); color: var(--text-2);
+  background: var(--fill-1); box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .5)), inset 0 0 0 .5px var(--hairline);
+  transition: background-color var(--id-fast) var(--id-ease), color var(--id-fast) var(--id-ease);
+}
+html[data-identite] .ds-chip:hover { background: var(--fill-2); color: var(--text-1); }
+html[data-identite] .ds-chip.is-on {
+  color: var(--text-1); font-weight: 600;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .5)), transparent), color-mix(in srgb, var(--id-tint) 16%, var(--pane-solid));
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.6)), inset 0 0 0 .5px color-mix(in srgb, var(--id-tint) 45%, transparent), 0 4px 12px -6px color-mix(in srgb, var(--id-tint) 50%, transparent);
+}
+html[data-identite] .ds-chip:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+/* Navigation des Réglages (onglets verticaux) */
+html[data-identite] .set-nav button { border-radius: 12px; font-family: var(--f-ui); }
+html[data-identite] .set-nav button.on, html[data-identite] .set-nav button[aria-current="page"], html[data-identite] .set-nav button[aria-selected="true"] {
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .5)), transparent), color-mix(in srgb, var(--id-tint) 13%, transparent);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.6)), inset 0 0 0 .5px color-mix(in srgb, var(--id-tint) 35%, transparent);
+}
+html[data-material="sentinelle"] .seg button.on, html[data-material="sentinelle"] .ds-chip.is-on { background: var(--text-1); color: var(--ground); box-shadow: none; }
+
+/* ── 11 · Cartes : verre simulé (dégradé + liseré + ombre), aucun flou ─── */
+html[data-identite] .card, html[data-identite] .tile, html[data-identite] .home-card {
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .3)), rgb(var(--edge-rgb) / 0) 70%), var(--fill-1);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .9)), inset 0 0 0 .5px var(--hairline), 0 10px 26px -20px rgb(var(--shadow-rgb) / .6);
+}
+html[data-material="sentinelle"] .card, html[data-material="sentinelle"] .tile, html[data-material="sentinelle"] .home-card { background: var(--pane-solid); box-shadow: inset 0 0 0 1.5px var(--hairline); }
+
+/* Accueil (.mod.hq) : jetons projetés sur l'identité */
+html[data-identite] .mod.hq {
+  --hq-glass: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .32)), rgb(var(--edge-rgb) / 0) 55%), color-mix(in srgb, var(--pane-solid) 72%, transparent);
+  --hq-glass-2: var(--fill-1);
+  --hq-edge: rgb(var(--edge-rgb) / calc(var(--edge-a) * .55));
+  --hq-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.3)), 0 1px 2px rgb(var(--shadow-rgb) / .14), 0 22px 48px -28px rgb(var(--shadow-rgb) / .7);
+  --hq-bronze: var(--accent); --hq-bronze-ink: var(--accent-ink);
+  --hq-btn-hi: color-mix(in srgb, var(--accent), #fff 14%); --hq-btn-lo: var(--accent);
+  --hq-pd-bg: radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--id-star) 26%, var(--pane-solid)), var(--pane-solid) 72%);
+}
+html[data-identite] .mod.hq .hq-glass { border-color: transparent; }
+html[data-material="sentinelle"] .mod.hq {
+  --hq-glass: var(--pane-solid); --hq-glass-2: var(--fill-1); --hq-edge: var(--border-strong); --hq-line: var(--hairline);
+  --hq-shadow: none; --hq-pd-bg: var(--pane-solid);
+}
+html[data-material="sentinelle"] .mod.hq .hq-glass { border: 1.5px solid var(--border-strong); }
+html[data-material="sentinelle"][data-identite] .mod.hq .hq-hero { background-image: none; }
+/* Le registre des amendements : filets de registre, très discrets, dans la carte d'ouverture. */
+html[data-identite] .mod.hq .hq-hero {
+  background-image:
+    repeating-linear-gradient(180deg, transparent 0 31px, color-mix(in srgb, var(--text-1) 4%, transparent) 31px 32px),
+    radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, var(--id-star) 12%, transparent), transparent 60%),
+    radial-gradient(60% 80% at 0% 100%, color-mix(in srgb, var(--id-tint) 10%, transparent), transparent 60%);
+}
+html[data-identite] .mod.hq .hq-lead, html[data-identite] .mod.hq .hq-title + * { font-variant-numeric: tabular-nums; }
+html[data-identite] .mod.hq .hq-chip { box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .7)); }
+html[data-identite] .mod.hq .hq-kpi {
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .25)), transparent), var(--fill-1);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .9)); border-color: var(--hairline);
+}
+html[data-identite] .mod.hq .hq-kpi b, html[data-identite] .mod.hq .hq-big { font-family: var(--f-numeric); font-weight: 600; font-variant-numeric: tabular-nums; }
+html[data-identite] .mod.hq .hq-send, html[data-identite] .mod.hq .hq-btn.pri {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent), #fff 16%), var(--accent) 55%, color-mix(in srgb, var(--accent), #000 14%));
+  color: var(--on-accent); border-color: transparent;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .38), inset 0 -1px 0 rgb(0 0 0 / .18), 0 6px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* ── 12 · Menus, palette, infobulles : surfaces flottantes (vrai flou, modeste) ── */
+html[data-identite] .ctxmenu, html[data-identite] .cs-att-menu, html[data-identite] .pal-box, html[data-identite] .peek-card,
+html[data-identite] .nav-hist-menu, html[data-identite] .cs-brainmenu, html[data-identite] .row-menu {
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .3)), transparent 60%), var(--glass-strong);
+  -webkit-backdrop-filter: var(--lg-blur-float); backdrop-filter: var(--lg-blur-float);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.6)), inset 0 0 0 .5px rgb(var(--edge-rgb) / calc(var(--edge-a) * .7)), var(--shadow-3);
+  border: 0;
+}
+html[data-identite] .ctx-item { border-radius: 9px; }
+html[data-identite] .ctx-item:hover, html[data-identite] .ctx-item:focus-visible { background: var(--accent-soft); color: var(--text-1); }
+html[data-identite] .toast {
+  background: var(--glass-strong); -webkit-backdrop-filter: var(--lg-blur-float); backdrop-filter: var(--lg-blur-float);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.5)), inset 0 0 0 .5px var(--hairline), var(--shadow-2);
+}
+/* La matière des cartes de thème : verre SIMULÉ (pas de flou sur 9 vignettes). */
+html[data-identite] .theme-chip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), 0 2px 6px rgb(0 0 0 / .18); }
+
+/* ── 13 · Conversation : fil, bulles, compositeur ───────────────────────── */
+html[data-identite] .cs-side { background: linear-gradient(90deg, transparent, rgb(var(--edge-rgb) / calc(var(--edge-a) * .08))); }
+html[data-identite] .cs-row { border-radius: 12px; }
+html[data-identite] .cs-row.on {
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .45)), transparent), color-mix(in srgb, var(--id-tint) 14%, transparent);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.4)), inset 0 0 0 .5px color-mix(in srgb, var(--id-tint) 34%, transparent);
+}
+html[data-identite] .cs-row.on .cs-row-t { color: var(--text-1); font-weight: 600; }
+html[data-identite] .cs-title { font: var(--type-headline); letter-spacing: var(--ls-headline); }
+html[data-identite] .cs-head { background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .18)), transparent); }
+/* Avatar de Nova dans le fil : la marque (l'Éclat à deux moitiés) sur disque de nuit indigo. */
+html[data-identite] .msg-head.nova .msg-av {
+  background: url(../assets/identite/icons/marque.svg) center / 20px 20px no-repeat, radial-gradient(circle at 35% 28%, #3A3F9A, #12153A 72%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), inset 0 0 0 .5px rgb(255 255 255 / .12), 0 4px 10px -4px rgb(10 12 40 / .6);
+}
+html[data-identite] .msg-head.nova .msg-av > svg { visibility: hidden; }
+html[data-identite] .msg-who { font-weight: 600; }
+/* Bulle d'Ahadi : verre teinté latérite, coin d'attache en bas à droite. */
+html[data-identite] .msg.me {
+  border-radius: 20px 20px 6px 20px; color: var(--text-1);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--id-tint) 24%, transparent), color-mix(in srgb, var(--id-tint) 14%, transparent));
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.2)), inset 0 0 0 .5px color-mix(in srgb, var(--id-tint) 36%, transparent), 0 8px 20px -14px color-mix(in srgb, var(--id-tint) 60%, transparent);
+}
+html[data-material="sentinelle"] .msg.me { background: var(--fill-1); box-shadow: inset 0 0 0 1.5px var(--text-1); }
+/* Réponse de Nova : le BLUF en tête devient l'encadré à filet (charte CAFU), sans toucher au texte. */
+html[data-identite] .msg.nova { font: var(--type-body); letter-spacing: var(--ls-body); }
+html[data-identite] .msg.me { font: var(--type-body); letter-spacing: var(--ls-body); }
+html[data-identite]:not([data-answer-style="sobre"]) .msg.nova > p:first-child:not(:only-child) {
+  margin: 2px 0 12px; padding: 11px 16px 11px 17px; border-radius: 4px 14px 14px 4px;
+  font: 500 15px/22px var(--f-ui); letter-spacing: var(--ls-headline);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cafu-red) 11%, transparent), color-mix(in srgb, var(--cafu-red) 3%, transparent) 70%);
+  box-shadow: inset 3px 0 0 var(--cafu-red), inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .9)), inset 0 0 0 .5px color-mix(in srgb, var(--cafu-red) 20%, transparent);
+}
+html[data-identite]:not([data-answer-style="sobre"]) .msg.nova h1,
+html[data-identite]:not([data-answer-style="sobre"]) .msg.nova h2 {
+  font: var(--type-title-2); letter-spacing: var(--ls-title-2); margin: 16px 0 6px;
+}
+html[data-identite]:not([data-answer-style="sobre"]) .msg.nova h3 { font-family: var(--f-ui); font-weight: 700; }
+html[data-identite] .msg.nova b, html[data-identite] .msg.nova strong { font-weight: 600; }
+/* Tableaux : verre, en-tête sable à filet rouge CAFU, chiffres tabulaires, survol de ligne. */
+html[data-identite] .msg .md-table {
+  border: 0; border-radius: 14px;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .2)), transparent 60%), var(--fill-1);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .9)), inset 0 0 0 .5px var(--hairline), 0 10px 24px -18px rgb(var(--shadow-rgb) / .55);
+}
+html[data-identite] .msg .md-table table { font-size: 13.5px; }
+html[data-identite] .msg .md-table th { font: 600 11.5px/14px var(--f-ui); text-transform: uppercase; letter-spacing: .05em; padding: 9px 12px; }
+html[data-identite] .msg .md-table td { padding: 8px 12px; border-bottom-color: color-mix(in srgb, var(--hairline) 70%, transparent); }
+html[data-identite] .msg .md-table tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--text-1) 2.5%, transparent); }
+html[data-identite] .msg .md-table tbody tr:hover td { background: color-mix(in srgb, var(--id-tint) 7%, transparent); }
+/* Citation — la Règle d'or, le registre : filet + verre. */
+html[data-identite]:not([data-answer-style="sobre"]) .msg.nova blockquote {
+  border-left: 0; border-radius: 4px 12px 12px 4px; padding: 10px 14px 10px 16px; color: var(--text-1);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--id-star) 12%, transparent), transparent 80%);
+  box-shadow: inset 3px 0 0 var(--id-star), inset 0 0 0 .5px var(--hairline);
+  font-family: var(--f-serif); font-style: italic; font-size: 15.5px; line-height: 1.45;
+}
+/* Pastilles CAFU : couleurs de la charte, relief discret. */
+html[data-identite] .msg .cafu-pill {
+  border-radius: 4px; font: 700 10px/1.7 var(--f-ui); letter-spacing: .08em; padding: 0 7px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), inset 0 -1px 0 rgb(0 0 0 / .12);
+}
+/* Suites proposées : pilules de verre, flèche latérite. */
+html[data-identite] .msg .nova-suites { gap: 8px; margin-top: 14px; }
+html[data-identite] .msg .nova-suite {
+  padding: 8px 14px 8px 12px; border: 0; border-radius: 999px; color: var(--text-1); font: 500 14px/18px var(--f-ui); letter-spacing: var(--ls-callout);
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .4)), transparent), color-mix(in srgb, var(--id-tint) 8%, var(--fill-1));
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.3)), inset 0 0 0 .5px color-mix(in srgb, var(--id-tint) 34%, var(--hairline)), 0 4px 12px -8px rgb(var(--shadow-rgb) / .5);
+  transition: background-color var(--id-fast) var(--id-ease), transform var(--id-fast) var(--id-ease), box-shadow var(--id-fast) var(--id-ease);
+}
+html[data-identite] .msg .nova-suite svg { color: var(--accent-ink); }
+html[data-identite] .msg .nova-suite:hover:not(:disabled) { transform: translateY(-1px); background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .5)), transparent), color-mix(in srgb, var(--id-tint) 16%, var(--fill-1)); }
+html[data-identite] .msg .nova-suite:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+html[data-material="sentinelle"] .msg .nova-suite { background: var(--pane-solid); box-shadow: inset 0 0 0 1.5px var(--text-1); }
+/* Pied (Preuve · Éclats) : un filet de registre pointillé. */
+html[data-identite] .msg .nova-pied { border-top: 0; background-image: linear-gradient(90deg, var(--hairline) 50%, transparent 50%); background-size: 6px 1px; background-repeat: repeat-x; background-position: top left; padding-top: 10px; }
+html[data-identite] .msg .nova-pied .np-lbl { letter-spacing: .09em; }
+html[data-identite] .msg .nova-pied .np-b { box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .7)); border-color: var(--hairline); }
+/* Carte livrable : papier sable, bandeau rouge CAFU, titre éditorial. */
+html[data-identite] .ncard.liv-card {
+  border-radius: 16px; padding: 16px 16px 14px; border: 0; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .3)), transparent 50%), color-mix(in srgb, var(--cafu-sand) 10%, var(--pane-solid));
+  box-shadow: inset 0 4px 0 var(--cafu-red), inset 0 0 0 .5px var(--hairline), 0 14px 30px -20px rgb(var(--shadow-rgb) / .6);
+}
+html[data-identite] .ncard .ncard-t { font: var(--type-headline); letter-spacing: var(--ls-headline); margin-top: 2px; }
+/* Compositeur : surface fixe — vrai verre, flou modeste ; le champ intérieur s'efface. */
+html[data-identite] .composer {
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .4)), transparent 70%), rgb(var(--glass-rgb) / calc(var(--glass-a) + .12));
+  -webkit-backdrop-filter: var(--lg-blur-float); backdrop-filter: var(--lg-blur-float);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.7)),
+    inset 0 0 0 .5px rgb(var(--edge-rgb) / calc(var(--edge-a) * .8)),
+    inset 0 -1px 0 rgb(var(--shadow-rgb) / .14),
+    0 18px 40px -22px rgb(var(--shadow-rgb) / .75);
+}
+html[data-identite] .composer:focus-within {
+  box-shadow:
+    inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.7)),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 0 4px var(--accent-soft),
+    0 18px 40px -22px rgb(var(--shadow-rgb) / .75);
+}
+html[data-identite] .composer .fld, html[data-identite] .composer textarea.fld, html[data-identite] .composer .fld:focus {
+  background: transparent; box-shadow: none; border: 0; outline: none; font: 400 15px/1.5 var(--f-ui);
+}
+html[data-identite] .composer .btn.icon { background: transparent; box-shadow: none; color: var(--text-2); }
+html[data-identite] .composer .btn.icon:hover { background: var(--fill-2); color: var(--text-1); }
+/* Envoyer : une perle d'émail latérite. */
+html[data-identite] .cs-composer .btn.acc, html[data-identite] .composer > .composer-row > .btn.acc {
+  background:
+    radial-gradient(120% 90% at 30% 15%, rgb(255 255 255 / .42), rgb(255 255 255 / 0) 45%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent), #fff 12%), var(--accent) 60%, color-mix(in srgb, var(--accent), #000 18%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .45), inset 0 -2px 3px rgb(0 0 0 / .2), 0 8px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+html[data-material="sentinelle"] .composer { background: var(--pane-solid); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+html[data-material="sentinelle"] .composer:focus-within { box-shadow: inset 0 0 0 2px var(--text-1), 0 0 0 3px var(--accent); }
+
+/* ── 14 · Réglages › Apparence : cartes de thème ─────────────────────────── */
+html[data-identite] .theme-card {
+  border-radius: 18px; overflow: hidden;
+  background: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .25)), transparent), var(--fill-1);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .9)), inset 0 0 0 .5px var(--hairline), 0 10px 24px -18px rgb(var(--shadow-rgb) / .6);
+}
+html[data-identite] .theme-card.on { box-shadow: inset 0 0 0 2px var(--accent-ink), 0 0 0 4px var(--accent-soft), 0 14px 30px -18px rgb(var(--shadow-rgb) / .7); }
+html[data-identite] .theme-card:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+html[data-identite] .theme-swatch { height: 96px; border: 0; }
+html[data-identite] .theme-fam-h b { font: var(--type-title-2); letter-spacing: var(--ls-title-2); }
+html[data-identite] .theme-meta b { font-weight: 600; }
+
+/* ── 15 · Focus clavier lisible partout ─────────────────────────────────── */
+html[data-identite] button:focus-visible, html[data-identite] [role="tab"]:focus-visible, html[data-identite] a:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+html[data-material="sentinelle"] button:focus-visible, html[data-material="sentinelle"] a:focus-visible, html[data-material="sentinelle"] [tabindex]:focus-visible { outline: 3px solid var(--text-1); outline-offset: 2px; box-shadow: 0 0 0 5px var(--accent); }
+html[data-material="sentinelle"] .msg a, html[data-material="sentinelle"] .mod a { text-decoration: underline; text-underline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V2 — « PREMIUM & 3D » (30/10/2026, retour d'Ahadi sur son Mac : « ni premium ni 3D »)
+   Verre liquide à plusieurs couches sur les cartes : corps en dégradé vertical, liseré
+   spéculaire de 1 px plus fort en haut à gauche (bordure en dégradé, border-box), bande
+   lumineuse haute, lueur d'accent qui saigne au bord bas, grain fixe (turbulence SVG
+   statique), ombres étagées (contact + ambiante + teintée). Boutons et pilules en relief,
+   enfoncement à la pression. Chiffres et salutation gravés. Tout est STATIQUE : seuls
+   transform/opacity bougent ; aucun flou ajouté.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+
+
+
+/* Niveaux de verre publics (voir l'en-tête) — s'utilisent avec border: 1px solid transparent. */
+
+
+/* ── V2·1 · Cartes de verre liquide ── */
+html[data-identite]:not([data-material="sentinelle"]) :is(.mod.hq .hq-glass, .mod.hq .hq-tile, .card, .tile, .home-card, .msg .ncard:not(.liv-card), .theme-card) {
+  border: 1px solid transparent;
+  background:
+    var(--id-grain) padding-box,
+    linear-gradient(180deg, rgb(var(--edge-rgb) / var(--c-hl)), rgb(var(--edge-rgb) / 0) 52px) padding-box,
+    radial-gradient(85% 55% at 50% 118%, color-mix(in srgb, var(--id-tint) var(--c-amb), transparent), transparent 70%) padding-box,
+    linear-gradient(180deg, var(--c-top), var(--c-bot)) padding-box,
+    var(--c-rim) border-box;
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.4)), var(--c-shadow), 0 26px 50px -34px color-mix(in srgb, var(--id-tint) 55%, transparent);
+}
+/* Carte d'ouverture de l'Accueil : verre + horizon de latérite + étoiles (nuit) + filets du registre. */
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-hero.hq-glass, html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-hero {
+  border: 1px solid transparent;
+  background:
+    var(--id-grain) padding-box,
+    repeating-linear-gradient(180deg, transparent 0 31px, color-mix(in srgb, var(--text-1) 3.5%, transparent) 31px 32px) padding-box,
+    var(--id-hero-sky, linear-gradient(transparent, transparent)) padding-box,
+    radial-gradient(70% 70% at 0% 112%, color-mix(in srgb, var(--id-tint) 30%, transparent), transparent 62%) padding-box,
+    radial-gradient(60% 80% at 100% -10%, color-mix(in srgb, var(--id-star) 14%, transparent), transparent 62%) padding-box,
+    linear-gradient(180deg, rgb(var(--edge-rgb) / var(--c-hl)), rgb(var(--edge-rgb) / 0) 70px) padding-box,
+    linear-gradient(180deg, var(--c-top), var(--c-bot)) padding-box,
+    var(--c-rim) border-box;
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.6)), var(--c-shadow), 0 34px 70px -40px color-mix(in srgb, var(--id-tint) 70%, transparent);
+}
+
+/* Survol : la carte se soulève de 2 px (transform seul ; l'ombre change sans transition). */
+html[data-identite] :is(.mod.hq .hq-card, .mod.hq .hq-tile, .card, .tile, .home-card, .theme-card) { transition: transform var(--id-med) var(--id-ease); }
+html[data-identite]:not([data-material="sentinelle"]) :is(.mod.hq .hq-card, .mod.hq .hq-tile, .card, .tile, .home-card, .theme-card):hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.6)), var(--c-shadow-hover), 0 30px 56px -30px color-mix(in srgb, var(--id-tint) 65%, transparent);
+}
+html[data-identite] .theme-card.on { box-shadow: 0 0 0 2px var(--accent-ink), 0 0 0 5px var(--accent-soft), var(--c-shadow); }
+/* Pastilles d'icône des cartes de l'Accueil : petites tuiles en relief. */
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-ico {
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), inset 0 -1px 0 rgb(0 0 0 / .2), 0 2px 4px rgb(var(--shadow-rgb) / .3), 0 8px 16px -8px color-mix(in srgb, var(--id-tint) 60%, transparent);
+}
+
+/* ── V2·2 · KPI : tuiles en relief, chiffres gravés ── */
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-kpi {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, rgb(var(--edge-rgb) / var(--c-hl)), rgb(var(--edge-rgb) / 0) 30px) padding-box,
+    linear-gradient(180deg, var(--b-top), var(--b-bot)) padding-box,
+    var(--b-rim) border-box;
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.2)), 0 1px 1px rgb(var(--shadow-rgb) / .3), 0 10px 22px -12px rgb(var(--shadow-rgb) / .6);
+  transition: transform var(--id-med) var(--id-ease);
+}
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-kpi:hover { transform: translateY(-2px); }
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-kpi:active { transform: translateY(1px); }
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-kpi > b {
+  font: 600 30px/1.1 var(--f-numeric); font-variant-numeric: tabular-nums lining-nums; letter-spacing: -.02em;
+  background: linear-gradient(180deg, var(--text-1) 25%, color-mix(in srgb, var(--text-1), var(--id-star) 35%)); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: var(--grav);
+}
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-kpi.hot > b { background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-ink), #fff 25%), var(--accent-ink) 70%, color-mix(in srgb, var(--accent), #000 10%)); }
+html[data-identite] .mod.hq .hq-bar { border-radius: 999px; box-shadow: inset 0 1px 2px rgb(0 0 0 / .35); }
+html[data-identite] .mod.hq .hq-bar > i { box-shadow: inset 0 1px 0 rgb(255 255 255 / .35); }
+
+/* ── V2·3 · Salutation gravée ── */
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-title > span {
+  -webkit-background-clip: text; background-clip: text; color: transparent; filter: var(--grav);
+  background-image: linear-gradient(180deg, var(--text-1) 30%, color-mix(in srgb, var(--text-1), var(--id-star) 30%) 95%);
+}
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-title > .hq-lead {
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-ink), #fff 30%) 10%, var(--accent-ink) 60%, color-mix(in srgb, var(--accent), #000 5%) 100%);
+}
+html[data-material="harmattan"][data-mode="jour"] .mod.hq .hq-title > .hq-lead { background-image: linear-gradient(180deg, #D0633A 10%, #A8381A 70%, #7E2810); }
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-big { -webkit-background-clip: text; background-clip: text; color: transparent; filter: var(--grav);
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--ok-text), #fff 25%), var(--ok-text) 75%); }
+
+/* ── V2·4 · Boutons et pilules en relief (pression = enfoncement) ── */
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon), .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .sb-navbtn, .msg .nova-suite, .ds-chip, .chip) {
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, var(--b-top), var(--b-bot)) padding-box, var(--b-rim) border-box;
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.3)), 0 1px 1px rgb(var(--shadow-rgb) / .35), 0 4px 10px -5px rgb(var(--shadow-rgb) / .55);
+  transition: transform var(--id-fast) var(--id-ease);
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon), .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .msg .nova-suite, .ds-chip, .chip):hover { transform: translateY(-1px); }
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon), .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .sb-navbtn, .msg .nova-suite, .ds-chip, .chip):active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgb(var(--shadow-rgb) / .4), inset 0 0 0 .5px rgb(var(--shadow-rgb) / .2);
+}
+/* Émail de latérite : action principale, Envoyer, « Traiter ». */
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn.acc, .mod.hq .hq-btn.pri, .mod.hq .hq-send) {
+  color: var(--on-accent); border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent), #fff 26%) 0%, color-mix(in srgb, var(--accent), #fff 6%) 48%, var(--accent) 52%, color-mix(in srgb, var(--accent), #000 16%) 100%) padding-box,
+    linear-gradient(180deg, rgb(255 255 255 / .6), color-mix(in srgb, var(--accent), #000 35%)) border-box;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .5), inset 0 -2px 0 color-mix(in srgb, var(--accent), #000 30%), 0 1px 1px rgb(var(--shadow-rgb) / .4), 0 8px 18px -8px color-mix(in srgb, var(--accent) 80%, transparent);
+  text-shadow: 0 -1px 0 rgb(0 0 0 / .18);
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn.acc, .mod.hq .hq-btn.pri, .mod.hq .hq-send):active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / .35), inset 0 -1px 0 color-mix(in srgb, var(--accent), #000 30%);
+}
+/* Suites : pilules en relief, nuance d'accent conservée. */
+html[data-identite]:not([data-material="sentinelle"]) .msg .nova-suite {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--b-top), var(--id-tint) 10%), var(--b-bot)) padding-box, var(--b-rim) border-box;
+}
+html[data-identite]:not([data-material="sentinelle"]) .ds-chip.is-on {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--b-top), var(--id-tint) 26%), color-mix(in srgb, var(--b-bot), var(--id-tint) 14%)) padding-box, var(--b-rim) border-box;
+}
+
+/* ── V2·5 · Panneaux : profondeur (vignette, horizon, grain) ── */
+html[data-identite]:not([data-material="sentinelle"]) .pane {
+  background:
+    var(--id-grain),
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgb(var(--shadow-rgb) / var(--id-vignette, .22)) 100%),
+    linear-gradient(180deg, var(--id-pane-sheen), transparent 140px),
+    radial-gradient(90% 60% at 100% 0%, var(--id-glow-top), transparent 62%),
+    radial-gradient(80% 55% at 0% 100%, var(--id-glow-bottom), transparent 64%),
+    var(--pane);
+}
+
+
+
+
+/* Fond de l'app : vignette par-dessus le ciel peint (statique). */
+html[data-identite]:not([data-material="sentinelle"]) body::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 45%, transparent 50%, rgb(var(--shadow-rgb) / calc(var(--id-vignette, .2) + .15)) 100%);
+}
+
+/* ── V2·6 · Cartes de données Nova (```nova-card : barres, chiffres, liste) ── */
+html[data-identite] .msg .ncard:not(.liv-card) { padding: 16px 18px 14px; margin: 10px 0 12px; border-radius: 16px; max-width: 560px; }
+html[data-identite] .ncard .ncard-t { font: var(--type-headline); letter-spacing: var(--ls-headline); margin: 0 0 10px; color: var(--text-1); }
+html[data-identite] .ncard-r {
+  display: grid; grid-template-columns: minmax(56px, 9.5em) minmax(80px, 1fr) minmax(64px, auto); align-items: center; column-gap: 14px;
+  padding: 6px 0; font-size: 13.5px;
+}
+html[data-identite] .ncard-r + .ncard-r { border-top: 1px dashed color-mix(in srgb, var(--hairline) 70%, transparent); }
+html[data-identite] .ncard-r > span { color: var(--text-2); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-identite] .ncard-r > i {
+  position: relative; display: block; height: 10px; border-radius: 999px; overflow: hidden;
+  background: color-mix(in srgb, var(--text-1) 8%, transparent);
+  box-shadow: inset 0 1px 2px rgb(var(--shadow-rgb) / .35), inset 0 0 0 .5px var(--hairline), 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * .6));
+}
+html[data-identite] .ncard-r > i::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--w, 0%); min-width: 4px; border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent), #000 8%), color-mix(in srgb, var(--id-tint), var(--id-star) 55%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .45), inset 0 -1px 0 rgb(0 0 0 / .2), 0 0 10px -2px color-mix(in srgb, var(--id-tint) 70%, transparent);
+}
+html[data-identite] .ncard-r > b { justify-self: end; font: 600 14px/18px var(--f-ui); font-variant-numeric: tabular-nums lining-nums; color: var(--text-1); white-space: nowrap; }
+html[data-identite] .ncard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; }
+html[data-identite] .ncard-stats > div {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; border: 1px solid transparent;
+  background: linear-gradient(180deg, var(--b-top), var(--b-bot)) padding-box, var(--b-rim) border-box;
+  box-shadow: inset 0 1px 0 rgb(var(--edge-rgb) / calc(var(--edge-a) * 1.2)), 0 6px 14px -10px rgb(var(--shadow-rgb) / .6);
+}
+html[data-identite] .ncard-stats b { white-space: nowrap; font: 600 22px/1.1 var(--f-numeric); font-variant-numeric: tabular-nums lining-nums; color: var(--text-1); }
+html[data-identite] .ncard-stats b small { font: 600 12px var(--f-ui); color: var(--text-2); margin-left: 2px; }
+html[data-identite] .ncard-stats span { font-size: 12px; color: var(--text-2); }
+html[data-identite] .ncard ul { margin: 0; padding: 0; list-style: none; }
+html[data-identite] .ncard ul li { display: flex; gap: 8px; padding: 6px 0; font-variant-numeric: tabular-nums; }
+html[data-identite] .ncard ul li + li { border-top: 1px dashed color-mix(in srgb, var(--hairline) 70%, transparent); }
+html[data-material="sentinelle"] .ncard { border: 1.5px solid var(--border-strong); background: var(--pane-solid); }
+html[data-material="sentinelle"] .ncard-r > i::before { background: var(--accent); box-shadow: none; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V3 — VRAI LIQUID GLASS (30/10/2026, Ahadi : « where is the liquid glass I've asked for »)
+   Dans l'app native (window.__NOVA_NATIVE_WEB → html[data-native]) la page est
+   TRANSPARENTE : derrière elle, la fenêtre porte le flou du bureau (NSVisualEffectView)
+   et, sur macOS 26+, le vrai Liquid Glass d'Apple (NSGlassEffectView), teinté par le thème
+   (message « win.appearance », core.js). Hors app native (navigateur, tests), le ciel peint
+   reste la toile de fond.
+   Chaque surface est du verre EN COUCHES : teinte faible, bande lumineuse haute, liseré
+   spéculaire (clair en haut à gauche, s'éteignant en bas à droite), anneau de lentille,
+   épaisseur (ombre intérieure basse), ombres portées étagées. Flou (backdrop-filter)
+   uniquement sur les grandes surfaces FIXES : rail, panneaux, compositeur, menus.
+   Les cartes, pilules et boutons sont translucides SANS flou (ils reposent sur le verre
+   du panneau). Reflet dynamique : js/glass-liquid.js (--gx/--gy, non hérités).
+   Jetons publics ajoutés : --glass-edges, --glass-edges-sm, --lg-drop, --lg-fill-*,
+   --lg-sel (pastille de sélection), --lg-sheen.
+   ════════════════════════════════════════════════════════════════════════════ */
+@property --gx { syntax: "<length>"; inherits: false; initial-value: -999px; }
+@property --gy { syntax: "<length>"; inherits: false; initial-value: -999px; }
+@property --lg-sheen { syntax: "*"; inherits: false; }
+
+/* ── V3·1 · Matière par mode (Harmattan et Fleuve ; Sentinelle reste opaque) ── */
+
+
+
+
+html[data-identite] .lg-hot { --lg-sheen: var(--lg-sheen-on); }
+
+/* ── V3·2 · Toile : transparente dans l'app native (le verre d'Apple est derrière) ── */
+html[data-identite][data-native]:not([data-material="sentinelle"]):not([data-transparency="reduced"]),
+html[data-identite][data-native]:not([data-material="sentinelle"]):not([data-transparency="reduced"]) body {
+  background: transparent !important;
+}
+html[data-identite][data-native]:not([data-material="sentinelle"]):not([data-transparency="reduced"]) :is(#bgstatic, #spatialbg) { display: none !important; }
+html[data-identite][data-native]:not([data-material="sentinelle"]) body::after { display: none; }
+html[data-identite][data-native]:not([data-material="sentinelle"]) body::before { background: radial-gradient(130% 100% at 50% 45%, transparent 60%, rgb(var(--shadow-rgb) / .12) 100%); }
+html[data-identite]:not([data-material="sentinelle"]) .shell, html[data-identite]:not([data-material="sentinelle"]) #view { background: transparent; background-image: none; }
+
+/* ── V3·3 · Grandes surfaces fixes : verre en couches ──
+   Le FLOU de ces surfaces est celui de macOS (NSVisualEffectView + NSGlassEffectView derrière la page) :
+   un backdrop-filter WebKit ne voit que le contenu web, qui est transparent ici — il ne flouterait rien
+   et coûterait une passe de composition à chaque image (mesuré : gels au repos). Hors app native, le
+   ciel peint est déjà un dégradé doux. Le backdrop-filter reste réservé aux surfaces FLOTTANTES
+   (menus, palette, infobulles, toasts) qui passent au-dessus du contenu de la page. */
+html[data-identite]:not([data-material="sentinelle"]) #rail {
+  background:
+    var(--lg-sheen, linear-gradient(transparent, transparent)),
+    linear-gradient(180deg, var(--lg-hl), transparent 140px),
+    radial-gradient(120% 45% at 0% 0%, transparent, transparent 70%),
+    radial-gradient(120% 40% at 100% 100%, transparent, transparent 70%),
+    rgb(var(--glass-rgb) / var(--glass-a));
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: var(--glass-edges), var(--lg-drop);
+}
+html[data-identite]:not([data-material="sentinelle"]) .pane {
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  background:
+    linear-gradient(180deg, var(--lg-hl), transparent 110px),
+    radial-gradient(90% 60% at 100% 0%, var(--id-glow-top), transparent 62%),
+    radial-gradient(80% 55% at 0% 100%, var(--id-glow-bottom), transparent 64%),
+    var(--pane);
+  box-shadow: var(--glass-edges), var(--lg-drop);
+}
+html[data-identite]:not([data-material="sentinelle"]) .pane-bar { background: linear-gradient(180deg, rgb(255 255 255 / .04), transparent); border-bottom: .5px solid var(--hairline); }
+html[data-identite]:not([data-material="sentinelle"]) .composer {
+  border-radius: 26px;
+  background: var(--lg-sheen, linear-gradient(transparent, transparent)), linear-gradient(180deg, var(--lg-hl), transparent 60%), rgb(var(--glass-rgb) / calc(var(--glass-a) + .14));
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: var(--glass-edges), var(--lg-drop);
+}
+html[data-identite]:not([data-material="sentinelle"]) .composer:focus-within { box-shadow: var(--glass-edges), 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 0 5px var(--accent-soft), var(--lg-drop); }
+html[data-identite]:not([data-material="sentinelle"]) :is(.ctxmenu, .cs-att-menu, .pal-box, .peek-card, .nav-hist-menu, .cs-brainmenu, .row-menu, .toast, .fwin) {
+  background: linear-gradient(180deg, var(--lg-hl), transparent 60%), var(--glass-strong);
+  -webkit-backdrop-filter: var(--lg-blur-float); backdrop-filter: var(--lg-blur-float);
+  box-shadow: var(--glass-edges), var(--shadow-3);
+}
+
+/* ── V3·4 · Cartes : translucides, sans flou (posées sur le verre du panneau) ── */
+html[data-identite]:not([data-material="sentinelle"]) :is(.mod.hq .hq-glass, .mod.hq .hq-tile, .card, .tile, .home-card, .msg .ncard:not(.liv-card), .theme-card, .mod.hq .hq-kpi) {
+  background:
+    var(--lg-sheen, linear-gradient(transparent, transparent)) padding-box,
+    linear-gradient(180deg, var(--lg-hl), transparent 56px) padding-box,
+    radial-gradient(85% 55% at 50% 118%, transparent, transparent 70%) padding-box,
+    linear-gradient(180deg, var(--c-top), var(--c-bot)) padding-box;
+  box-shadow: var(--c-shadow);
+}
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-kpi { box-shadow: var(--glass-edges-sm), 0 1px 1px rgb(var(--shadow-rgb) / .16), 0 10px 22px -14px rgb(var(--shadow-rgb) / .5); }
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-hero.hq-glass, html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-hero {
+  background:
+    var(--lg-sheen, linear-gradient(transparent, transparent)) padding-box,
+    repeating-linear-gradient(180deg, transparent 0 31px, color-mix(in srgb, var(--text-1) 3%, transparent) 31px 32px) padding-box,
+    var(--id-hero-sky, linear-gradient(transparent, transparent)) padding-box,
+    radial-gradient(70% 70% at 0% 112%, transparent, transparent 62%) padding-box,
+    radial-gradient(60% 80% at 100% -10%, color-mix(in srgb, var(--id-star) 12%, transparent), transparent 62%) padding-box,
+    linear-gradient(180deg, var(--lg-hl), transparent 80px) padding-box,
+    linear-gradient(180deg, var(--c-top), var(--c-bot)) padding-box;
+  box-shadow: var(--c-shadow);
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.mod.hq .hq-card, .mod.hq .hq-tile, .card, .tile, .home-card, .theme-card):hover { box-shadow: var(--c-shadow-hover); }
+html[data-identite]:not([data-material="sentinelle"]) .msg .md-table { background: linear-gradient(180deg, var(--lg-hl), transparent 40px), var(--lg-fill-card); box-shadow: var(--glass-edges-sm), 0 10px 24px -18px rgb(var(--shadow-rgb) / .5); }
+
+/* ── V3·5 · Boutons, pilules, onglets : capsules de verre (macOS 26) ── */
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon), .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .sb-navbtn, .msg .nova-suite, .ds-chip, .chip, .sb-search) {
+  border-radius: 999px;
+  background: var(--lg-sheen, linear-gradient(transparent, transparent)) padding-box, linear-gradient(180deg, var(--b-top), var(--b-bot)) padding-box;
+  box-shadow: var(--glass-edges-sm), 0 1px 1px rgb(var(--shadow-rgb) / .2), 0 6px 14px -8px rgb(var(--shadow-rgb) / .5);
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon), .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .sb-navbtn, .msg .nova-suite, .ds-chip, .chip):active {
+  box-shadow: inset 0 2px 5px rgb(var(--shadow-rgb) / .35), inset 0 0 0 .5px var(--lg-rim-lo);
+}
+/* Verre « proéminent » teinté d'accent : action principale, Envoyer, « Traiter ». */
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn.acc, .mod.hq .hq-btn.pri, .mod.hq .hq-send) {
+  background:
+    var(--lg-sheen, linear-gradient(transparent, transparent)) padding-box,
+    linear-gradient(180deg, rgb(255 255 255 / .34), rgb(255 255 255 / 0) 55%) padding-box,
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, transparent), color-mix(in srgb, var(--accent), #000 12%)) padding-box;
+  box-shadow: inset 1px 1px 0 rgb(255 255 255 / .55), inset -1px -1px 0 rgb(255 255 255 / .12), inset 0 0 12px -4px rgb(255 255 255 / .35), inset 0 -6px 10px -6px rgb(0 0 0 / .3), 0 8px 18px -8px color-mix(in srgb, var(--accent) 80%, transparent), 0 1px 1px rgb(var(--shadow-rgb) / .3);
+}
+html[data-identite]:not([data-material="sentinelle"]) .msg .nova-suite { background: var(--lg-sheen, linear-gradient(transparent, transparent)) padding-box, linear-gradient(180deg, color-mix(in srgb, var(--b-top), var(--id-tint) 10%), var(--b-bot)) padding-box; }
+/* Pastille de sélection (« lozenge ») : rail, segments, puces actives, navigation des Réglages. */
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on,
+html[data-identite]:not([data-material="sentinelle"]) .seg button.on,
+html[data-identite]:not([data-material="sentinelle"]) .seg .seg-btn.on,
+html[data-identite]:not([data-material="sentinelle"]) .ds-chip.is-on,
+html[data-identite]:not([data-material="sentinelle"]) .set-nav button.on,
+html[data-identite]:not([data-material="sentinelle"]) .cs-row.on {
+  background: var(--lg-sheen, linear-gradient(transparent, transparent)), var(--lg-sel);
+  box-shadow: var(--glass-edges-sm), 0 2px 6px -1px rgb(var(--shadow-rgb) / .3), 0 8px 20px -10px rgb(var(--shadow-rgb) / .25);
+}
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on { border-radius: 999px; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on::before { display: none; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn:hover:not(.on) { background: rgb(255 255 255 / .06); }
+html[data-identite][data-mode="jour"]:not([data-material="sentinelle"]) .rail-btn:hover:not(.on) { background: rgb(255 255 255 / .45); }
+html[data-identite]:not([data-material="sentinelle"]) :is(.seg, .ds-chips.cs-arch-filter) {
+  background: rgb(var(--shadow-rgb) / .14);
+  box-shadow: inset 0 1px 3px rgb(var(--shadow-rgb) / .28), inset 0 -.5px 0 var(--lg-rim-lo), 0 1px 0 var(--lg-rim-lo);
+}
+html[data-identite][data-mode="jour"]:not([data-material="sentinelle"]) :is(.seg, .ds-chips.cs-arch-filter) { background: rgb(var(--shadow-rgb) / .07); }
+/* Bulle d'Ahadi : verre teinté latérite. */
+html[data-identite]:not([data-material="sentinelle"]) .msg.me {
+  background: var(--lg-sheen, linear-gradient(transparent, transparent)), linear-gradient(180deg, color-mix(in srgb, var(--id-tint) 30%, transparent), color-mix(in srgb, var(--id-tint) 16%, transparent));
+  box-shadow: var(--glass-edges-sm), 0 10px 22px -14px color-mix(in srgb, var(--id-tint) 60%, transparent);
+}
+/* Lisibilité sur verre : le texte secondaire se renforce légèrement (vibrance), sans ombre portée. */
+
+
+
+
+/* ── 16 · Accessibilité : transparence réduite, mouvement réduit, contraste ── */
+html[data-identite][data-transparency="reduced"] body { background: var(--surface-dense); }
+html[data-identite][data-transparency="reduced"] body::after, html[data-identite][data-transparency="reduced"] body::before { display: none; }
+html[data-identite][data-transparency="reduced"] #rail,
+html[data-identite][data-transparency="reduced"] .composer,
+html[data-identite][data-transparency="reduced"] .ctxmenu,
+html[data-identite][data-transparency="reduced"] .cs-att-menu,
+html[data-identite][data-transparency="reduced"] .pal-box,
+html[data-identite][data-transparency="reduced"] .peek-card,
+html[data-identite][data-transparency="reduced"] .nav-hist-menu,
+html[data-identite][data-transparency="reduced"] .cs-brainmenu,
+html[data-identite][data-transparency="reduced"] .row-menu,
+html[data-identite][data-transparency="reduced"] .fwin,
+html[data-identite][data-transparency="reduced"] .toast {
+  -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--pane-solid);
+}
+html[data-identite][data-transparency="reduced"] .pane { background: var(--pane-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+
+html[data-identite][data-reduce-motion="1"] *, html[data-identite][data-reduce-motion="1"] *::before, html[data-identite][data-reduce-motion="1"] *::after { transition-duration: 0ms !important; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-identite] .rail-btn, html[data-identite] .btn, html[data-identite] .seg button, html[data-identite] .ds-chip,
+  html[data-identite] .msg .nova-suite, html[data-identite] .sb-preset, html[data-identite] .sb-navbtn { transition: none; }
+  html[data-identite] .btn:hover, html[data-identite] .msg .nova-suite:hover:not(:disabled) { transform: none; }
+  html[data-identite] :is(.mod.hq .hq-card, .mod.hq .hq-tile, .mod.hq .hq-kpi, .card, .tile, .home-card, .theme-card, .rail-btn .ri, .btn, .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .ds-chip, .chip) { transition: none !important; }
+  html[data-identite] :is(.mod.hq .hq-card, .mod.hq .hq-tile, .mod.hq .hq-kpi, .card, .tile, .home-card, .theme-card, .mod.hq .hq-btn, .mod.hq .hq-chip, .sb-preset, .ds-chip, .chip):hover { transform: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-identite] #rail, html[data-identite] .composer, html[data-identite] .ctxmenu, html[data-identite] .pal-box, html[data-identite] .peek-card, html[data-identite] .toast {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--pane-solid);
+  }
+}
+/* fin identite.css */
+
+
+/* ── V3·clair (30/10, Ahadi : « real liquid, transparent, premium, not colored ») ─────────────────────────────
+   Verre NEUTRE et CLAIR : aucune teinte de couleur dans la matière (ni indigo ni sable) — seulement de la
+   lumière (blanc) et de l'ombre (noir) en très faible opacité ; la couleur ne reste que sur les actions. */
+
+
+
+/* ══ V4 · ÉPURÉ macOS 26 (30/10 08:24, Ahadi : « icônes et onglets font vieux, pas premium ») ═══════════════════
+   Retour à la grammaire d'Apple : SF Symbols monochromes (vrais symboles du système), barre latérale sans tuiles,
+   sélection par une pastille de verre discrète + symbole à la couleur d'accent, contrôles plats en capsules fines
+   (aucun dégradé bombé, aucun relief « bouton 2015 »), segmentés façon macOS (piste creuse, curseur clair). */
+
+
+/* Barre latérale : plus de tuiles 3D — symbole nu, 18 px, centré dans 22 px. */
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn .ri,
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn .ri.ri3d {
+  background: none !important; box-shadow: none !important; border: 0 !important;
+  width: 22px; height: 22px; display: grid; place-items: center; color: var(--v4-sym); transform: none !important;
+}
+html[data-identite][data-native="1"]:not([data-material="sentinelle"]) .rail-btn .ri.ri3d > .ico3d { display: none !important; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn {
+  background: transparent !important; box-shadow: none !important; border-radius: 8px; min-height: 30px;
+  font-weight: 400; color: var(--text-1);
+}
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn:hover { background: var(--v4-hover) !important; transform: none; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on { background: var(--v4-sel) !important; box-shadow: none !important; color: var(--text-1); font-weight: 500; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on::before { display: none !important; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on .ri { color: var(--accent) !important; filter: none !important; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn .bdg { box-shadow: none; font-weight: 600; }
+
+/* Boutons, capsules, puces : plats, fins, translucides — l'accent reste plein et net (pas de brillant).
+   31/10 (fix-boutons) : les boutons PRIMAIRES (.ds-btn-primary, « Traiter »/« Examiner » .hq-btn.pri) sont exclus de la
+   capsule translucide : elle effaçait leur fond d'accent et gardait le texte --on-accent → blanc sur verre blanc (jour),
+   encre sombre sur verre sombre (nuit). Ils prennent l'accent plein, comme .btn.acc ci-dessous. Exclusions dans :where() :
+   la spécificité de la règle reste celle d'avant (sinon elle battrait d'autres !important, ex. la puce « Actives »). */
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon):not(.acc):where(:not(.ds-btn-primary)), .mod.hq .hq-btn:where(:not(.pri)), .mod.hq .hq-chip, .sb-preset, .sb-navbtn, .msg .nova-suite, .ds-chip, .chip) {
+  background: var(--v4-ctl) !important; background-image: none !important;
+  box-shadow: inset 0 0 0 .5px var(--v4-ctl-line), 0 .5px 1px rgb(0 0 0 / .05) !important;
+  border: 0 !important; border-radius: 999px; font-weight: 500; transform: none !important;
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn:not(.ghost):not(.icon):not(.acc):where(:not(.ds-btn-primary)), .mod.hq .hq-chip, .sb-preset, .msg .nova-suite, .ds-chip, .chip):hover {
+  background: color-mix(in srgb, var(--v4-ctl), var(--text-1) 6%) !important;
+}
+/* 31/10 (fix-boutons) : texte --on-accent (et non #fff) — en Harmattan/Fleuve nuit l'accent est clair (tokens.css) et
+   son encre est sombre : le blanc tombait à 2,3:1 sur « Envoyer », « Nouvelle conversation », « Configurer et ouvrir ». */
+html[data-identite]:not([data-material="sentinelle"]) .btn.acc,
+html[data-identite]:not([data-material="sentinelle"]) .btn.ds-btn-primary,
+html[data-identite]:not([data-material="sentinelle"]) .mod.hq .hq-btn.pri,
+html[data-identite]:not([data-material="sentinelle"]) .cs-composer .btn.acc {
+  background: var(--accent) !important; background-image: none !important; color: var(--on-accent) !important;
+  box-shadow: 0 .5px 1px rgb(0 0 0 / .12) !important; border: 0 !important; border-radius: 999px; transform: none !important; text-shadow: none;
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn.acc, .btn.ds-btn-primary, .mod.hq .hq-btn.pri):hover { background: color-mix(in srgb, var(--accent), #000 8%) !important; }
+html[data-identite]:not([data-material="sentinelle"]) :is(.btn, .chip, .ds-chip, .nova-suite):active { opacity: .85; }
+
+/* Segmentés (Actives / Archivées, onglets, filtres) : piste creuse + curseur clair, exactement macOS. */
+html[data-identite]:not([data-material="sentinelle"]) :is(.seg, .ds-chips.cs-arch-filter, .ds-tabs) {
+  background: var(--v4-track) !important; background-image: none !important; box-shadow: none !important;
+  border-radius: 9px; padding: 2px; gap: 0;
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.seg button, .seg .seg-btn, .ds-chips.cs-arch-filter .ds-chip, .ds-tabs > *) {
+  background: transparent !important; box-shadow: none !important; border-radius: 7px; font-weight: 500; color: var(--text-2);
+}
+html[data-identite]:not([data-material="sentinelle"]) :is(.seg button.on, .seg .seg-btn.on, .ds-chips.cs-arch-filter .ds-chip.is-on, .ds-tabs > .on, .ds-tabs > [aria-selected="true"]) {
+  background: var(--v4-thumb) !important; color: var(--text-1) !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .12), 0 0 0 .5px rgb(0 0 0 / .04) !important;
+}
+/* V4 · correctif : une seule icône par entrée (variante « off » au repos, « on » sélectionnée). */
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn .ri.ri-on { display: none !important; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on .ri.ri-off { display: none !important; }
+html[data-identite]:not([data-material="sentinelle"]) .rail-btn.on .ri.ri-on { display: grid !important; }
+/* Recherche : champ plat comme dans les barres latérales macOS (pas de relief). */
+html[data-identite]:not([data-material="sentinelle"]) :is(.sb-search, .rail-search, .sb-find, button[title^="Rechercher"]) {
+  background: var(--v4-track) !important; background-image: none !important; box-shadow: none !important; border: 0 !important; border-radius: 9px;
+}
+
+/* 30/10 — Présence en VERRE LIQUIDE (avatar-glass.js) : la sphère porte son verre, son halo et sa lumière ;
+   aucun cercle de découpe (les gouttes orbitent au-delà), aucun drop-shadow (recomposé à chaque image), orbe CSS masquée. */
+.avatar-presence:has(.avatar-glass) > .orb { opacity: 0 !important; }
+.pv-companion:has(.avatar-glass) { overflow: visible !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
+.pv-companion:has(.avatar-glass) .avatar-3d { filter: none !important; }
+
+/* 30/10 — Icônes en VERRE (img/glass/, série Gemini) : posées telles quelles, sans pastille teintée ni ombre de tuile ;
+   Sable garde ses céramiques. */
+html[data-identite] .mod.hq .hq-ico.has-glass { background: none !important; box-shadow: none !important; border: 0 !important; overflow: visible !important; }
+html[data-identite] .mod.hq .hq-ico.has-glass > img { display: none !important; }
+html[data-identite] .mod.hq .hq-ico.has-glass > img.g { display: block !important; width: 118%; height: 118%; margin: -9%; object-fit: contain; filter: drop-shadow(0 4px 8px rgb(var(--shadow-rgb) / .18)); }
+html[data-identite] .mod.hq .hq-ico.has-glass > i { display: none !important; }
+.cs-welcome-glass { display: block; width: 84px; height: 84px; margin: 0 auto 14px; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+html[data-mode="nuit"] .cs-welcome-glass { filter: brightness(.96); }
+.hq-ico > img.g { display: none !important; }   /* 30/10 : hors identité (Sable…), l'icône en verre reste cachée */
+
+/* 30/10 — En-tête de chaque page (barre du panneau) : icône en VERRE quand la page en a une (workspace.js, GLASS). */
+.pane-bar .pb-ic.has-glass { width: 26px; height: 26px; margin: 0 0 0 -4px; background: none !important; box-shadow: none !important; border-radius: 0 !important; flex: none; }
+.pane-bar .pb-ic.has-glass > img.pb-glass { display: block; width: 26px; height: 26px; pointer-events: none; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 1px 2px rgb(var(--shadow-rgb, 0 0 0) / .22)); }
+
+/* 30/10 soir — Compagnons VIDÉO (avatar-video.js) : même traitement que le verre (aucun cercle, aucun filtre, orbe masquée). */
+.avatar-presence:has(.avatar-video) > .orb { opacity: 0 !important; }
+.pv-companion:has(.avatar-video) { overflow: visible !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
+.pv-companion:has(.avatar-video) .avatar-3d { filter: none !important; }

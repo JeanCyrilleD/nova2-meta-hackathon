@@ -1,0 +1,32 @@
+{
+  "note": "Catalogue du banc eval/ — version hackathon Meta : modèles Meta seulement. Prix en micro-dollars par million de jetons.",
+  "modeles": {
+    "wonder-1.0": {
+      "famille": "meta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 4000000,
+        "sortie": 20000000
+      },
+      "prix_verifie": true
+    },
+    "spark-1.3": {
+      "famille": "meta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "bulk",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 1250000,
+        "sortie": 4250000
+      },
+      "prix_verifie": true
+    }
+  }
+}

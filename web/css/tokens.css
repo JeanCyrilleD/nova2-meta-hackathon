@@ -1,0 +1,989 @@
+/* tokens.css — FICHIER UNIQUE DES JETONS DE DESIGN de Nova 2 (Phase 4, 31/10/2026 ; règles : docs/DESIGN_RULES.md).
+   Partie A : jetons de thème anciennement dispersés dans app.css et identite.css, déplacés ici par
+   tools/ui/tokens_consolidate.py SANS modification (même ordre ; variables calculées identiques : tools/ui/root_vars_dump.py).
+   Partie B : système « NOVA Liquid Glass » (Gemini) + pont. Partie C (fin) : jetons Phase 4 (surfaces pleines, espacement,
+   rayons, mouvement, préférences d'accessibilité). Aucune autre feuille ne doit déclarer de jeton global. */
+/* ── Jetons venus de app.css (ordre de cascade conservé) ── */
+html[data-material="sable"][data-mode="jour"]{--ck-tile-hi:#FAF8F5; --ck-tile-lo:#EEEAE2}
+html[data-material="sable"][data-mode="nuit"]{--ck-tile-hi:#3C372F; --ck-tile-lo:#322E27}
+:root {
+  --ds-1: 4px; --ds-2: 8px; --ds-3: 12px; --ds-4: 16px; --ds-5: 24px; --ds-6: 32px;
+  --ds-r-sm: 8px; --ds-r-md: 12px; --ds-r-lg: 16px;
+  /* Statuts : la variante « -text » de chaque thème (contrastes AA vérifiés sur le
+     fond des volets, jour et nuit — banc V6_DS). */
+  --ds-ok: var(--ok-text, var(--ok));
+  --ds-warn: var(--warn-text, var(--warn));
+  --ds-danger: var(--bad-text, var(--bad));
+  --ds-neutral: var(--text-2);
+  --ds-ok-bg: color-mix(in srgb, var(--ds-ok) 14%, transparent);
+  --ds-warn-bg: color-mix(in srgb, var(--ds-warn) 15%, transparent);
+  --ds-danger-bg: color-mix(in srgb, var(--ds-danger) 14%, transparent);
+  --ds-neutral-bg: var(--fill-2);
+  --ds-sel-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+  --ds-line: var(--hairline);
+  --ds-card-bg: var(--fill-1);
+  --ds-card-shadow: inset 0 0 0 .5px var(--hairline);
+  --ds-ring: var(--accent-ink);
+}
+html[data-mode="jour"] {
+  --ds-ok: color-mix(in srgb, var(--ok-text, var(--ok)) 72%, #000);
+  --ds-warn: color-mix(in srgb, var(--warn-text, var(--warn)) 70%, #000);
+  --ds-danger: color-mix(in srgb, var(--bad-text, var(--bad)) 86%, #000);
+  --ds-ok-bg: color-mix(in srgb, var(--ds-ok) 11%, transparent);
+  --ds-warn-bg: color-mix(in srgb, var(--ds-warn) 12%, transparent);
+  --ds-danger-bg: color-mix(in srgb, var(--ds-danger) 10%, transparent);
+}
+html[data-mode="nuit"] { --ds-danger: color-mix(in srgb, var(--bad-text, var(--bad)) 82%, #fff); }
+:root { --ds-muted: var(--text-3); }
+html[data-material="sable"][data-mode="nuit"] { --ds-muted: color-mix(in srgb, var(--text-3) 55%, var(--text-2)); }
+html[data-material="sable"] { --ds-card-bg: var(--paper); --ds-card-shadow: inset 0 0 0 1px var(--hairline), var(--shadow-1); }
+html[data-material="graphite"] { --ds-card-bg: var(--glass); --ds-card-shadow: inset 0 0 0 .5px var(--hairline); }
+html[data-text-size="s"]{--chat-fs:13.5px}
+html[data-text-size="l"]{--chat-fs:16.5px}
+html[data-text-size="xl"]{--chat-fs:18.5px}
+html[data-read-width="narrow"]{--read-w:640px}
+html[data-read-width="wide"]{--read-w:1000px}
+/* ── Jetons venus de identite.css (ordre de cascade conservé) ── */
+html[data-material="sentinelle"] {
+  --blur-e1: 0px; --blur-e2: 0px; --blur-e3: 0px; --mat-sat: 100%;
+  --filter-e1: none; --filter-e2: none; --filter-e3: none; --glass-blur: none; --glass-blur-strong: none;
+  --lg-blur-rail: none; --lg-blur-float: none;
+  --scene-glow-1: rgb(0 0 0 / 0); --scene-glow-2: rgb(0 0 0 / 0); --scene-intensity: 0; --scene-floor: 0;
+  --fs-body: 15px;
+  --focus-ring: 0 0 0 2px var(--ground), 0 0 0 5px var(--text-1);
+}
+html[data-identite] {
+  /* Grain : bruit fractal, tuile de 160 px peinte une fois. */
+  --id-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 -.42'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+  --c-hl: .085;            /* bande lumineuse haute */
+  --c-amb: 16%;            /* lueur d'accent au bord bas */
+}
+html[data-identite][data-mode="nuit"] {
+  --c-top: color-mix(in srgb, var(--pane-solid), #fff 7%);
+  --c-bot: color-mix(in srgb, var(--pane-solid), #000 6%);
+  --c-rim: linear-gradient(140deg, rgb(255 243 226 / .62), rgb(255 243 226 / .16) 26%, rgb(255 243 226 / .05) 55%, rgb(255 243 226 / .03) 78%, rgb(255 243 226 / .12));
+  --c-shadow: 0 1px 1px rgb(0 0 8 / .45), 0 3px 8px -2px rgb(0 0 8 / .45), 0 22px 44px -20px rgb(0 0 8 / .85);
+  --c-shadow-hover: 0 1px 1px rgb(0 0 8 / .45), 0 6px 14px -4px rgb(0 0 8 / .5), 0 30px 60px -22px rgb(0 0 8 / .95);
+  --b-top: color-mix(in srgb, var(--pane-solid), #fff 14%);
+  --b-bot: color-mix(in srgb, var(--pane-solid), #fff 4%);
+  --b-rim: linear-gradient(180deg, rgb(255 243 226 / .4), rgb(255 243 226 / .08) 60%, rgb(0 0 0 / .3));
+  --grav: drop-shadow(0 1px 0 rgb(0 0 0 / .55));
+}
+html[data-identite][data-mode="jour"] {
+  --id-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .1 0 0 0 .9 -.42'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+  --c-hl: .9; --c-amb: 9%;
+  --c-top: #FFFFFF;
+  --c-bot: color-mix(in srgb, var(--pane-solid), var(--ground) 45%);
+  --c-rim: linear-gradient(140deg, #FFFFFF, rgb(255 255 255 / .85) 30%, rgb(var(--shadow-rgb) / .1) 65%, rgb(var(--shadow-rgb) / .22));
+  --c-shadow: 0 1px 1px rgb(var(--shadow-rgb) / .12), 0 4px 10px -3px rgb(var(--shadow-rgb) / .16), 0 24px 44px -22px rgb(var(--shadow-rgb) / .38);
+  --c-shadow-hover: 0 1px 1px rgb(var(--shadow-rgb) / .12), 0 8px 16px -4px rgb(var(--shadow-rgb) / .2), 0 32px 56px -24px rgb(var(--shadow-rgb) / .46);
+  --b-top: #FFFFFF;
+  --b-bot: color-mix(in srgb, var(--pane-solid), var(--ground) 60%);
+  --b-rim: linear-gradient(180deg, #FFFFFF, rgb(var(--shadow-rgb) / .1) 55%, rgb(var(--shadow-rgb) / .3));
+  --grav: drop-shadow(0 1px 0 rgb(255 255 255 / .9));
+}
+html[data-identite] {
+  --glass-rim: var(--c-rim);
+  --glass-1: var(--id-grain) padding-box, linear-gradient(180deg, rgb(var(--edge-rgb) / var(--c-hl)), rgb(var(--edge-rgb) / 0) 52px) padding-box, linear-gradient(180deg, var(--c-top), var(--c-bot)) padding-box, var(--c-rim) border-box;
+  --glass-2: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .4)), transparent 70%), rgb(var(--glass-rgb) / calc(var(--glass-a) + .12));
+  --glass-3: linear-gradient(180deg, rgb(var(--edge-rgb) / calc(var(--edge-a) * .3)), transparent 60%), var(--glass-strong);
+}
+html[data-material="sentinelle"][data-identite][data-mode] {
+  --c-rim: linear-gradient(var(--border-strong), var(--border-strong)); --c-top: var(--pane-solid); --c-bot: var(--pane-solid); --c-hl: 0; --c-amb: 0%;
+  --b-top: var(--pane-solid); --b-bot: var(--pane-solid); --b-rim: linear-gradient(var(--border-strong), var(--border-strong));
+  --c-shadow: none; --c-shadow-hover: none; --grav: none; --id-grain: none;
+  --glass-2: var(--pane-solid); --glass-3: var(--pane-solid); --glass-blur-fixed: none;
+}
+html[data-material="harmattan"][data-mode="nuit"] {
+  --id-hero-sky:
+    radial-gradient(1.3px 1.3px at 46% 18%, rgb(255 244 222 / .8), transparent),
+    radial-gradient(1px 1px at 58% 42%, rgb(255 244 222 / .5), transparent),
+    radial-gradient(1.6px 1.6px at 66% 12%, rgb(242 196 107 / .9), transparent),
+    radial-gradient(1px 1px at 71% 30%, rgb(255 244 222 / .45), transparent),
+    radial-gradient(1.2px 1.2px at 52% 64%, rgb(255 244 222 / .35), transparent);
+}
+html[data-material="harmattan"][data-mode="nuit"] { --id-glow-bottom: rgb(232 100 58 / .16); --id-glow-top: rgb(95 102 230 / .14); --id-vignette: .45; }
+html[data-material="harmattan"][data-mode="jour"] { --id-vignette: .06; }
+html[data-material="fleuve"][data-mode="nuit"] { --id-vignette: .4; }
+html[data-material="fleuve"][data-mode="jour"] { --id-vignette: .05; }
+html[data-identite][data-mode="nuit"]:not([data-material="sentinelle"]) {
+  --glass-a: .34;
+  --pane: rgb(var(--glass-rgb) / .42);
+  --glass-strong: rgb(var(--glass-rgb) / .7);
+  --lg-fill-card: rgb(255 248 238 / .055);
+  --lg-fill-ctl: rgb(255 255 255 / .085);
+  --lg-sel: linear-gradient(180deg, rgb(255 255 255 / .2), rgb(255 255 255 / .07));
+  --lg-hl: rgb(255 255 255 / .1);
+  --lg-rim-hi: rgb(255 255 255 / .42); --lg-rim-lo: rgb(255 255 255 / .08);
+  --lg-lens: rgb(255 255 255 / .1); --lg-depth: rgb(0 0 10 / .4);
+  --lg-drop: 0 1px 1px rgb(0 0 10 / .25), 0 12px 30px -14px rgb(0 0 10 / .55), 0 34px 70px -36px rgb(0 0 10 / .6);
+  --lg-blur-rail: blur(26px) saturate(170%);
+  --lg-blur-pane: blur(30px) saturate(170%);
+  --lg-blur-float: blur(22px) saturate(180%);
+  --c-top: rgb(255 248 238 / .075); --c-bot: rgb(255 248 238 / .03);
+  --b-top: rgb(255 255 255 / .14); --b-bot: rgb(255 255 255 / .05);
+  --id-vignette: .16;
+}
+html[data-identite][data-mode="jour"]:not([data-material="sentinelle"]) {
+  --glass-a: .44;
+  --pane: rgb(var(--glass-rgb) / .5);
+  --glass-strong: rgb(var(--glass-rgb) / .82);
+  --lg-fill-card: rgb(255 255 255 / .42);
+  --lg-fill-ctl: rgb(255 255 255 / .55);
+  --lg-sel: linear-gradient(180deg, rgb(255 255 255 / .95), rgb(255 255 255 / .62));
+  --lg-hl: rgb(255 255 255 / .55);
+  --lg-rim-hi: rgb(255 255 255 / .98); --lg-rim-lo: rgb(var(--shadow-rgb) / .1);
+  --lg-lens: rgb(255 255 255 / .55); --lg-depth: rgb(var(--shadow-rgb) / .12);
+  --lg-drop: 0 1px 1px rgb(var(--shadow-rgb) / .1), 0 12px 28px -14px rgb(var(--shadow-rgb) / .22), 0 34px 70px -36px rgb(var(--shadow-rgb) / .3);
+  --lg-blur-rail: blur(26px) saturate(160%);
+  --lg-blur-pane: blur(30px) saturate(160%);
+  --lg-blur-float: blur(22px) saturate(170%);
+  --c-top: rgb(255 255 255 / .58); --c-bot: rgb(255 255 255 / .32);
+  --b-top: rgb(255 255 255 / .82); --b-bot: rgb(255 255 255 / .5);
+  --id-vignette: .03;
+}
+html[data-identite]:not([data-material="sentinelle"]) {
+  /* liseré spéculaire + anneau de lentille + épaisseur — à ajouter à toute surface de verre */
+  --glass-edges: inset 1px 1px 0 var(--lg-rim-hi), inset -1px -1px 0 var(--lg-rim-lo), inset 0 0 0 .5px var(--lg-rim-lo), inset 0 0 16px -6px var(--lg-lens), inset 0 -14px 22px -18px var(--lg-depth);
+  --glass-edges-sm: inset 1px 1px 0 var(--lg-rim-hi), inset -1px -1px 0 var(--lg-rim-lo), inset 0 0 0 .5px var(--lg-rim-lo), inset 0 -6px 10px -8px var(--lg-depth);
+  /* les cartes (identite v2 et layouts.css) deviennent translucides : plus de liseré border-box opaque */
+  --c-rim: linear-gradient(transparent, transparent);
+  --b-rim: linear-gradient(transparent, transparent);
+  --c-shadow: var(--glass-edges), 0 1px 1px rgb(var(--shadow-rgb) / .18), 0 16px 34px -20px rgb(var(--shadow-rgb) / .55);
+  --c-shadow-hover: var(--glass-edges), 0 2px 4px rgb(var(--shadow-rgb) / .2), 0 26px 50px -22px rgb(var(--shadow-rgb) / .65);
+  --elev-2: var(--glass-edges-sm), 0 1px 1px rgb(var(--shadow-rgb) / .2), 0 12px 24px -16px rgb(var(--shadow-rgb) / .5);
+  --lg-sheen-on: radial-gradient(220px circle at var(--gx) var(--gy), rgb(255 255 255 / .16), rgb(255 255 255 / .04) 40%, transparent 70%);
+}
+html[data-identite][data-mode="jour"]:not([data-material="sentinelle"]) { --lg-sheen-on: radial-gradient(220px circle at var(--gx) var(--gy), rgb(255 255 255 / .7), rgb(255 255 255 / .2) 40%, transparent 70%); }
+html[data-identite][data-mode="nuit"]:not([data-material="sentinelle"]) { --text-2: rgb(245 240 232 / .8); --text-3: rgb(245 240 232 / .64); }
+html[data-identite][data-mode="jour"]:not([data-material="sentinelle"]) { --text-2: color-mix(in srgb, var(--text-1) 80%, transparent); --text-3: color-mix(in srgb, var(--text-1) 68%, transparent); }
+html[data-material="fleuve"][data-mode="nuit"] { --text-2: rgb(233 241 240 / .8); --text-3: rgb(233 241 240 / .64); }
+html[data-identite][data-transparency="reduced"][data-mode] { --pane: var(--pane-solid); --c-top: var(--pane-solid); --c-bot: var(--pane-solid); --b-top: var(--fill-2); --b-bot: var(--fill-2); --lg-sheen-on: linear-gradient(transparent, transparent); }
+html[data-identite][data-contrast="more"] { --hairline: var(--border-strong); --text-2: var(--text-1); }
+html[data-identite][data-native="1"][data-mode="nuit"]:not([data-material="sentinelle"]) {
+  --glass-rgb: 24 24 28;
+  --glass-a: .12;
+  --pane: rgb(24 24 28 / .12);
+  --glass-strong: rgb(24 24 28 / .55);
+  --lg-fill-card: rgb(255 255 255 / .045);
+  --lg-fill-ctl: rgb(255 255 255 / .08);
+  --c-top: rgb(255 255 255 / .06); --c-bot: rgb(255 255 255 / .02);
+  --id-vignette: 0;
+}
+html[data-identite][data-native="1"][data-mode="jour"]:not([data-material="sentinelle"]) {
+  --glass-rgb: 255 255 255;
+  --glass-a: .14;
+  --pane: rgb(255 255 255 / .12);
+  --glass-strong: rgb(255 255 255 / .62);
+  --lg-fill-card: rgb(255 255 255 / .16);
+  --lg-fill-ctl: rgb(255 255 255 / .3);
+  --c-top: rgb(255 255 255 / .22); --c-bot: rgb(255 255 255 / .08);
+  --id-vignette: 0;
+}
+html[data-identite]:not([data-material="sentinelle"]) {
+  --v4-hover: rgb(0 0 0 / .045);
+  --v4-sel: rgb(0 0 0 / .075);
+  --v4-ctl: rgb(255 255 255 / .55);
+  --v4-ctl-line: rgb(0 0 0 / .08);
+  --v4-track: rgb(0 0 0 / .055);
+  --v4-thumb: rgb(255 255 255 / .92);
+  --v4-sym: rgb(0 0 0 / .62);
+}
+html[data-identite][data-mode="nuit"]:not([data-material="sentinelle"]) {
+  --v4-hover: rgb(255 255 255 / .06);
+  --v4-sel: rgb(255 255 255 / .1);
+  --v4-ctl: rgb(255 255 255 / .08);
+  --v4-ctl-line: rgb(255 255 255 / .1);
+  --v4-track: rgb(255 255 255 / .06);
+  --v4-thumb: rgb(255 255 255 / .16);
+  --v4-sym: rgb(255 255 255 / .72);
+}
+
+/* ══ Partie B ══ */
+/* tokens.css — 30/10 09:16 : système de design « NOVA Liquid Glass » produit par Gemini (AI Studio, prompt 1 du document
+   « Nova — prompts de refonte visuelle »), intégré tel quel avec trois adaptations à Nova :
+   1. sélecteur de thème : Nova pose data-material="harmattan|fleuve|sentinelle" (data-theme vaut « harmattan-nuit ») ;
+   2. --accent-ink (texte SUR l'accent chez Gemini) devient --on-accent : chez Nova, --accent-ink = texte COULEUR accent ;
+   3. le PONT en fin de fichier branche ces jetons sur les variables que l'interface lit déjà (--text-1, --type-*, --bad…).
+   Le verre (fond, flou) reste celui de V3·clair, transparent et neutre, validé par Ahadi le 30/10 08:14 : les fonds
+   --glass-l1..l3 (blanc 56 à 84 %) ne sont PAS branchés, ils rendraient les cartes opaques. Chargé APRÈS identite.css. */
+/* ==========================================================================
+   NOVA — macOS 26/27 "Liquid Glass" Visual System Tokens
+   Owner: Ahadi (Ouagadougou, UTC+0) | Language: FR
+   Architecture: Transparent WKWebView over NSVisualEffectView (.hudWindow)
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. TYPOGRAPHY (Apple Native System Stack — Zero External Fonts)
+     ------------------------------------------------------------------------ */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
+  --font-display: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-rounded: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+  --font-serif: ui-serif, "New York", Georgia, serif;
+
+  /* 11-Role Type Scale: Size, Line-Height, Weight, Tracking */
+  /* 01. Caption 2 (Micro-labels, timestamps, UTC+0 badges) */
+  --text-caption2-size: 0.6875rem;     /* 11px */
+  --text-caption2-lh: 0.875rem;        /* 14px */
+  --text-caption2-weight: 500;
+  --text-caption2-track: 0.012em;
+
+  /* 02. Caption 1 (Secondary metadata, table footers, keyboard shortcuts) */
+  --text-caption1-size: 0.75rem;       /* 12px */
+  --text-caption1-lh: 1rem;            /* 16px */
+  --text-caption1-weight: 400;
+  --text-caption1-track: 0.008em;
+
+  /* 03. Footnote (Sidebar status, Éclat sub-labels, audit trail) */
+  --text-footnote-size: 0.8125rem;     /* 13px */
+  --text-footnote-lh: 1.125rem;        /* 18px */
+  --text-footnote-weight: 400;
+  --text-footnote-track: -0.003em;
+
+  /* 04. Subhead (List secondary lines, card subtitles) */
+  --text-subhead-size: 0.875rem;       /* 14px */
+  --text-subhead-lh: 1.25rem;         /* 20px */
+  --text-subhead-weight: 400;
+  --text-subhead-track: -0.006em;
+
+  /* 05. Callout (Controls, buttons, segmented items, menu items) */
+  --text-callout-size: 0.875rem;       /* 14px */
+  --text-callout-lh: 1.25rem;         /* 20px */
+  --text-callout-weight: 500;
+  --text-callout-track: -0.008em;
+
+  /* 06. Body (Primary reading, mail preview, briefing text) */
+  --text-body-size: 0.9375rem;         /* 15px */
+  --text-body-lh: 1.375rem;            /* 22px */
+  --text-body-weight: 400;
+  --text-body-track: -0.011em;
+
+  /* 07. Headline (Card headers, modal titles, active row titles) */
+  --text-headline-size: 0.9375rem;     /* 15px */
+  --text-headline-lh: 1.375rem;        /* 22px */
+  --text-headline-weight: 600;
+  --text-headline-track: -0.014em;
+
+  /* 08. Title 3 (Section headers, sub-panes) */
+  --text-title3-size: 1.125rem;        /* 18px */
+  --text-title3-lh: 1.5rem;            /* 24px */
+  --text-title3-weight: 600;
+  --text-title3-track: -0.018em;
+
+  /* 09. Title 2 (Sheet titles, major group headers) */
+  --text-title2-size: 1.375rem;        /* 22px */
+  --text-title2-lh: 1.75rem;           /* 28px */
+  --text-title2-weight: 600;
+  --text-title2-track: -0.021em;
+
+  /* 10. Title 1 (Page headers, shared-element rail morph target) */
+  --text-title1-size: 1.75rem;         /* 28px */
+  --text-title1-lh: 2.125rem;          /* 34px */
+  --text-title1-weight: 650;
+  --text-title1-track: -0.024em;
+
+  /* 11. Large Title (Briefing hero, KPI rounded figures, FCFA/EUR totals) */
+  --text-largetitle-size: 2.25rem;     /* 36px */
+  --text-largetitle-lh: 2.625rem;      /* 42px */
+  --text-largetitle-weight: 700;
+  --text-largetitle-track: -0.028em;
+
+  /* ------------------------------------------------------------------------
+     2. 4PT SPATIAL GRID (--space-*)
+     ------------------------------------------------------------------------ */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ------------------------------------------------------------------------
+     3. CONCENTRIC RADII (--radius-*)
+     Rule: Inner radius = Outer radius - Padding
+     ------------------------------------------------------------------------ */
+  --radius-xs: 6px;                    /* Badges, checkboxes, inline tags */
+  --radius-sm: 8px;                    /* Buttons, inputs, menu items (L2 - 8px pad) */
+  --radius-md: 12px;                   /* L3 Popovers, toasts, nested sub-cards */
+  --radius-lg: 16px;                   /* L2 Cards, sheets (outer container) */
+  --radius-xl: 20px;                   /* L1 Sidebar rail floating inset, modals */
+  --radius-pill: 9999px;               /* Toggles, GO confirmation pills, avatars */
+
+  /* ------------------------------------------------------------------------
+     4. CURSOR LENSING COORDINATES (Updated via JS pointermove)
+     ------------------------------------------------------------------------ */
+  --gx: 50%;
+  --gy: 0%;
+  --lensing-radius: 260px;
+
+  /* ------------------------------------------------------------------------
+     5. MOTION & SPRING PHYSICS (--spring-*, --dur-*)
+     Physical parameters documented + CSS linear() approximations
+     ------------------------------------------------------------------------ */
+  /* Durations */
+  --dur-press: 160ms;
+  --dur-hover: 220ms;
+  --dur-toast: 380ms;
+  --dur-list: 340ms;
+  --dur-sheet: 440ms;
+  --dur-page: 480ms;
+  --dur-avatar: 620ms;
+  --dur-stagger: 30ms;                 /* Max 6 items = 180ms cap */
+
+  /* 1. Press: stiffness 600, damping 38, mass 0.8 (critically damped, crisp) */
+  --spring-press-meta: "stiffness:600; damping:38; mass:0.8";
+  --spring-press: linear(
+    0, 0.354 11%, 0.672 24%, 0.871 38%, 0.963 54%, 0.994 72%, 1
+  );
+
+  /* 2. Hover: stiffness 420, damping 32, mass 0.9 (responsive, zero bounce) */
+  --spring-hover-meta: "stiffness:420; damping:32; mass:0.9";
+  --spring-hover: linear(
+    0, 0.289 10%, 0.612 23%, 0.838 38%, 0.948 55%, 0.989 75%, 1
+  );
+
+  /* 3. Open Sheet: stiffness 340, damping 28, mass 1.0 (2% subtle settle) */
+  --spring-sheet-meta: "stiffness:340; damping:28; mass:1.0";
+  --spring-sheet: linear(
+    0, 0.214 8%, 0.569 20%, 0.852 34%, 0.986 48%, 1.018 62%, 1.005 78%, 1
+  );
+
+  /* 4. Page Change / Shared Morph: stiffness 300, damping 30, mass 1.0 */
+  --spring-page-meta: "stiffness:300; damping:30; mass:1.0";
+  --spring-page: linear(
+    0, 0.192 8%, 0.518 20%, 0.796 34%, 0.945 50%, 0.992 68%, 1.002 84%, 1
+  );
+
+  /* 5. List Insert: stiffness 380, damping 29, mass 0.9 */
+  --spring-list-meta: "stiffness:380; damping:29; mass:0.9";
+  --spring-list: linear(
+    0, 0.246 9%, 0.614 22%, 0.881 36%, 0.994 50%, 1.014 65%, 1.003 82%, 1
+  );
+
+  /* 6. Toast: stiffness 400, damping 25, mass 0.95 (tactile 3.4% overshoot) */
+  --spring-toast-meta: "stiffness:400; damping:25; mass:0.95";
+  --spring-toast: linear(
+    0, 0.268 8%, 0.654 20%, 0.928 33%, 1.034 46%, 1.019 60%, 0.998 76%, 1
+  );
+
+  /* 7. Avatar State Change: stiffness 180, damping 20, mass 1.2 (calm breathing) */
+  --spring-avatar-meta: "stiffness:180; damping:20; mass:1.2";
+  --spring-avatar: linear(
+    0, 0.148 8%, 0.442 20%, 0.751 35%, 0.954 50%, 1.022 65%, 1.008 82%, 1
+  );
+}
+
+/* ==========================================================================
+   BASE LIQUID GLASS LEVELS — MODE JOUR (Light Neutral Colourless Glass)
+   L0 = Native NSVisualEffectView (.hudWindow) — Web layer 0% alpha
+   ========================================================================== */
+:root,
+html[data-mode="jour"] {
+  color-scheme: light;
+
+  /* L0: Window Base */
+  --glass-l0-bg: transparent;
+  --glass-l0-filter: none;
+
+  /* L1: Sidebar & Navigation Rail */
+  --glass-l1-blur: 24px;
+  --glass-l1-sat: 140%;
+  --glass-l1-bg: rgba(255, 255, 255, 0.56);
+  --glass-l1-filter: blur(var(--glass-l1-blur)) saturate(var(--glass-l1-sat));
+  --glass-l1-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.78),
+                       inset -1px -1px 0 0 rgba(255, 255, 255, 0.24);
+  --glass-l1-hairline: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --glass-l1-radius: var(--radius-xl);
+
+  /* L2: Cards, Briefings & Sheets */
+  --glass-l2-blur: 36px;
+  --glass-l2-sat: 160%;
+  --glass-l2-bg: rgba(255, 255, 255, 0.72);
+  --glass-l2-filter: blur(var(--glass-l2-blur)) saturate(var(--glass-l2-sat));
+  --glass-l2-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.92),
+                       inset 0 -1px 0 0 rgba(255, 255, 255, 0.38);
+  --glass-l2-hairline: 0 0 0 1px rgba(0, 0, 0, 0.09);
+  --glass-l2-radius: var(--radius-lg);
+
+  /* L3: Popovers, Menus & Toasts */
+  --glass-l3-blur: 52px;
+  --glass-l3-sat: 185%;
+  --glass-l3-bg: rgba(255, 255, 255, 0.84);
+  --glass-l3-filter: blur(var(--glass-l3-blur)) saturate(var(--glass-l3-sat));
+  --glass-l3-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.98),
+                       inset -1px -1px 0 0 rgba(255, 255, 255, 0.52);
+  --glass-l3-hairline: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  --glass-l3-radius: var(--radius-md);
+
+  /* Lensing refraction highlight (follows --gx, --gy) */
+  --glass-lensing-bg: radial-gradient(
+    var(--lensing-radius) circle at var(--gx) var(--gy),
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.14) 38%,
+    transparent 70%
+  );
+}
+
+/* ==========================================================================
+   BASE LIQUID GLASS LEVELS — MODE NUIT (Dark Neutral Colourless Glass)
+   ========================================================================== */
+html[data-mode="nuit"] {
+  color-scheme: dark;
+
+  --glass-l0-bg: transparent;
+  --glass-l0-filter: none;
+
+  /* L1: Sidebar & Navigation Rail */
+  --glass-l1-blur: 28px;
+  --glass-l1-sat: 150%;
+  --glass-l1-bg: rgba(0, 0, 0, 0.44);
+  --glass-l1-filter: blur(var(--glass-l1-blur)) saturate(var(--glass-l1-sat));
+  --glass-l1-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.15),
+                       inset -1px -1px 0 0 rgba(255, 255, 255, 0.04);
+  --glass-l1-hairline: 0 0 0 1px rgba(0, 0, 0, 0.58);
+  --glass-l1-radius: var(--radius-xl);
+
+  /* L2: Cards, Briefings & Sheets */
+  --glass-l2-blur: 40px;
+  --glass-l2-sat: 170%;
+  --glass-l2-bg: rgba(0, 0, 0, 0.58);
+  --glass-l2-filter: blur(var(--glass-l2-blur)) saturate(var(--glass-l2-sat));
+  --glass-l2-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.22),
+                       inset 0 -1px 0 0 rgba(255, 255, 255, 0.06);
+  --glass-l2-hairline: 0 0 0 1px rgba(0, 0, 0, 0.68);
+  --glass-l2-radius: var(--radius-lg);
+
+  /* L3: Popovers, Menus & Toasts */
+  --glass-l3-blur: 56px;
+  --glass-l3-sat: 195%;
+  --glass-l3-bg: rgba(0, 0, 0, 0.72);
+  --glass-l3-filter: blur(var(--glass-l3-blur)) saturate(var(--glass-l3-sat));
+  --glass-l3-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.28),
+                       inset -1px -1px 0 0 rgba(255, 255, 255, 0.09);
+  --glass-l3-hairline: 0 0 0 1px rgba(0, 0, 0, 0.78);
+  --glass-l3-radius: var(--radius-md);
+
+  /* Lensing refraction highlight (follows --gx, --gy) */
+  --glass-lensing-bg: radial-gradient(
+    var(--lensing-radius) circle at var(--gx) var(--gy),
+    rgba(255, 255, 255, 0.20) 0%,
+    rgba(255, 255, 255, 0.05) 40%,
+    transparent 70%
+  );
+}
+
+/* ==========================================================================
+   THEME 1: HARMATTAN (Sahel Dust Light — Warm Neutral, Deep Ochre Accent)
+   ========================================================================== */
+html[data-material="harmattan"][data-mode="jour"],
+html[data-material="harmattan"]:not([data-mode="nuit"]) {
+  /* Ink Hierarchy (All >= 4.5:1 for readable text on L1–L3 glass) */
+  --ink-1: #1C1915;                    /* Primary ink (14.6:1 on L2) */
+  --ink-2: #4A443C;                    /* Secondary ink (7.8:1 on L2) */
+  --ink-3: #635B51;                    /* Tertiary / muted label (5.1:1 on L2) */
+  --ink-4: #8C8378;                    /* Disabled / placeholder (3.1:1 non-text/disabled) */
+
+  /* Hairlines & Dividers */
+  --line-subtle: rgba(28, 25, 21, 0.07);
+  --line-default: rgba(28, 25, 21, 0.13);
+  --line-strong: rgba(28, 25, 21, 0.22);
+
+  /* Sand-Grey Layered Shadows (Ambient + Key + Specular + Hairline) */
+  --shadow-l1: var(--glass-l1-specular), var(--glass-l1-hairline),
+               0 4px 16px -2px rgba(42, 34, 24, 0.07),
+               0 1px 3px 0 rgba(42, 34, 24, 0.05);
+  --shadow-l2: var(--glass-l2-specular), var(--glass-l2-hairline),
+               0 12px 32px -4px rgba(42, 34, 24, 0.11),
+               0 3px 8px -1px rgba(42, 34, 24, 0.07);
+  --shadow-l3: var(--glass-l3-specular), var(--glass-l3-hairline),
+               0 24px 56px -8px rgba(42, 34, 24, 0.18),
+               0 6px 16px -2px rgba(42, 34, 24, 0.11);
+
+  /* Semantic & Primary Action Accent (Deep Sahel Ochre — 5.12:1 with white) */
+  --accent: #9E5316;
+  --accent-hover: #874510;
+  --accent-press: #70380B;
+  --accent-soft: rgba(158, 83, 22, 0.12);
+  --on-accent: #FFFFFF;
+
+  /* Semantic Status (Desaturated Apple-grade, >= 4.8:1 contrast) */
+  --ok: #246A43;
+  --ok-soft: rgba(36, 106, 67, 0.12);
+  --warn: #94580A;
+  --warn-soft: rgba(148, 88, 10, 0.13);
+  --danger: #B3261E;
+  --danger-soft: rgba(179, 38, 30, 0.12);
+  --info: #1D5D8F;
+  --info-soft: rgba(29, 93, 143, 0.12);
+
+  /* 6-Colour Financial & Grant Chart Palette */
+  --chart-1: #9E5316;                  /* Deep Ochre (Engagé) */
+  --chart-2: #2B6B7F;                  /* River Slate (Décaissé) */
+  --chart-3: #4E7A5B;                  /* Acacia Sage (Disponible) */
+  --chart-4: #7A5C8F;                  /* Dusk Plum (En attente GO) */
+  --chart-5: #B57C2E;                  /* Amber Gold (Réserve) */
+  --chart-6: #6E665E;                  /* Laterite Grey (Clôturé) */
+
+  /* Fallback Opaque Surfaces (for prefers-reduced-transparency) */
+  --opaque-l0: #F4F1EC;
+  --opaque-l1: #EDE9E2;
+  --opaque-l2: #F9F7F3;
+  --opaque-l3: #FFFFFF;
+}
+
+html[data-material="harmattan"][data-mode="nuit"] {
+  --ink-1: #F5F2ED;                    /* Primary ink (15.1:1 on L2) */
+  --ink-2: #C7C0B6;                    /* Secondary ink (8.9:1 on L2) */
+  --ink-3: #9E968B;                    /* Tertiary ink (5.3:1 on L2) */
+  --ink-4: #665F56;                    /* Disabled ink */
+
+  --line-subtle: rgba(245, 242, 237, 0.08);
+  --line-default: rgba(245, 242, 237, 0.14);
+  --line-strong: rgba(245, 242, 237, 0.24);
+
+  --shadow-l1: var(--glass-l1-specular), var(--glass-l1-hairline),
+               0 6px 20px -2px rgba(0, 0, 0, 0.42),
+               0 2px 5px 0 rgba(0, 0, 0, 0.30);
+  --shadow-l2: var(--glass-l2-specular), var(--glass-l2-hairline),
+               0 14px 36px -4px rgba(0, 0, 0, 0.54),
+               0 4px 10px -1px rgba(0, 0, 0, 0.38);
+  --shadow-l3: var(--glass-l3-specular), var(--glass-l3-hairline),
+               0 28px 64px -8px rgba(0, 0, 0, 0.68),
+               0 8px 20px -2px rgba(0, 0, 0, 0.48);
+
+  /* Luminous Ochre for Dark Glass (7.4:1 against dark ink) */
+  --accent: #E09453;
+  --accent-hover: #E8A368;
+  --accent-press: #CC8040;
+  --accent-soft: rgba(224, 148, 83, 0.18);
+  --on-accent: #1A120B;
+
+  --ok: #5CC489;
+  --ok-soft: rgba(92, 196, 137, 0.16);
+  --warn: #E8A84C;
+  --warn-soft: rgba(232, 168, 76, 0.16);
+  --danger: #F2746B;
+  --danger-soft: rgba(242, 116, 107, 0.18);
+  --info: #6DB3E8;
+  --info-soft: rgba(109, 179, 232, 0.16);
+
+  --chart-1: #E09453;
+  --chart-2: #58A6BD;
+  --chart-3: #74B588;
+  --chart-4: #AE8EC4;
+  --chart-5: #E3B35A;
+  --chart-6: #9E968B;
+
+  --opaque-l0: #141210;
+  --opaque-l1: #1C1916;
+  --opaque-l2: #24201C;
+  --opaque-l3: #2E2924;
+}
+
+/* ==========================================================================
+   THEME 2: FLEUVE (The Niger River — Cool Neutral Greys, Deep River Teal)
+   ========================================================================== */
+html[data-material="fleuve"][data-mode="jour"],
+html[data-material="fleuve"]:not([data-mode="nuit"]) {
+  --ink-1: #12181C;                    /* 15.4:1 on L2 */
+  --ink-2: #39444C;                    /* 8.3:1 on L2 */
+  --ink-3: #52606B;                    /* 5.4:1 on L2 */
+  --ink-4: #7D8B96;
+
+  --line-subtle: rgba(18, 24, 28, 0.07);
+  --line-default: rgba(18, 24, 28, 0.13);
+  --line-strong: rgba(18, 24, 28, 0.22);
+
+  --shadow-l1: var(--glass-l1-specular), var(--glass-l1-hairline),
+               0 4px 16px -2px rgba(15, 28, 38, 0.07),
+               0 1px 3px 0 rgba(15, 28, 38, 0.05);
+  --shadow-l2: var(--glass-l2-specular), var(--glass-l2-hairline),
+               0 12px 32px -4px rgba(15, 28, 38, 0.11),
+               0 3px 8px -1px rgba(15, 28, 38, 0.07);
+  --shadow-l3: var(--glass-l3-specular), var(--glass-l3-hairline),
+               0 24px 56px -8px rgba(15, 28, 38, 0.18),
+               0 6px 16px -2px rgba(15, 28, 38, 0.11);
+
+  /* Deep River Teal (5.65:1 with white) */
+  --accent: #146978;
+  --accent-hover: #0F5663;
+  --accent-press: #0A4550;
+  --accent-soft: rgba(20, 105, 120, 0.12);
+  --on-accent: #FFFFFF;
+
+  --ok: #1F6E4A;
+  --ok-soft: rgba(31, 110, 74, 0.12);
+  --warn: #8F5B10;
+  --warn-soft: rgba(143, 91, 16, 0.12);
+  --danger: #B02727;
+  --danger-soft: rgba(176, 39, 39, 0.12);
+  --info: #1B5E91;
+  --info-soft: rgba(27, 94, 145, 0.12);
+
+  --chart-1: #146978;
+  --chart-2: #2E5B88;
+  --chart-3: #3B7A57;
+  --chart-4: #6D5B8E;
+  --chart-5: #A66E29;
+  --chart-6: #5C6B73;
+
+  --opaque-l0: #EEF2F5;
+  --opaque-l1: #E5EBF0;
+  --opaque-l2: #F6F9FB;
+  --opaque-l3: #FFFFFF;
+}
+
+html[data-material="fleuve"][data-mode="nuit"] {
+  --ink-1: #EDF2F5;                    /* 15.2:1 on L2 */
+  --ink-2: #B6C2CC;                    /* 8.8:1 on L2 */
+  --ink-3: #8A99A6;                    /* 5.2:1 on L2 */
+  --ink-4: #56636E;
+
+  --line-subtle: rgba(237, 242, 245, 0.08);
+  --line-default: rgba(237, 242, 245, 0.14);
+  --line-strong: rgba(237, 242, 245, 0.24);
+
+  --shadow-l1: var(--glass-l1-specular), var(--glass-l1-hairline),
+               0 6px 20px -2px rgba(0, 0, 0, 0.45),
+               0 2px 5px 0 rgba(0, 0, 0, 0.32);
+  --shadow-l2: var(--glass-l2-specular), var(--glass-l2-hairline),
+               0 14px 36px -4px rgba(0, 0, 0, 0.56),
+               0 4px 10px -1px rgba(0, 0, 0, 0.40);
+  --shadow-l3: var(--glass-l3-specular), var(--glass-l3-hairline),
+               0 28px 64px -8px rgba(0, 0, 0, 0.70),
+               0 8px 20px -2px rgba(0, 0, 0, 0.50);
+
+  /* River Teal Nuit (8.1:1 with dark ink) */
+  --accent: #4DB8C9;
+  --accent-hover: #64C4D4;
+  --accent-press: #3BA3B4;
+  --accent-soft: rgba(77, 184, 201, 0.18);
+  --on-accent: #08181C;
+
+  --ok: #59C48E;
+  --ok-soft: rgba(89, 196, 142, 0.16);
+  --warn: #E6A94E;
+  --warn-soft: rgba(230, 169, 78, 0.16);
+  --danger: #F27272;
+  --danger-soft: rgba(242, 114, 114, 0.18);
+  --info: #68B2E8;
+  --info-soft: rgba(104, 178, 232, 0.16);
+
+  --chart-1: #4DB8C9;
+  --chart-2: #6499CC;
+  --chart-3: #68B88C;
+  --chart-4: #A491C9;
+  --chart-5: #DBA258;
+  --chart-6: #8A99A6;
+
+  --opaque-l0: #0E1317;
+  --opaque-l1: #141B20;
+  --opaque-l2: #1B242B;
+  --opaque-l3: #232E37;
+}
+
+/* ==========================================================================
+   THEME 3: SENTINELLE (Night Watch — Graphite Neutrals, Signal Blue)
+   ========================================================================== */
+html[data-material="sentinelle"][data-mode="jour"],
+html[data-material="sentinelle"]:not([data-mode="nuit"]) {
+  --ink-1: #141518;                    /* 15.6:1 on L2 */
+  --ink-2: #3E4149;                    /* 8.4:1 on L2 */
+  --ink-3: #595D66;                    /* 5.3:1 on L2 */
+  --ink-4: #858A94;
+
+  --line-subtle: rgba(20, 21, 24, 0.07);
+  --line-default: rgba(20, 21, 24, 0.13);
+  --line-strong: rgba(20, 21, 24, 0.22);
+
+  --shadow-l1: var(--glass-l1-specular), var(--glass-l1-hairline),
+               0 4px 16px -2px rgba(16, 18, 24, 0.08),
+               0 1px 3px 0 rgba(16, 18, 24, 0.05);
+  --shadow-l2: var(--glass-l2-specular), var(--glass-l2-hairline),
+               0 12px 32px -4px rgba(16, 18, 24, 0.12),
+               0 3px 8px -1px rgba(16, 18, 24, 0.08);
+  --shadow-l3: var(--glass-l3-specular), var(--glass-l3-hairline),
+               0 24px 56px -8px rgba(16, 18, 24, 0.19),
+               0 6px 16px -2px rgba(16, 18, 24, 0.12);
+
+  /* Signal Blue (5.42:1 with white) */
+  --accent: #1F5BB5;
+  --accent-hover: #184A96;
+  --accent-press: #123B7A;
+  --accent-soft: rgba(31, 91, 181, 0.12);
+  --on-accent: #FFFFFF;
+
+  --ok: #216B45;
+  --ok-soft: rgba(33, 107, 69, 0.12);
+  --warn: #8C590E;
+  --warn-soft: rgba(140, 89, 14, 0.12);
+  --danger: #B32626;
+  --danger-soft: rgba(179, 38, 38, 0.12);
+  --info: #1F5BB5;
+  --info-soft: rgba(31, 91, 181, 0.12);
+
+  --chart-1: #1F5BB5;
+  --chart-2: #24737D;
+  --chart-3: #3C7853;
+  --chart-4: #70578F;
+  --chart-5: #A36B24;
+  --chart-6: #636770;
+
+  --opaque-l0: #F0F1F4;
+  --opaque-l1: #E7E9ED;
+  --opaque-l2: #F7F8FA;
+  --opaque-l3: #FFFFFF;
+}
+
+html[data-material="sentinelle"][data-mode="nuit"] {
+  --ink-1: #F0F2F5;                    /* 15.5:1 on L2 */
+  --ink-2: #B8BDC7;                    /* 8.7:1 on L2 */
+  --ink-3: #8E94A0;                    /* 5.2:1 on L2 */
+  --ink-4: #5A5F6B;
+
+  --line-subtle: rgba(240, 242, 245, 0.08);
+  --line-default: rgba(240, 242, 245, 0.14);
+  --line-strong: rgba(240, 242, 245, 0.24);
+
+  --shadow-l1: var(--glass-l1-specular), var(--glass-l1-hairline),
+               0 6px 20px -2px rgba(0, 0, 0, 0.48),
+               0 2px 5px 0 rgba(0, 0, 0, 0.34);
+  --shadow-l2: var(--glass-l2-specular), var(--glass-l2-hairline),
+               0 14px 36px -4px rgba(0, 0, 0, 0.58),
+               0 4px 10px -1px rgba(0, 0, 0, 0.42);
+  --shadow-l3: var(--glass-l3-specular), var(--glass-l3-hairline),
+               0 28px 64px -8px rgba(0, 0, 0, 0.72),
+               0 8px 20px -2px rgba(0, 0, 0, 0.52);
+
+  /* Signal Blue Nuit (7.6:1 with dark ink) */
+  --accent: #68A0F5;
+  --accent-hover: #7FB0FA;
+  --accent-press: #518CE6;
+  --accent-soft: rgba(104, 160, 245, 0.18);
+  --on-accent: #091324;
+
+  --ok: #5CC48B;
+  --ok-soft: rgba(92, 196, 139, 0.16);
+  --warn: #E8A94F;
+  --warn-soft: rgba(232, 169, 79, 0.16);
+  --danger: #F27272;
+  --danger-soft: rgba(242, 114, 114, 0.18);
+  --info: #68A0F5;
+  --info-soft: rgba(104, 160, 245, 0.16);
+
+  --chart-1: #68A0F5;
+  --chart-2: #58B4BF;
+  --chart-3: #6BB889;
+  --chart-4: #A890CF;
+  --chart-5: #DBA156;
+  --chart-6: #8E94A0;
+
+  --opaque-l0: #101114;
+  --opaque-l1: #16181C;
+  --opaque-l2: #1D2026;
+  --opaque-l3: #262A32;
+}
+
+/* ==========================================================================
+   AUTO MODE (@media prefers-color-scheme: dark)
+   Automatically switches html[data-mode="auto"] to Nuit tokens
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  html[data-mode="auto"] {
+    color-scheme: dark;
+    --glass-l1-blur: 28px;
+    --glass-l1-sat: 150%;
+    --glass-l1-bg: rgba(0, 0, 0, 0.44);
+    --glass-l1-filter: blur(var(--glass-l1-blur)) saturate(var(--glass-l1-sat));
+    --glass-l1-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.15),
+                         inset -1px -1px 0 0 rgba(255, 255, 255, 0.04);
+    --glass-l1-hairline: 0 0 0 1px rgba(0, 0, 0, 0.58);
+
+    --glass-l2-blur: 40px;
+    --glass-l2-sat: 170%;
+    --glass-l2-bg: rgba(0, 0, 0, 0.58);
+    --glass-l2-filter: blur(var(--glass-l2-blur)) saturate(var(--glass-l2-sat));
+    --glass-l2-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.22),
+                         inset 0 -1px 0 0 rgba(255, 255, 255, 0.06);
+    --glass-l2-hairline: 0 0 0 1px rgba(0, 0, 0, 0.68);
+
+    --glass-l3-blur: 56px;
+    --glass-l3-sat: 195%;
+    --glass-l3-bg: rgba(0, 0, 0, 0.72);
+    --glass-l3-filter: blur(var(--glass-l3-blur)) saturate(var(--glass-l3-sat));
+    --glass-l3-specular: inset 1px 1px 0 0 rgba(255, 255, 255, 0.28),
+                         inset -1px -1px 0 0 rgba(255, 255, 255, 0.09);
+    --glass-l3-hairline: 0 0 0 1px rgba(0, 0, 0, 0.78);
+
+    --glass-lensing-bg: radial-gradient(
+      var(--lensing-radius) circle at var(--gx) var(--gy),
+      rgba(255, 255, 255, 0.20) 0%,
+      rgba(255, 255, 255, 0.05) 40%,
+      transparent 70%
+    );
+  }
+
+  html[data-material="harmattan"][data-mode="auto"] {
+    --ink-1: #F5F2ED; --ink-2: #C7C0B6; --ink-3: #9E968B; --ink-4: #665F56;
+    --line-subtle: rgba(245, 242, 237, 0.08);
+    --line-default: rgba(245, 242, 237, 0.14);
+    --line-strong: rgba(245, 242, 237, 0.24);
+    --accent: #E09453; --accent-hover: #E8A368; --accent-press: #CC8040;
+    --accent-soft: rgba(224, 148, 83, 0.18); --on-accent: #1A120B;
+    --ok: #5CC489; --warn: #E8A84C; --danger: #F2746B; --info: #6DB3E8;
+    --chart-1: #E09453; --chart-2: #58A6BD; --chart-3: #74B588;
+    --chart-4: #AE8EC4; --chart-5: #E3B35A; --chart-6: #9E968B;
+    --opaque-l0: #141210; --opaque-l1: #1C1916; --opaque-l2: #24201C; --opaque-l3: #2E2924;
+  }
+
+  html[data-material="fleuve"][data-mode="auto"] {
+    --ink-1: #EDF2F5; --ink-2: #B6C2CC; --ink-3: #8A99A6; --ink-4: #56636E;
+    --line-subtle: rgba(237, 242, 245, 0.08);
+    --line-default: rgba(237, 242, 245, 0.14);
+    --line-strong: rgba(237, 242, 245, 0.24);
+    --accent: #4DB8C9; --accent-hover: #64C4D4; --accent-press: #3BA3B4;
+    --accent-soft: rgba(77, 184, 201, 0.18); --on-accent: #08181C;
+    --ok: #59C48E; --warn: #E6A94E; --danger: #F27272; --info: #68B2E8;
+    --chart-1: #4DB8C9; --chart-2: #6499CC; --chart-3: #68B88C;
+    --chart-4: #A491C9; --chart-5: #DBA258; --chart-6: #8A99A6;
+    --opaque-l0: #0E1317; --opaque-l1: #141B20; --opaque-l2: #1B242B; --opaque-l3: #232E37;
+  }
+
+  html[data-material="sentinelle"][data-mode="auto"] {
+    --ink-1: #F0F2F5; --ink-2: #B8BDC7; --ink-3: #8E94A0; --ink-4: #5A5F6B;
+    --line-subtle: rgba(240, 242, 245, 0.08);
+    --line-default: rgba(240, 242, 245, 0.14);
+    --line-strong: rgba(240, 242, 245, 0.24);
+    --accent: #68A0F5; --accent-hover: #7FB0FA; --accent-press: #518CE6;
+    --accent-soft: rgba(104, 160, 245, 0.18); --on-accent: #091324;
+    --ok: #5CC48B; --warn: #E8A94F; --danger: #F27272; --info: #68A0F5;
+    --chart-1: #68A0F5; --chart-2: #58B4BF; --chart-3: #6BB889;
+    --chart-4: #A890CF; --chart-5: #DBA156; --chart-6: #8E94A0;
+    --opaque-l0: #101114; --opaque-l1: #16181C; --opaque-l2: #1D2026; --opaque-l3: #262A32;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY FALLBACKS: REDUCE TRANSPARENCY & REDUCE MOTION
+   ========================================================================== */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  html[data-mode="jour"],
+  html[data-mode="nuit"],
+  html[data-mode="auto"] {
+    --glass-l0-bg: var(--opaque-l0);
+    --glass-l1-bg: var(--opaque-l1);
+    --glass-l2-bg: var(--opaque-l2);
+    --glass-l3-bg: var(--opaque-l3);
+    --glass-l1-filter: none;
+    --glass-l2-filter: none;
+    --glass-l3-filter: none;
+    --glass-lensing-bg: none;
+  }
+}
+
+html[data-reduced-transparency="true"] {
+  --glass-l0-bg: var(--opaque-l0) !important;
+  --glass-l1-bg: var(--opaque-l1) !important;
+  --glass-l2-bg: var(--opaque-l2) !important;
+  --glass-l3-bg: var(--opaque-l3) !important;
+  --glass-l1-filter: none !important;
+  --glass-l2-filter: none !important;
+  --glass-l3-filter: none !important;
+  --glass-lensing-bg: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  html[data-mode="jour"],
+  html[data-mode="nuit"],
+  html[data-mode="auto"] {
+    --dur-press: 120ms;
+    --dur-hover: 120ms;
+    --dur-toast: 150ms;
+    --dur-list: 150ms;
+    --dur-sheet: 150ms;
+    --dur-page: 150ms;
+    --dur-avatar: 0ms;
+    --dur-stagger: 0ms;
+    --spring-press: ease-out;
+    --spring-hover: ease-out;
+    --spring-sheet: ease-out;
+    --spring-page: ease-out;
+    --spring-list: ease-out;
+    --spring-toast: ease-out;
+    --spring-avatar: linear;
+  }
+}
+
+html[data-reduced-motion="true"] {
+  --dur-press: 120ms !important;
+  --dur-hover: 120ms !important;
+  --dur-toast: 150ms !important;
+  --dur-list: 150ms !important;
+  --dur-sheet: 150ms !important;
+  --dur-page: 150ms !important;
+  --dur-avatar: 0ms !important;
+  --dur-stagger: 0ms !important;
+  --spring-press: ease-out !important;
+  --spring-hover: ease-out !important;
+  --spring-sheet: ease-out !important;
+  --spring-page: ease-out !important;
+  --spring-list: ease-out !important;
+  --spring-toast: ease-out !important;
+  --spring-avatar: linear !important;
+}
+
+/* ══ PONT Nova ← jetons Gemini (30/10) ═══════════════════════════════════════════════════════════════════════════
+   Spécificité (0,3,1) > identite.css (0,2,1). Le verre n'est pas touché (voir en-tête). */
+html[data-identite][data-material][data-mode] {
+  /* Familles */
+  --f-ui: var(--font-sans); --f-display: var(--font-display); --f-mono: var(--font-mono);
+  --f-serif: var(--font-serif); --f-numeric: var(--font-rounded);
+  /* Rampe typographique Apple (11 rôles) */
+  --type-hero: var(--text-largetitle-weight) var(--text-largetitle-size)/var(--text-largetitle-lh) var(--font-display); --ls-hero: var(--text-largetitle-track);
+  --type-large-title: var(--text-title1-weight) var(--text-title1-size)/var(--text-title1-lh) var(--font-display); --ls-large-title: var(--text-title1-track);
+  --type-title-1: var(--text-title2-weight) var(--text-title2-size)/var(--text-title2-lh) var(--font-display); --ls-title-1: var(--text-title2-track);
+  --type-title-2: var(--text-title3-weight) var(--text-title3-size)/var(--text-title3-lh) var(--font-display); --ls-title-2: var(--text-title3-track);
+  --type-headline: var(--text-headline-weight) var(--text-headline-size)/var(--text-headline-lh) var(--font-sans); --ls-headline: var(--text-headline-track);
+  --type-body: var(--text-body-weight) var(--text-body-size)/var(--text-body-lh) var(--font-sans); --ls-body: var(--text-body-track);
+  --type-callout: var(--text-callout-weight) var(--text-callout-size)/var(--text-callout-lh) var(--font-sans); --ls-callout: var(--text-callout-track);
+  --type-footnote: var(--text-footnote-weight) var(--text-footnote-size)/var(--text-footnote-lh) var(--font-sans); --ls-footnote: var(--text-footnote-track);
+  --type-caption: var(--text-caption1-weight) var(--text-caption1-size)/var(--text-caption1-lh) var(--font-sans); --ls-caption: var(--text-caption1-track);
+  /* Filets */
+  --hairline: var(--line-default); --border-strong: var(--line-strong); --border-subtle: var(--line-subtle);
+  /* Accent et états (couleur seulement pour le sens) */
+  --accent-ink: var(--accent);
+  --accent-ring: color-mix(in srgb, var(--accent) 34%, transparent);
+  --accent-halo: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-fill: var(--accent);
+  --bad: var(--danger); --ok-text: var(--ok); --warn-text: var(--warn); --bad-text: var(--danger);
+  --on-ok: var(--on-accent); --on-warn: var(--on-accent); --on-bad: var(--on-accent);
+  /* Mouvement : ressorts physiques */
+  --ease-out: var(--spring-page); --ease-spring: var(--spring-toast); --id-ease: var(--spring-page);
+  --id-fast: var(--dur-press); --id-med: var(--dur-hover);
+}
+/* Encres : sauf « Nuit douce » et « Contraste accru », qui gardent leurs propres règles */
+html[data-identite][data-material][data-mode]:not([data-soft-night="1"]):not([data-contrast="more"]) {
+  --text-1: var(--ink-1); --text-2: var(--ink-2); --text-3: var(--ink-3);
+}
+
+/* ══ Partie C — Phase 4 (31/10/2026, v2 : décision d'Ahadi 19:51, « on garde notre UI actuelle ») ═══════════════
+   AUCUN jeton par défaut n'est modifié ni ajouté. Seul correctif conservé, et il n'agit QUE si le Mac demande
+   « Augmenter le contraste » (prefers-contrast: more) ou si le réglage de Nova pose html[data-contrast="more"] :
+   texte secondaire = texte principal, filets forts. Raison : la règle html[data-contrast="more"] d'app.css est dans
+   @layer accessibility et perd face aux jetons de thème non stratifiés (elle ne changeait --text-3 dans aucun thème).
+   Spécificité (0,3,1) ≥ celle des blocs de thème, et placée après eux. Échappatoire : data-contrast="normal".
+   « Réduire la transparence » et « Réduire les animations » : déjà respectées par l'existant (appearance-boot.js →
+   data-transparency, app.css/identite.css/tokens.css @media) — rien d'ajouté ici. Couper : supprimer ces lignes. */
+html[data-contrast="more"], html[data-contrast="more"][data-material][data-mode] { --text-2: var(--text-1); --text-3: var(--text-1); --border-subtle: var(--border-strong); }
+@media (prefers-contrast: more) {
+  html:not([data-contrast="normal"]), html:not([data-contrast="normal"])[data-material][data-mode] { --text-2: var(--text-1); --text-3: var(--text-1); --border-subtle: var(--border-strong); }
+}

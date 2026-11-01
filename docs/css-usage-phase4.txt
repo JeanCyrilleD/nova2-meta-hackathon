@@ -1,0 +1,14 @@
+app.css          478515 o →   445396 o  (règles mortes 378, @keyframes mortes 2)
+   noms morts (221) : @keyframes fc-drop @keyframes pulse-dot arch-form arch-it arch-synth chrono-peaks chrono-slot clamp-2 cn-arch-head cs-pin-chip deuil-arch deuil-btns deuil-card deuil-lecons ds-body ds-clip ds-secret empty--compact eng-act eng-av eng-badge eng-bluf eng-bluf-ic eng-bluf-s eng-bluf-t eng-body eng-chev eng-chip eng-cit eng-closed-h eng-due eng-empty eng-empty-in eng-empty-s eng-empty-t eng-foot eng-gc eng-gh eng-gn eng-group eng-groups eng-gs eng-main eng-meta eng-quoi eng-rel eng-rel-act eng-rel-note eng-rel-txt eng-rep eng-rep-lb eng-row eng-src eng-src-t eng-tabs fc-mirror fin-sum fin-sum-at fx-cr-act fx-cr-amt fx-cr-badge fx-cr-br fx-cr-card fx-cr-chip fx-cr-due fx-cr-foot fx-cr-grid fx-cr-head fx-cr-lock fx-cr-more fx-cr-repli fx-cr-sum fx-cr-u fx-cr-u-c fx-cr-u-d fx-cr-u-t fx-cr-urg fx-cr-use fx-doctrine fx-due fx-due-c fx-due-k fx-due-l fx-fc fx-fnote fx-frow fx-fsec fx-fsec-n fx-fsec-t fx-ftable fx-h1 fx-kpi fx-kpi-l fx-kpi-s fx-kpi-v fx-kpis fx-lc-badge fx-lockic fx-pill fx-pill-n fx-pills home-ask home-ask-go home-ask-ic home-ask-in home-band home-band-r home-calm home-chip home-count home-focus home-greet home-hello home-kpi home-row home-row-b home-row-c home-row-item home-sugg home-tile home-timeline home-weather home-when home-wrap hr-acts hr-ic hr-txt is-closed is-deduit is-dos is-me is-static is-them is-week kpi-link kpi-lock kpi-note kpi-spark kpi-sub mem-acts mem-add mem-btns mem-confirm mem-count mem-edit mem-extra mem-f-lock mem-fact mem-hist mem-import mem-import-card mem-import-list mem-more mem-off mem-pardon-acts mem-port mem-q mem-row mem-search mem-tools mem-txt mem-ver mem-ver-txt mod-badge moi-ame-doctitle no-dot og-mono pane-menu pj-alias pj-det pj-docs pj-ech pj-item pj-main pj-meta pj-note pj-row pj-src rel-add rel-src rel-sync row-meta rz-box rz-card rz-cell rz-col rz-cols rz-ell rz-gf rz-grid rz-head rz-min rz-note rz-seuil rz-sig rz-sig-row rz-sugg rz-tabs rz-val set-nav-group sv-meta sv-nums sv-stat sys-kv sys-mac tbl tl-dot tl-lb tl-now tl-row tl-sub tl-time tr-bluf tr-muted tt--2l tv-dead tv-health va-chip vlt-imp vlt-open vlt-proto
+identite.css      93740 o →    93740 o  (règles mortes 0, @keyframes mortes 0)
+   noms morts (0) : 
+tokens.css        50725 o →    50725 o  (règles mortes 0, @keyframes mortes 0)
+   noms morts (0) : 
+motion.css         9924 o →     9940 o  (règles mortes 0, @keyframes mortes 0)
+   noms morts (0) : 
+layouts.css       61260 o →    61260 o  (règles mortes 0, @keyframes mortes 0)
+   noms morts (0) : 
+interface.css     10630 o →    10630 o  (règles mortes 0, @keyframes mortes 0)
+   noms morts (0) : 
+TOTAL feuilles du démarrage : 704794 o → 671691 o (4.7 %)
+corpus : 260 fichiers, 36935 mots, 87 préfixes

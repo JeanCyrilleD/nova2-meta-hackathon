@@ -1,0 +1,2 @@
+# Les .glb (> 5 Mo) restent hors git : ils sont déposés tels quels dans ce dossier (voir README.md).
+*.glb

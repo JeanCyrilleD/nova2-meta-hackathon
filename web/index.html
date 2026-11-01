@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr" data-theme="obsidienne-nuit">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="same-origin"><!-- PHASE 1 : Referer interne seulement (preuve de provenance nova://app), jamais vers l extérieur -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova 2</title>
+<style>
+/* NOVA2-FIX (reco n°2 — boot shell façon Linear) : CSS critique du shell, en ligne,
+   < 4 Ko, pour que le PREMIER paint soit déjà « themed, sized, positioned » :
+   fond du thème, rail à sa largeur (72 ou 186 px — tokens --rail-w /
+   --rail-w-ext de nova2.css §24.1, source unique, DS §2.3), grille en place,
+   squelette à la géométrie du système (.skel-* de §24.11, même première
+   barre que le squelette du shell). Le CSS complet (css/nova2.css) prend
+   le relais sans rupture. */
+html, body { height: 100%; }
+body { margin: 0; background: #08090E; color: #F4EFE7; font: 14.5px/1.55 -apple-system, "SF Pro Text", system-ui, sans-serif; overflow: hidden; }
+html[data-material="obsidienne"][data-mode="nuit"] body { background: linear-gradient(180deg, #08090E, #0E111A); color: #F4EFE7; }
+html[data-material="obsidienne"][data-mode="jour"] body { background: #ECE9E3; color: #121318; }
+html[data-material="verre"][data-mode="nuit"] body { background: #070912; color: #F5F7FA; }
+html[data-material="verre"][data-mode="jour"] body { background: #E6E9F1; color: #0B0E14; }
+html[data-material="graphite"][data-mode="nuit"] body { background: #0B0B0D; color: #F4F4F5; }
+html[data-material="graphite"][data-mode="jour"] body { background: #ECECEF; color: #111113; }
+#bgstatic { position: fixed; inset: 0; z-index: 0; }
+.shell { position: relative; z-index: 1; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 8px; padding: 8px; height: 100vh; box-sizing: border-box; }
+html[data-rail="mini"] .shell, .shell.sb-mini { grid-template-columns: 64px minmax(0, 1fr); }
+#rail { border-radius: 18px; }
+#view { position: relative; }
+.boot-skel { padding: 26px 30px; }
+.boot-skel i { display: block; border-radius: 10px; background: rgba(140, 140, 160, 0.14); margin-bottom: 14px; }
+/* Géométrie du système (DS §6.10) : les enfants portent .skel + .skel-line /
+   .skel-block / .skel-card de nova2.css §24.11 ; avant son chargement, le
+   fond plat ci-dessus tient le premier paint, les hauteurs en ligne sont
+   celles du squelette du shell (barre 34×260) et de §24 (.skel-card 120). */
+.boot-msg { margin-top: 18px; font-size: 13px; opacity: 0.65; }
+</style>
+<script src="js/appearance-boot.js"></script>
+<script src="js/jank.js"></script>
+<script>
+/* NOVA2-FIX (bug démarrage 20/10) : si le bundle n'a pas monté le premier écran
+   en 3 s, le squelette le DIT — fini le gel silencieux (le moteur indexait la
+   base de connaissances pendant ~5 min sans un mot). shell.js pose
+   window.__novaBooted dès le premier module monté ; son propre chien de garde
+   prend ensuite le relais avec progression et bouton Réessayer. */
+setTimeout(function () {
+  if (window.__novaBooted) return;
+  var sk = document.querySelector(".boot-skel");
+  if (sk && !sk.querySelector(".boot-msg")) { var m = document.createElement("div"); m.className = "boot-msg"; m.textContent = "Nova démarre… le premier écran arrive (le moteur peut être en train d'indexer la base de connaissances, en arrière-plan)."; sk.appendChild(m); }
+}, 3000);
+</script>
+<link rel="stylesheet" href="css/app.css?v=29.10">  <!-- 29/10 : feuille unique — 25 couches fusionnées dans l'ordre exact (cascade identique), anciennes dans dormant/css-bak/ -->
+<!-- 30/10 : identité « Promesse » (Harmattan · Fleuve · Sentinelle) — chargée APRÈS app.css ; typographie système Apple (SF Pro / New York / SF Mono), rien d'embarqué (docs/identite/IDENTITE.md) -->
+<link rel="stylesheet" href="css/identite.css?v=31.10fb">
+<link rel="stylesheet" href="css/tokens.css?v=30.10a">  <!-- 30/10 09:16 : jetons Gemini « NOVA Liquid Glass » + pont vers les variables Nova -->
+<script src="js/glass-liquid.js?v=30.10" defer></script>  <!-- 30/10 : reflet spéculaire du Liquid Glass (suit le pointeur, surface survolée seulement) -->
+<link rel="stylesheet" href="css/motion.css?v=30.10">  <!-- 30/10 : mouvement (transitions de page, pilule de sélection, bord de défilement) — jetons d'identite.css -->
+<script type="module" src="js/motion.js?v=30.10"></script>  <!-- 30/10 : window.NovaMotion, exécuté avant shell.js (ordre des modules) -->
+<link rel="stylesheet" href="css/layouts.css?v=30.10c">  <!-- 30/10 : mises en page « Promesse » (Accueil, Conversations, Messages, Finance, Agenda, Engagements, Feeds) — jetons d'identite.css seulement -->
+</head>
+<body>
+<div id="bgstatic" aria-hidden="true"></div>
+<div class="shell">
+  <nav id="rail" aria-label="Modules"></nav>
+  <main id="view"><div class="boot-skel" aria-hidden="true"><i class="skel skel-line" style="height:34px;width:260px"></i><i class="skel skel-block" style="height:180px"></i><i class="skel skel-card" style="height:120px;width:70%"></i></div></main>
+</div>
+<div id="miniplayer" aria-label="Mini-lecteur"></div>
+<div id="pal"></div>
+<div id="toasts" aria-live="polite"></div>
+<audio id="audio" preload="none"></audio>
+<!-- V5-N : hls.js n'est plus chargé ici (413 Ko analysés à chaque démarrage) — modules/radio.js le charge à la première ouverture de Médias (local, secours CDN épinglé SRI). -->
+<script type="module" src="js/shell.js"></script>
+</body>
+</html>

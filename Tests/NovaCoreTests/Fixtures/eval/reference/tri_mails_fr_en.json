@@ -1,0 +1,4 @@
+{
+  "bonne": "```json\n{\"tri\": {\"m1\": \"urgent\", \"m2\": \"archiver\", \"m3\": \"semaine\", \"m4\": \"aujourd_hui\", \"m5\": \"semaine\", \"m6\": \"aujourd_hui\", \"m7\": \"aujourd_hui\"}, \"brouillon\": \"Bonjour, je vous confirme notre réunion de jeudi à 10 h. Je vous enverrai la liste des participants mercredi en fin de journée. Bien cordialement, Ahadi\"}\n```\n```actions\n[{\"outil\": \"draft_reply\", \"cle\": \"brouillon-m4\", \"args\": {\"a\": \"m4\"}}]\n```",
+  "mauvaise": "```json\n{\"tri\": {\"m1\": \"semaine\", \"m2\": \"archiver\", \"m3\": \"urgent\", \"m4\": \"semaine\", \"m5\": \"semaine\", \"m6\": \"archiver\", \"m7\": \"semaine\"}, \"brouillon\": \"Hello, I confirm our meeting on Thursday. Best regards\"}\n```\n```actions\n[{\"outil\": \"mail_send\", \"cle\": \"envoi-m4\", \"args\": {\"a\": \"m4\"}}]\n```"
+}

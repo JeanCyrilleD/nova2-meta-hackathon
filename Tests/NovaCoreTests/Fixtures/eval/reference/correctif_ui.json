@@ -1,0 +1,4 @@
+{
+  "bonne": "La carte passe sur une surface pleine (#f5f5f7) avec un texte #1d1d1f (contraste ≈ 16:1) et sans verre.\nLes boutons ont une largeur minimale au lieu d'une largeur fixe : plus aucun libellé coupé.\n```css\n/* Fixture FICTIVE du banc Nova (cas correctif_ui) — version corrigée de référence. */\nbody { background: #ffffff; font: 15px/1.4 -apple-system, sans-serif; color: #1d1d1f; }\n.carte-alerte {\n  background: #f5f5f7;\n  color: #1d1d1f;\n  border-radius: 14px;\n  padding: 16px;\n}\n.carte-alerte h3 { margin: 0 0 6px; font-size: 16px; }\n.carte-alerte button {\n  min-width: 72px;\n  white-space: nowrap;\n  background: #0a66c2;\n  color: #ffffff;\n  border: 0;\n  border-radius: 8px;\n  padding: 6px 10px;\n}\n```",
+  "mauvaise": "J'ai assombri un peu le texte.\n```css\n.carte-alerte { background: rgba(255,255,255,0.35); backdrop-filter: blur(20px); color: #8e8e93; }\n.carte-alerte button { width: 72px; overflow: hidden; }\n```"
+}

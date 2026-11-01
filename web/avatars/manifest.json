@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "note": "Écrit par tools/check_glb.py --installer. Ne pas éditer à la main.",
+  "avatars": {
+    "panda": {
+      "fichier": "nova_panda.glb",
+      "ok": true,
+      "verdict": "APERÇU",
+      "verdict_technique": "CONFORME",
+      "defaut": false,
+      "octets": 5414068,
+      "sha256": "7951b36ce606e27bc326d75c81d55f3c50af7de850b97ad41289a55a4ee8cc37",
+      "triangles": 26400,
+      "verifie": "2026-10-24T21:44:10"
+    },
+    "renard": {
+      "fichier": "nova_pandaroux.glb",
+      "ok": true,
+      "verdict": "APERÇU",
+      "verdict_technique": "CONFORME",
+      "defaut": false,
+      "octets": 5830072,
+      "sha256": "9452e0f4ca22c80298a9ec2753bc5c21dbbcc61c5d02026b90306bf3844d9471",
+      "triangles": 28064,
+      "verifie": "2026-10-24T21:44:11"
+    }
+  }
+}

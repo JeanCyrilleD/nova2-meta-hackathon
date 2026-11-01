@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "note": "Conditions ÉCRITES de chaque fournisseur (amendement 2.3 du 31/10/2026 : conditions, pas pays). Règle appliquée en code (DataPolicy) : personal exige no_training_api == true ET retention_days != null ET retention_days <= 30 ET verified il y a moins de 90 jours. null = non écrit / contradictoire = refus. Fournisseur absent de ce fichier = bloqué pour toute classe. Aucun champ 'pays' : il n'entre dans aucune décision.",
+  "rule": {
+    "personal_max_retention_days": 30,
+    "max_verification_age_days": 90
+  },
+  "providers": {
+    "vendoralpha": {
+      "no_training_api": true,
+      "retention_days": 30,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "sources": [
+        "https://privacy.alpha.com/en/articles/7996868-is-my-data-used-for-training",
+        "https://privacy.alpha.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data"
+      ],
+      "evidence": "« By default, we will not use your inputs or outputs from our commercial products » (API comprise, page du 18/08/2026) ; « we automatically delete inputs and outputs on our backend within 30 days » (page du 01/07/2026). Exceptions écrites : contenus signalés (jusqu'à 2 ans), retours volontaires (5 ans), Files API."
+    },
+    "vendorbeta": {
+      "no_training_api": true,
+      "retention_days": 30,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "conditions": [
+        "store=false"
+      ],
+      "sources": [
+        "https://example.org/terms"
+      ],
+      "evidence": "« data sent to the Vendorbeta API is not used to train or improve Vendorbeta models » ; journaux anti-abus « retained for up to 30 days ». Responses API : état d'application 30 j par défaut → store=false exigé (Chat Completions : aucun état par défaut)."
+    },
+    "vendorgamma": {
+      "no_training_api": false,
+      "retention_days": null,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "sources": [
+        "https://platform.gamma.ai/docs/agreement/modeluse",
+        "https://example.org/terms"
+      ],
+      "evidence": "Conditions OpenPlatform (30/07/2026), section 4 : « Unless otherwise expressly agreed in writing, Customer Content may be used » pour améliorer les services ; restriction de l'entraînement sur demande écrite seulement. Aucune durée de conservation chiffrée (section 11). Le Help Center (non daté, locale Chine) dit l'inverse : contradiction → la règle retient le texte contractuel.",
+      "brief_diff": "L'amendement 2.3 du 31/10 autorise Gamma en personal « selon sa déclaration de non-entraînement ». Les conditions écrites vérifiées le 31/10 ne remplissent pas la règle (entraînement possible sans accord écrit, conservation non chiffrée) : Gamma reste public seulement tant qu'un accord écrit (Enterprise) n'est pas versé ici."
+    },
+    "vendordelta": {
+      "no_training_api": false,
+      "retention_days": null,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "sources": [
+        "https://example.org/terms",
+        "https://example.org/terms",
+        "https://example.org/terms"
+      ],
+      "evidence": "Politique de confidentialité : l'entrée sert notamment à entraîner (droit d'opposition non confirmé pour l'API) ; conservation « for as long as you have an account ». Brief : Vendordelta direct = public seulement."
+    },
+    "vendorepsilon": {
+      "no_training_api": null,
+      "retention_days": null,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "sources": [
+        "https://example.org/terms",
+        "https://example.org/terms",
+        "https://www.developersdigest.tech/models/data-retention/zai"
+      ],
+      "evidence": "La phrase de non-entraînement des conditions est entre crochets (brouillon possible) ; la politique dit ne rien stocker, sans durée chiffrée pour le reste. Conditions contradictoires (brief) → public seulement."
+    },
+    "meta": {
+      "no_training_api": true,
+      "retention_days": null,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "training_models": [
+        "muse-spark-1.3-contributor",
+        "muse-spark-1.2-contributor",
+        "muse-code-cli"
+      ],
+      "sources": [
+        "https://dev.meta.ai/legal/terms-of-service",
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ],
+      "evidence": "Conditions du 09/10/2026, 5.1 : Meta « will not use Content submitted in a request to the Standard Services to train Meta Models » ; 6.1 : Contributor = entraînement. 4.4 : « Meta will retain your Content and Usage Data as needed » — aucune durée → personal refusé par la règle (Standard reste public). Contributor et Muse Code : jamais."
+    },
+    "vendorzeta": {
+      "no_training_api": true,
+      "retention_days": 55,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "conditions": [
+        "paid_tier"
+      ],
+      "sources": [
+        "https://example.org/terms",
+        "https://example.org/terms"
+      ],
+      "evidence": "Services payants : Vendorzeta « doesn't use your prompts » pour améliorer ses produits (palier gratuit : oui). Journaux : « default maximum period of 55 days » (réglable 7/14/28/55 j) ; conservation anti-abus « for a limited period of time », non chiffrée → personal refusé. Palier de la clé d'Ahadi non confirmé (Argon, sans palier gratuit, répond : indice, pas preuve)."
+    },
+    "vendoriota": {
+      "no_training_api": true,
+      "retention_days": 30,
+      "public_allowed": true,
+      "verified": "2026-11-01",
+      "sources": [
+        "https://example.org/terms",
+        "https://example.org/terms",
+        "https://example.org/terms"
+      ],
+      "evidence": "Services Agreement 4.2 (modifié le 22/06/2026) : « Vendoriota is not permitted to use Inputs or Outputs for training or fine-tuning any AI Model Services or other models » sauf permission explicite. Your data : « By default, Vendoriota does not retain customer data for inference requests » ; journaux de fiabilité et d'abus « retained for up to 30 days, unless legally required to retain longer » (Zero Data Retention activable). La page ne distingue pas le palier gratuit : le contrat couvre tous les Cloud Services."
+    },
+    "vendoreta": {
+      "no_training_api": null,
+      "retention_days": null,
+      "public_allowed": false,
+      "verified": null,
+      "sources": [],
+      "evidence": "discovery-api.intern-ai.org.cn : aucune condition d'utilisation de l'API trouvée le 31/10/2026 → inconnu → bloqué pour toute classe jusqu'à lecture des conditions."
+    },
+    "vendorondevice": {
+      "on_device": true,
+      "no_training_api": null,
+      "retention_days": 0,
+      "public_allowed": false,
+      "verified": "2026-10-31",
+      "sources": [],
+      "evidence": "Modèle Vendorondevice sur l'appareil : aucune donnée ne quitte le Mac. Bloqué par la règle 6 du brief (aucune inférence LLM locale) — pas par la confidentialité. Décision d'Ahadi."
+    },
+    "celeris": {
+      "no_training_api": null,
+      "retention_days": null,
+      "public_allowed": false,
+      "verified": null,
+      "sources": [],
+      "evidence": "Conditions non trouvées → bloqué."
+    },
+    "baseten": {
+      "no_training_api": true,
+      "retention_days": 0,
+      "public_allowed": true,
+      "verified": "2026-11-01",
+      "sources": [
+        "https://www.baseten.co/security-practices/"
+      ],
+      "evidence": "« Baseten does not use Customer Content for model training, fine-tuning, or improvement of any algorithms » ; Model APIs : « Zero Data Retention posture for all Customer Content » — « will not store, retain, or otherwise make a persistent copy of model inputs or outputs » (page lue le 01/11/2026). Exception écrite : journalisation activée par le client."
+    }
+  }
+}

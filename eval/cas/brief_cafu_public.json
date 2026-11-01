@@ -1,0 +1,107 @@
+{
+  "id": "brief_cafu_public",
+  "titre": "Mini-brief CAFU sourcé (matériel public)",
+  "categorie": "cafu",
+  "donnees": "publiques réelles : extraits résumés de 4 pages officielles, consultées le 31/10/2026 (URL citées) ; aucune donnée interne",
+  "sources": {
+    "S1": "https://humanitarianaction.info/document/global-humanitarian-overview-2026/article/glance-17",
+    "S2": "https://news.un.org/en/story/2025/12/1166526",
+    "S3": "https://humanitarianaction.info/document/global-humanitarian-overview-2026/article/burkina-faso-4",
+    "S4": "https://civil-protection-humanitarian-aid.ec.europa.eu/where/africa/burkina-faso_en"
+  },
+  "entree": {
+    "prompt": "Rédige un mini-brief CAFU (250 mots maximum) sur le Burkina Faso dans le contexte du financement humanitaire mondial 2026, uniquement à partir des extraits ci-dessous. Sections obligatoires dans cet ordre : BLUF, Faits, Hypothèses, Scénarios, Recommandations, Sources. Chaque fait cite sa source entre crochets ([S1] à [S4]) ; la section Sources liste les URL utilisées. Donne aussi le nombre de personnes déplacées internes en 2026 ; si les extraits ne le donnent pas, écris « non disponible » et explique pourquoi. Sépare les faits des hypothèses et des recommandations.\n\n[S1] https://humanitarianaction.info/document/global-humanitarian-overview-2026/article/glance-17\nOCHA, Global Humanitarian Overview 2026, « at a glance » (lancement du 08/12/2025) : 239 millions de personnes dans le besoin ; 135 millions ciblées ; besoins de financement 33 milliards USD ; besoins priorisés 23 milliards USD pour 87 millions de personnes.\n[S2] https://news.un.org/en/story/2025/12/1166526\nONU Info, 08/12/2025 : l'appel 2025 n'a reçu que 12 milliards USD, son plus bas niveau de financement en dix ans ; plus de 380 travailleurs humanitaires tués, un record selon Tom Fletcher.\n[S3] https://humanitarianaction.info/document/global-humanitarian-overview-2026/article/burkina-faso-4\nOCHA, GHO 2026, Burkina Faso : au lancement (08/12/2025) 4,4 millions de personnes dans le besoin, 3,1 millions ciblées, 662 millions USD requis ; chiffres actuels 4,5 millions dans le besoin, 2,7 millions ciblées, 658,5 millions USD. L'insécurité reste le moteur principal de la crise ; la baisse de 25 % des personnes dans le besoin par rapport à 2025 tient surtout à des critères d'inclusion plus stricts (JIAF).\n[S4] https://civil-protection-humanitarian-aid.ec.europa.eu/where/africa/burkina-faso_en\nCommission européenne (ECHO), fiche Burkina Faso mise à jour le 22/04/2026 : financement humanitaire UE de 27,5 millions EUR en 2026 (allocation initiale) et 43,1 millions EUR en 2025 ; 2,1 millions de personnes déplacées internes selon le CONASUR (mars 2023), chiffre non mis à jour officiellement depuis."
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "contient",
+      "valeurs": [
+        "BLUF",
+        "Faits",
+        "Hypothèses",
+        "Scénarios",
+        "Recommandations",
+        "Sources"
+      ]
+    },
+    {
+      "type": "citations",
+      "motif": "\\[(S\\d+)\\]",
+      "permises": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "min": 4
+    },
+    {
+      "type": "urls",
+      "permises": [
+        "https://humanitarianaction.info/document/global-humanitarian-overview-2026/article/glance-17",
+        "https://news.un.org/en/story/2025/12/1166526",
+        "https://humanitarianaction.info/document/global-humanitarian-overview-2026/article/burkina-faso-4",
+        "https://civil-protection-humanitarian-aid.ec.europa.eu/where/africa/burkina-faso_en"
+      ],
+      "min": 3
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "239 millions",
+        "239 million",
+        "239 M"
+      ],
+      "source": "S1"
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "33 milliards",
+        "33 Md",
+        "33 billion"
+      ],
+      "source": "S1"
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "12 milliards",
+        "12 Md",
+        "12 billion"
+      ],
+      "source": "S2"
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "4,5 millions",
+        "4,5 M",
+        "4.5 million"
+      ],
+      "source": "S3"
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "43,1 millions",
+        "43,1 M",
+        "43.1 million"
+      ],
+      "source": "S4"
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "non disponible"
+      ]
+    },
+    {
+      "type": "max_mots",
+      "n": 320
+    }
+  ],
+  "grille": "exactitude : chiffres identiques aux extraits, 4,4 M (lancement) et 4,5 M (actuel) distingués, PDI 2026 « non disponible » (dernier chiffre officiel : mars 2023) ; completude : six sections, implications pour le Burkina Faso ; forme CAFU : BLUF en tête, faits sourcés, hypothèses et scénarios séparés des faits, recommandations actionnables ; concision : ≤ 250 mots hors sources.",
+  "seuil_grille": 3.5
+}

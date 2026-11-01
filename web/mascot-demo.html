@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="fr" data-material="verre" data-mode="nuit">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova 2 — Démonstration des Compagnons 3D (Panda &amp; Panda roux)</title>
+<link rel="stylesheet" href="./css/app.css">
+<link rel="stylesheet" href="./css/tokens.css">  <!-- Phase 4 : les jetons de thème vivent désormais dans tokens.css -->
+<style>
+  :root {
+    --accent: #6C6AF6;
+    --accent-ink: #9C9BFF;
+    --on-accent: #FFFFFF;
+    --accent-soft: rgba(108, 106, 246, 0.2);
+    --accent-ring: rgba(140, 140, 255, 0.38);
+    --fill-1: rgba(255, 255, 255, 0.06);
+    --fill-2: rgba(255, 255, 255, 0.10);
+    --fill-3: rgba(255, 255, 255, 0.15);
+    --hairline: rgba(255, 255, 255, 0.10);
+    --pane-solid: #141726;
+    --shadow-1: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 28px 64px;
+    background: #0d1020;
+    color: #f4f6fb;
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background 200ms ease, color 200ms ease;
+  }
+  body.bg-jour {
+    background: #eef2f8;
+    color: #0d1320;
+    --fill-1: rgba(15, 23, 42, 0.05);
+    --fill-2: rgba(15, 23, 42, 0.09);
+    --fill-3: rgba(15, 23, 42, 0.14);
+    --hairline: rgba(15, 23, 42, 0.10);
+    --pane-solid: #ffffff;
+  }
+  header.demo-bar {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    border-radius: 18px;
+    background: rgba(20, 24, 42, 0.78);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+  body.bg-jour header.demo-bar {
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 12px 28px rgba(15, 23, 42, 0.10);
+  }
+  .demo-title {
+    font: 700 17px/1.2 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif;
+    letter-spacing: -0.015em;
+    margin-right: auto;
+  }
+  .ctrl-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .ctrl-label {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.72;
+    margin-right: 2px;
+  }
+  .btn {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 0;
+    cursor: pointer;
+    font: 500 12px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    background: var(--fill-2);
+    color: inherit;
+  }
+  .btn.on {
+    background: var(--accent);
+    color: #ffffff;
+    font-weight: 600;
+  }
+  section.species-block {
+    margin-bottom: 36px;
+  }
+  .species-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .species-head h2 {
+    margin: 0;
+    font: 700 22px/1.2 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .species-head span {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+  /* Grille interactive principale (pilote tous les états à 220 px et 96 px) */
+  .hero-stage {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 18px;
+    margin-bottom: 32px;
+  }
+  .stage-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 20px;
+    background: var(--fill-1);
+    box-shadow: inset 0 0 0 0.5px var(--hairline);
+  }
+  .stage-canvases {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 16px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .stage-canvases.nuit { background: #0d1020; color: #f4f6fb; }
+  .stage-canvases.jour { background: #eef2f8; color: #0d1320; }
+  .av-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .av-box-220 { width: 220px; height: 220px; position: relative; }
+  .av-box-96 { width: 96px; height: 96px; position: relative; }
+  .av-box-40 { width: 40px; height: 40px; position: relative; }
+  .av-cap {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.72;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Galerie complète des 9 états × Nuit (#0d1020) & Jour (#eef2f8) × 220 px & 96 px */
+  .states-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+    gap: 14px;
+  }
+  .state-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 0.5px solid rgba(128, 138, 170, 0.22);
+    cursor: pointer;
+    transition: transform 150ms ease;
+  }
+  .state-tile:hover {
+    transform: translateY(-2px);
+  }
+  .state-tile.nuit {
+    background: #0d1020;
+    color: #f4f6fb;
+  }
+  .state-tile.jour {
+    background: #eef2f8;
+    color: #0d1320;
+  }
+  .st-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .st-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    background: rgba(108, 106, 246, 0.18);
+    color: #8f8eff;
+  }
+  .state-tile.jour .st-badge {
+    background: rgba(87, 83, 232, 0.14);
+    color: #4642d6;
+  }
+  .st-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header class="demo-bar">
+  <div class="demo-title">Nova 2 · Studio Compagnons 3D</div>
+
+  <div class="ctrl-group" id="state-btns">
+    <span class="ctrl-label">État :</span>
+  </div>
+
+  <div class="ctrl-group" id="mood-btns">
+    <span class="ctrl-label">Humeur :</span>
+  </div>
+
+  <div class="ctrl-group" id="react-btns">
+    <span class="ctrl-label">Réaction :</span>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Fond page :</span>
+    <button class="btn on" id="bg-nuit-btn" type="button">Nuit #0d1020</button>
+    <button class="btn" id="bg-jour-btn" type="button">Jour #eef2f8</button>
+    <button class="btn" id="vide-btn" type="button">Le Vide (data-vide)</button>
+  </div>
+</header>
+
+<!-- Scène interactive en direct : Panda géant & Panda roux en 220 px, 96 px et 40 px sur fond Nuit et Jour -->
+<section class="species-block">
+  <div class="species-head">
+    <h2>1. Scène interactive temps réel (220 px · 96 px · 40 px)</h2>
+    <span>Utilise la barre ci-dessus pour piloter l'état, l'humeur et `react()` en direct</span>
+  </div>
+  <div class="hero-stage">
+    <div class="stage-card">
+      <div class="st-top"><span>Panda géant (`species: "panda"`) — Fond Nuit `#0d1020`</span><span class="st-badge" id="lbl-panda-nuit">idle</span></div>
+      <div class="stage-canvases nuit">
+        <div class="av-slot"><div class="av-box-220" id="live-panda-nuit-220"></div><span class="av-cap">220 px</span></div>
+        <div class="av-slot"><div class="av-box-96" id="live-panda-nuit-96"></div><span class="av-cap">96 px</span></div>
+        <div class="av-slot"><div class="av-box-40" id="live-panda-nuit-40"></div><span class="av-cap">40 px</span></div>
+      </div>
+    </div>
+    <div class="stage-card">
+      <div class="st-top"><span>Panda géant (`species: "panda"`) — Fond Jour `#eef2f8`</span><span class="st-badge" id="lbl-panda-jour">idle</span></div>
+      <div class="stage-canvases jour">
+        <div class="av-slot"><div class="av-box-220" id="live-panda-jour-220"></div><span class="av-cap">220 px</span></div>
+        <div class="av-slot"><div class="av-box-96" id="live-panda-jour-96"></div><span class="av-cap">96 px</span></div>
+        <div class="av-slot"><div class="av-box-40" id="live-panda-jour-40"></div><span class="av-cap">40 px</span></div>
+      </div>
+    </div>
+    <div class="stage-card">
+      <div class="st-top"><span>Panda roux (`species: "renard"`) — Fond Nuit `#0d1020`</span><span class="st-badge" id="lbl-red-nuit">idle</span></div>
+      <div class="stage-canvases nuit">
+        <div class="av-slot"><div class="av-box-220" id="live-red-nuit-220"></div><span class="av-cap">220 px</span></div>
+        <div class="av-slot"><div class="av-box-96" id="live-red-nuit-96"></div><span class="av-cap">96 px</span></div>
+        <div class="av-slot"><div class="av-box-40" id="live-red-nuit-40"></div><span class="av-cap">40 px</span></div>
+      </div>
+    </div>
+    <div class="stage-card">
+      <div class="st-top"><span>Panda roux (`species: "renard"`) — Fond Jour `#eef2f8`</span><span class="st-badge" id="lbl-red-jour">idle</span></div>
+      <div class="stage-canvases jour">
+        <div class="av-slot"><div class="av-box-220" id="live-red-jour-220"></div><span class="av-cap">220 px</span></div>
+        <div class="av-slot"><div class="av-box-96" id="live-red-jour-96"></div><span class="av-cap">96 px</span></div>
+        <div class="av-slot"><div class="av-box-40" id="live-red-jour-40"></div><span class="av-cap">40 px</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Planche complète des 9 états pour les 2 espèces (cliquer sur une carte relance son état) -->
+<section class="species-block">
+  <div class="species-head">
+    <h2>2. Planche des 9 états — Panda géant &amp; Panda roux (220 px &amp; 96 px, Nuit `#0d1020` / Jour `#eef2f8`)</h2>
+    <span>Clique sur n'importe quelle vignette pour ré-exécuter l'état ou basculer son fond</span>
+  </div>
+  <div class="states-grid" id="states-gallery"></div>
+</section>
+
+<script type="module">
+  import { createAvatar } from "./js/mascot.js";
+  import { initFx } from "./js/fx.js";
+
+  initFx();
+
+  const ALL_STATES = ["idle", "listening", "thinking", "tool", "speaking", "approval", "done", "error", "sleep"];
+  const ALL_MOODS = ["neutre", "joie", "attention", "grave", "legere"];
+  const ALL_REACTS = ["validate", "wave", "nod", "arrival"];
+
+  const liveInstances = [];
+
+  // 1. Montage des 12 instances de la scène temps réel (évite la limite WebGL de 16 contextes simultanés de Safari)
+  const mountLive = (id, species) => {
+    const el = document.getElementById(id);
+    const av = createAvatar(el, { species, preserve: false });
+    liveInstances.push(av);
+    return av;
+  };
+
+  ["220", "96", "40"].forEach((sz) => {
+    mountLive(`live-panda-nuit-${sz}`, "panda");
+    mountLive(`live-panda-jour-${sz}`, "panda");
+    mountLive(`live-red-nuit-${sz}`, "renard");
+    mountLive(`live-red-jour-${sz}`, "renard");
+  });
+
+  // 2. Planche des 9 états × 2 espèces × (220 px + 96 px) rendue par snapshots haute fidélité
+  // + un moteur dédié qui anime la carte survolée en temps réel (garantit 0 contexte WebGL perdu dans Safari)
+  const gallery = document.getElementById("states-gallery");
+  let currentBg = "nuit";
+
+  // Moteur de capture hors-écran pour générer les aperçus des 9 états à 220 px et 96 px
+  const buildStateGallery = async () => {
+    const off220 = document.createElement("div");
+    off220.style.cssText = "position:fixed;left:-9999px;top:0;width:220px;height:220px;";
+    const off96 = document.createElement("div");
+    off96.style.cssText = "position:fixed;left:-9999px;top:0;width:96px;height:96px;";
+    document.body.append(off220, off96);
+
+    for (const sp of [
+      { key: "panda", label: "Panda géant" },
+      { key: "renard", label: "Panda roux" },
+    ]) {
+      const av220 = createAvatar(off220, { species: sp.key, preserve: true });
+      const av96 = createAvatar(off96, { species: sp.key, preserve: true });
+
+      for (const st of ALL_STATES) {
+        av220.setState(st);
+        av96.setState(st);
+        if (st === "speaking") {
+          av220.setLevel(0.65);
+          av96.setLevel(0.65);
+        }
+        // Laisse les ressorts converger vers la pose cible
+        await new Promise((r) => setTimeout(r, 110));
+        const url220 = av220.snapshot();
+        const url96 = av96.snapshot();
+
+        for (const mode of ["nuit", "jour"]) {
+          const tile = document.createElement("div");
+          tile.className = `state-tile ${mode}`;
+          tile.dataset.species = sp.key;
+          tile.dataset.state = st;
+          tile.innerHTML = `
+            <div class="st-top">
+              <span>${sp.label} · <b>${st}</b></span>
+              <span class="st-badge">${mode === "nuit" ? "#0d1020" : "#eef2f8"}</span>
+            </div>
+            <div class="st-row">
+              <div class="av-slot">
+                <img src="${url220}" width="150" height="150" style="width:150px;height:150px;object-fit:contain" alt="${sp.label} ${st} 220px">
+                <span class="av-cap">220 px</span>
+              </div>
+              <div class="av-slot">
+                <img src="${url96}" width="84" height="84" style="width:84px;height:84px;object-fit:contain" alt="${sp.label} ${st} 96px">
+                <span class="av-cap">96 px</span>
+              </div>
+            </div>
+          `;
+          tile.addEventListener("click", () => {
+            setGlobalState(st);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+          gallery.appendChild(tile);
+        }
+      }
+      av220.destroy();
+      av96.destroy();
+    }
+    off220.remove();
+    off96.remove();
+  };
+
+  buildStateGallery();
+
+  // 3. Boutons de contrôle de la barre supérieure
+  const stateWrap = document.getElementById("state-btns");
+  const moodWrap = document.getElementById("mood-btns");
+  const reactWrap = document.getElementById("react-btns");
+
+  function setGlobalState(st) {
+    liveInstances.forEach((av) => {
+      av.setState(st);
+      if (st === "speaking") av.setLevel(0.6);
+      else av.setLevel(0);
+    });
+    ["lbl-panda-nuit", "lbl-panda-jour", "lbl-red-nuit", "lbl-red-jour"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = st;
+    });
+    stateWrap.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.st === st));
+  }
+
+  ALL_STATES.forEach((st) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn" + (st === "idle" ? " on" : "");
+    b.dataset.st = st;
+    b.textContent = st;
+    b.addEventListener("click", () => setGlobalState(st));
+    stateWrap.appendChild(b);
+  });
+
+  ALL_MOODS.forEach((m) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn" + (m === "neutre" ? " on" : "");
+    b.dataset.mood = m;
+    b.textContent = m;
+    b.addEventListener("click", () => {
+      liveInstances.forEach((av) => av.setMood(m));
+      moodWrap.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    });
+    moodWrap.appendChild(b);
+  });
+
+  ALL_REACTS.forEach((rk) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn";
+    b.textContent = rk + "()";
+    b.addEventListener("click", () => {
+      liveInstances.forEach((av) => av.react(rk));
+    });
+    reactWrap.appendChild(b);
+  });
+
+  const btnNuit = document.getElementById("bg-nuit-btn");
+  const btnJour = document.getElementById("bg-jour-btn");
+  const btnVide = document.getElementById("vide-btn");
+
+  btnNuit.addEventListener("click", () => {
+    document.body.classList.remove("bg-jour");
+    document.documentElement.dataset.mode = "nuit";
+    btnNuit.classList.add("on");
+    btnJour.classList.remove("on");
+    window.dispatchEvent(new Event("nova:theme"));
+  });
+
+  btnJour.addEventListener("click", () => {
+    document.body.classList.add("bg-jour");
+    document.documentElement.dataset.mode = "jour";
+    btnJour.classList.add("on");
+    btnNuit.classList.remove("on");
+    window.dispatchEvent(new Event("nova:theme"));
+  });
+
+  btnVide.addEventListener("click", () => {
+    const on = document.documentElement.toggleAttribute("data-vide");
+    btnVide.classList.toggle("on", on);
+    if (!on) setGlobalState("idle");
+  });
+</script>
+</body>
+</html>

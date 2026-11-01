@@ -1,0 +1,75 @@
+{
+  "id": "synthese_contradictoire",
+  "titre": "Synthèse de documents contradictoires",
+  "categorie": "synthese",
+  "donnees": "synthétiques (commune et documents fictifs)",
+  "entree": {
+    "prompt": "Exercice (documents fictifs). Fais une synthèse de 150 mots maximum pour la direction : combien de déplacés sont arrivés à Tougan-Est et la route est-elle praticable ? Cite chaque affirmation avec son document entre crochets ([D1], [D2], [D3]). Signale les contradictions, n'invente aucun chiffre et ne fais pas de moyenne.\n\n[D1] Communiqué de la mairie de Tougan-Est (commune fictive), 14/10/2026 : « 3 200 ménages déplacés sont arrivés depuis le 1er octobre. La route Tougan-Est–Lanfiéra est ouverte. »\n[D2] Note du cluster Abris (fictive), 20/10/2026 : « Après vérification sur listes et élimination des doublons, 2 450 ménages déplacés arrivés depuis le 1er octobre. La route Tougan-Est–Lanfiéra est fermée depuis le 18/10. »\n[D3] Message radio d'un chef de village (fictif), 12/10/2026 : « Environ 5 000 personnes sont arrivées. »\n"
+  },
+  "outils_permis": [],
+  "verifs": [
+    {
+      "type": "contient",
+      "valeurs": [
+        "3 200",
+        "2 450"
+      ]
+    },
+    {
+      "type": "un_de",
+      "valeurs": [
+        "contradict",
+        "divergen",
+        "écart",
+        "incohéren",
+        "diffèrent",
+        "differ"
+      ]
+    },
+    {
+      "type": "citations",
+      "motif": "\\[(D\\d+)\\]",
+      "permises": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "min": 3
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "2 450"
+      ],
+      "source": "D2"
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "3 200"
+      ],
+      "source": "D1"
+    },
+    {
+      "type": "fait_source",
+      "variantes": [
+        "5 000"
+      ],
+      "source": "D3"
+    },
+    {
+      "type": "absent",
+      "valeurs": [
+        "2 825",
+        "3 550",
+        "3 217"
+      ]
+    },
+    {
+      "type": "max_mots",
+      "n": 150
+    }
+  ],
+  "grille": "exactitude : chiffres exacts par source, D2 identifié comme le plus récent et vérifié, ménages ≠ personnes (D3 non comparable), statut de la route daté (fermée depuis le 18/10 selon D2) ; completude : effectif, route, contradictions, point à vérifier ; forme : BLUF puis faits sourcés ; concision : ≤ 150 mots.",
+  "seuil_grille": 3.5
+}

@@ -1,0 +1,28 @@
+{
+  "id": "image",
+  "recorded": true,
+  "source": "real Nova run logs (releves/diag), sanitised by tools/demo/build_traces.py",
+  "title": "Muse Image (muse-image-1.0) — POST /v1/images/generations",
+  "model": "muse-image-1.0",
+  "events": [
+    {
+      "ts": "2026-11-01T04:28:29Z",
+      "fournisseur": "meta",
+      "hote": "api.meta.ai",
+      "modele": "muse-image-1.0",
+      "meta": true,
+      "statut": "envoye",
+      "source": "http"
+    },
+    {
+      "ts": "2026-11-01T04:28:41Z",
+      "fournisseur": "meta",
+      "modele": "muse-image-1.0",
+      "meta": true,
+      "statut": "ok",
+      "source": "api.meta.image",
+      "specialite": "image"
+    }
+  ],
+  "note": "Journal lines only: the generated image file is not part of the public trace."
+}

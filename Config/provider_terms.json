@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "note": "Version hackathon Meta : conditions des seuls fournisseurs servant des modèles Meta (API Meta Model, Baseten).",
+  "rule": {
+    "personal_max_retention_days": 30,
+    "max_verification_age_days": 90
+  },
+  "providers": {
+    "meta": {
+      "no_training_api": true,
+      "retention_days": null,
+      "public_allowed": true,
+      "verified": "2026-10-31",
+      "training_models": [
+        "muse-spark-1.3-contributor",
+        "muse-spark-1.2-contributor",
+        "muse-code-cli"
+      ],
+      "sources": [
+        "https://dev.meta.ai/legal/terms-of-service",
+        "https://dev.meta.ai/docs/pricing-rate-limits"
+      ],
+      "evidence": "Conditions du 09/10/2026, 5.1 : Meta « will not use Content submitted in a request to the Standard Services to train Meta Models » ; 6.1 : Contributor = entraînement. 4.4 : « Meta will retain your Content and Usage Data as needed » — aucune durée → personal refusé par la règle (Standard reste public). Contributor et Muse Code : jamais."
+    },
+    "baseten": {
+      "no_training_api": true,
+      "retention_days": 0,
+      "public_allowed": true,
+      "verified": "2026-11-01",
+      "sources": [
+        "https://www.baseten.co/security-practices/"
+      ],
+      "evidence": "« Baseten does not use Customer Content for model training, fine-tuning, or improvement of any algorithms » ; Model APIs : « Zero Data Retention posture for all Customer Content » — « will not store, retain, or otherwise make a persistent copy of model inputs or outputs » (page lue le 01/11/2026). Exception écrite : journalisation activée par le client."
+    }
+  }
+}

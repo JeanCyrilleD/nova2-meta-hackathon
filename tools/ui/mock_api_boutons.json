@@ -1,0 +1,60 @@
+{
+ "/api/tasks": "__404__",
+ "/api/costs/summary": "__404__",
+ "/api/state": {
+  "settings": {
+   "city": "Ouagadougou",
+   "user_name": "Ahadi"
+  }
+ },
+ "/api/mail/counts": {
+  "unread": 7,
+  "important": 2
+ },
+ "/api/commitments": {
+  "items": [
+   {
+    "id": "c1",
+    "quoi": "Envoyer l'ordre du jour à Mariam",
+    "qui": "Mariam",
+    "echeance": "@-2",
+    "status": "ouvert"
+   },
+   {
+    "id": "c2",
+    "quoi": "Relire la note CAFU Sahel",
+    "qui": "Ahadi",
+    "echeance": "@0",
+    "status": "ouvert"
+   },
+   {
+    "id": "c3",
+    "quoi": "Valider le budget atelier",
+    "qui": "Moussa",
+    "echeance": "@3",
+    "status": "ouvert"
+   }
+  ]
+ },
+ "/api/dots/waiting": {
+  "items": [
+   {
+    "id": "w1",
+    "name": "Veille BRVM",
+    "question": "Publier le brief du soir ?",
+    "decision": true,
+    "ts": "@0T08:00:00Z"
+   }
+  ]
+ },
+ "/api/budget": {
+  "month_usd": 41.27,
+  "cap_usd": 125
+ },
+ "/api/agents2": {
+  "ok": true,
+  "enabled": false,
+  "agents": [],
+  "tasks": []
+ }
+}

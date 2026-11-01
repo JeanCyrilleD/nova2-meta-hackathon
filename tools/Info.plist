@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Nova 2 — Info.plist du bundle Nova.app (v2.0.0).
+     La version fait foi ici ; package_app.sh la recopie sans la modifier.
+     CFBundleExecutable = NovaMac (produit SwiftPM, voir Package.swift).
+     Le dossier web/ est copié dans Contents/Resources/web par package_app.sh :
+     c'est là que main.swift le cherche (Bundle.main.resourcePath + "/web"). -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Nova</string>
+	<key>CFBundleDisplayName</key>
+	<string>Nova</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.ahadi.nova</string>
+	<key>CFBundleExecutable</key>
+	<string>NovaMac</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>fr</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>2.0.0</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Nova utilise le microphone pour la dictée et la conversation vocale, uniquement à ta demande.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Nova transcrit ta voix en texte pour la dictée et les commandes vocales.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Nova dialogue avec Calendrier, Rappels et Mail pour préparer tes briefs et tes brouillons — aucun envoi sans ton approbation.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Nova lit ton calendrier pour préparer tes journées et tes fiches de réunion.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Nova lit ton calendrier pour préparer tes journées et tes fiches de réunion.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Nova lit et prépare tes rappels dans le cadre de tes routines quotidiennes.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Nova lit et prépare tes rappels dans le cadre de tes routines quotidiennes.</string>
+	<!-- NOVA PARTOUT (24/10) : schéma d'URL nova:// (nova://ask?q=…, nova://open?page=…, nova://dictee) — main.swift
+	     installURLHandler (kAEGetURL). Le même schéma sert au bus interne WebKit (nova://app/…), ignoré côté URL. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.ahadi.nova.url</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>nova</string>
+			</array>
+		</dict>
+	</array>
+	<!-- NOVA PARTOUT : Services macOS sur le texte sélectionné (NovaServiceProvider, main.swift). Ouvrent le panneau compact
+	     pré-rempli ; rien n'est envoyé ni retenu sans geste dans le panneau. NSRequiredContext vide = actifs par défaut. -->
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict><key>default</key><string>Demander à Nova</string></dict>
+			<key>NSMessage</key>
+			<string>askNova</string>
+			<key>NSPortName</key>
+			<string>Nova</string>
+			<key>NSSendTypes</key>
+			<array><string>public.utf8-plain-text</string><string>NSStringPboardType</string></array>
+			<key>NSRequiredContext</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict><key>default</key><string>Résumer avec Nova</string></dict>
+			<key>NSMessage</key>
+			<string>summarizeNova</string>
+			<key>NSPortName</key>
+			<string>Nova</string>
+			<key>NSSendTypes</key>
+			<array><string>public.utf8-plain-text</string><string>NSStringPboardType</string></array>
+			<key>NSRequiredContext</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict><key>default</key><string>Retenir dans Nova</string></dict>
+			<key>NSMessage</key>
+			<string>rememberNova</string>
+			<key>NSPortName</key>
+			<string>Nova</string>
+			<key>NSSendTypes</key>
+			<array><string>public.utf8-plain-text</string><string>NSStringPboardType</string></array>
+			<key>NSRequiredContext</key>
+			<dict/>
+		</dict>
+	</array>
+</dict>
+</plist>

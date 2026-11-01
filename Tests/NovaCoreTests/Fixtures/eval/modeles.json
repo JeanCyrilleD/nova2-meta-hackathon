@@ -1,0 +1,203 @@
+{
+  "note": "Catalogue FICTIF (fournisseurs vendor-*) pour tester le banc sans aucun modèle réel non Meta.",
+  "modeles": {
+    "alpha-main-direct": {
+      "famille": "alpha",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 2000000,
+        "sortie": 10000000,
+        "cache_lu": 200000
+      },
+      "prix_verifie": true
+    },
+    "alpha-mini-direct": {
+      "famille": "alpha",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "bulk",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 100000,
+        "sortie": 500000,
+        "cache_lu": 10000
+      },
+      "prix_verifie": true,
+      "note": "fictif"
+    },
+    "wonder-1.0": {
+      "famille": "meta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 4000000,
+        "sortie": 20000000
+      },
+      "prix_verifie": true
+    },
+    "spark-1.3": {
+      "famille": "meta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "bulk",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 1250000,
+        "sortie": 4250000
+      },
+      "prix_verifie": true
+    },
+    "zeta-flash": {
+      "famille": "zeta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "bulk"
+      ],
+      "prix_micro_par_million": {
+        "entree": 750000,
+        "sortie": 3750000,
+        "cache_lu": 75000
+      },
+      "prix_verifie": true,
+      "note": "fictif"
+    },
+    "zeta-argon": {
+      "famille": "zeta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 2000000,
+        "sortie": 10000000,
+        "cache_lu": 100000
+      },
+      "prix_verifie": true,
+      "note": "fictif"
+    },
+    "beta-sol": {
+      "famille": "beta",
+      "statut": "en_service",
+      "profils": [
+        "fast",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 2500000,
+        "sortie": 15000000,
+        "cache_lu": 250000
+      },
+      "prix_verifie": false,
+      "note": "fictif"
+    },
+    "delta-direct": {
+      "famille": "delta",
+      "statut": "en_service",
+      "profils": [
+        "bulk",
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 280000,
+        "sortie": 420000,
+        "cache_lu": 28000
+      },
+      "prix_verifie": false,
+      "note": "fictif"
+    },
+    "alpha-max-direct": {
+      "famille": "alpha",
+      "statut": "experimental",
+      "profils": [
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 4000000,
+        "sortie": 20000000,
+        "cache_lu": 200000
+      },
+      "prix_verifie": true
+    },
+    "alpha-fable-direct": {
+      "famille": "alpha",
+      "statut": "experimental",
+      "profils": [
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 10000000,
+        "sortie": 50000000,
+        "cache_lu": 250000
+      },
+      "prix_verifie": true
+    },
+    "eta-dawn": {
+      "famille": "eta",
+      "statut": "experimental",
+      "profils": [
+        "fast",
+        "bulk"
+      ],
+      "prix_micro_par_million": {
+        "entree": 0,
+        "sortie": 0
+      },
+      "prix_verifie": false,
+      "note": "fictif"
+    },
+    "eta-sage": {
+      "famille": "eta",
+      "statut": "experimental",
+      "profils": [
+        "fast",
+        "bulk"
+      ],
+      "prix_micro_par_million": {
+        "entree": 0,
+        "sortie": 0
+      },
+      "prix_verifie": false,
+      "note": "fictif"
+    },
+    "epsilon-5": {
+      "famille": "epsilon",
+      "statut": "experimental",
+      "profils": [
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 1000000,
+        "sortie": 3200000,
+        "cache_lu": 200000
+      },
+      "prix_verifie": false
+    },
+    "gamma-direct": {
+      "famille": "gamma",
+      "statut": "experimental",
+      "profils": [
+        "deep"
+      ],
+      "prix_micro_par_million": {
+        "entree": 3000000,
+        "sortie": 15000000,
+        "cache_lu": 300000
+      },
+      "prix_verifie": false,
+      "note": "fictif"
+    }
+  }
+}

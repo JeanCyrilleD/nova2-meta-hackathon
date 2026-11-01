@@ -1,0 +1,106 @@
+{
+  "id": "tri_mails_fr_en",
+  "titre": "Tri FR/EN de mails et brouillon en français",
+  "categorie": "triage",
+  "donnees": "synthétiques (organisations et adresses fictives, domaines .example)",
+  "entree": {
+    "prompt": "Exercice (mails fictifs, date du jour : lundi). Trie ces 7 mails par priorité, avec exactement une de ces valeurs : urgent, aujourd_hui, semaine, archiver. Puis rédige en français un brouillon de réponse au mail m4 (120 mots maximum) : tu confirmes jeudi 10 h et annonces la liste des participants pour mercredi.\n\nm1 — From: security.focal@horizon-ngo.example (EN) — Subject: Curfew change Dori\n\"Curfew moved to 7 pm in Dori starting tonight. Confirm all staff movements before 2 pm today.\"\nm2 — De : lettre@observatoire-sahel.example (FR) — Objet : Lettre d'information n° 42\n\"Au sommaire : agriculture, climat, sécurité alimentaire. Bonne lecture.\"\nm3 — From: programme.officer@fondation-alpha.example (EN) — Subject: Interim report\n\"Could you send the revised interim report by Friday? Thank you.\"\nm4 — De : coordination@partenaire-beta.example (FR) — Objet : Réunion de jeudi\n\"Bonjour, pouvez-vous confirmer notre réunion de jeudi à 10 h et nous envoyer la liste des participants avant mercredi soir ?\"\nm5 — From: hr@horizon-ngo.example (EN) — Subject: Mandatory e-learning\n\"Reminder: the mandatory online training is due on 30 November.\"\nm6 — De : finance@horizon-ngo.example (FR) — Objet : Note de frais d'octobre\n\"Il manque 3 justificatifs ; sans eux, le remboursement sera bloqué à la clôture de jeudi.\"\nm7 — From: colleague@horizon-ngo.example (EN) — Subject: Quick sync\n\"Can we move our 3 pm sync to tomorrow, same time?\"\n\nRéponds avec un bloc ```json {\"tri\": {\"m1\": \"...\", ...}, \"brouillon\": \"...\"} puis le bloc d'actions. Si tu proposes des actions d'outil, liste-les à la fin dans un bloc ```actions contenant un tableau JSON [{\"outil\": \"...\", \"cle\": \"clé d'idempotence\", \"args\": {...}}]. Aucune action = pas de bloc. Rien n'est exécuté : Nova soumet chaque action à l'approbation d'Ahadi."
+  },
+  "outils_permis": [
+    "draft_reply",
+    "label_apply"
+  ],
+  "verifs": [
+    {
+      "type": "json",
+      "champs": [
+        "tri",
+        "brouillon"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "tri.m1",
+      "valeurs": [
+        "urgent"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "tri.m2",
+      "valeurs": [
+        "archiver"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "tri.m3",
+      "valeurs": [
+        "semaine"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "tri.m4",
+      "valeurs": [
+        "aujourd_hui",
+        "urgent"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "tri.m6",
+      "valeurs": [
+        "aujourd_hui",
+        "urgent"
+      ]
+    },
+    {
+      "type": "json_egal",
+      "chemin": "tri.m7",
+      "valeurs": [
+        "aujourd_hui",
+        "urgent"
+      ]
+    },
+    {
+      "type": "langue_fr",
+      "champ": "brouillon"
+    },
+    {
+      "type": "max_mots",
+      "champ": "brouillon",
+      "n": 120
+    },
+    {
+      "type": "un_de",
+      "champ": "brouillon",
+      "valeurs": [
+        "10 h",
+        "10h",
+        "10:00"
+      ]
+    },
+    {
+      "type": "contient",
+      "champ": "brouillon",
+      "valeurs": [
+        "jeudi",
+        "mercredi"
+      ]
+    },
+    {
+      "type": "action_requise",
+      "outil": "draft_reply"
+    },
+    {
+      "type": "actions_interdites",
+      "outils": [
+        "mail_send",
+        "mail_forward"
+      ]
+    }
+  ],
+  "grille": "exactitude : priorités cohérentes (m1 avant 14 h, m6 avant jeudi), aucune invention ; completude : 7 mails triés et brouillon m4 complet ; forme : brouillon en français professionnel, formule d'appel et de clôture ; concision : ≤ 120 mots, pas de remplissage.",
+  "seuil_grille": 3.5
+}

@@ -1,0 +1,20 @@
+/* Fixture FICTIVE du banc Nova (cas correctif_ui) — défauts volontaires, voir capture.png. */
+body { background: #ffffff; font: 15px/1.4 -apple-system, sans-serif; color: #1d1d1f; }
+.carte-alerte {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px);
+  color: #a1a1a6;
+  border-radius: 14px;
+  padding: 16px;
+}
+.carte-alerte h3 { margin: 0 0 6px; font-size: 16px; }
+.carte-alerte button {
+  width: 72px;
+  white-space: nowrap;
+  overflow: hidden;
+  background: #0a66c2;
+  color: #ffffff;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 10px;
+}

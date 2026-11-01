@@ -1,0 +1,9 @@
+# PHASE 1 (31/10) : configuration gitleaks de Nova 2 — règles par défaut + liste d'exceptions VÉRIFIÉES à la main (Phase 0, NOVA_STATE.md §6).
+title = "Nova 2"
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Faux positifs vérifiés : noms de clés localStorage (const *_KEY = \"nova…\"), jamais des secrets"
+regexTarget = "match"
+regexes = ['''_KEY\s*=\s*["']nova[0-9A-Za-z_.:-]*["']''']
