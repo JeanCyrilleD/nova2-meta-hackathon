@@ -2,6 +2,8 @@
 
 **▶ Demo video (3 min):** https://youtu.be/TSjw5fsBKsM
 
+📣 Like / repost / comment the demo on X (Most Viral track): https://x.com/DahaniPasc81200/status/2116924167429960109
+
 License: All rights reserved — see LICENSE (evaluation permitted).
 
 Nova is a native macOS companion (Swift + a local web UI) for a humanitarian foresight analyst: it drafts sourced
@@ -60,7 +62,7 @@ Nova's own run logs by `tools/demo/build_traces.py` and sanitised (model ids, en
 costs, public source URLs only — no conversation text, keys, paths or e-mail addresses).
 
 - Without a Mac: `python3 tools/demo/replay.py all` (or `cafu_note`, `spark_open_review`, `image`, `dictation`,
-  `meta_routing`). No network call is made.
+  `voice_chain`, `meta_routing`). No network call is made.
 - In the app: `NOVA_DEMO_REPLAY=1 swift run NovaMac`, then `GET /api/demo/traces`, `GET /api/demo/trace?id=cafu_note`
   or the step-by-step stream `GET /api/demo/replay?id=cafu_note` (`Sources/NovaCore/DemoReplay.swift`).
 
@@ -69,8 +71,9 @@ costs, public source URLs only — no conversation text, keys, paths or e-mail a
 | `cafu_note` | CAFU note on NGO regulation in Mali/Niger, public sources only — Muse Spark 1.3, `reasoning_effort=max`, 447 s, LLM cost 0.2254 $ (01/11/2026) | yes |
 | `meta_routing` | the `meta_only` proof journal: every routed model call, all `meta: true` | yes |
 | `image` | Muse Image call (`muse-image-1.0`), journal lines only (no image file) | yes |
-| `spark_open_review` | Spark Open (Baseten) review step | **not yet**: the recorded requests used a wrong model id (`…-1026`, HTTP 404), now fixed to `meta-models/muse-spark-open` |
-| `dictation` | Muse Voice Transcribe dictation | **not yet** with the current endpoint |
+| `spark_open_review` | Spark Open (Baseten) calls of 01/11/2026: the first ones with a wrong model id (`…-1026`, HTTP 404, now fixed to `meta-models/muse-spark-open`), then the CAFU review that succeeded at 06:44:54 UTC | yes |
+| `dictation` | Muse Voice Transcribe dictation (`POST /v1/asr/transcribe`), 24 calls of the voice bench of 01/11/2026 08:42 UTC, synthetic public phrases, no transcript text | yes |
+| `voice_chain` | the voice bench end to end: Muse Voice Transcribe → Spark 1.3 (`reasoning_effort` `minimal`) → macOS system voice; 21 measured turns, first audio median 2.77 s (the < 1 s target is not met in this file-based bench), barge-in 2 of 3, 0.0256 $ | yes |
 
 A trace without a successful real run is marked `"recorded": false`; nothing is invented. After a real run, rebuild
 with `python3 tools/demo/build_traces.py --diag <run-logs dir>`.
@@ -124,8 +127,8 @@ Each Baseten call is logged with tokens and cost at the Baseten price (1.25 $ in
 
 ## 6. What pre-existed vs built during the event
 
-**About this repository's history.** This public repository is a **single-commit snapshot** (01/11/2026) of the
-submission branch. The real development history starts on **26/10/2026** (root commit `4817512`, tag
+**About this repository's history.** This public repository starts with a **single-commit snapshot** (01/11/2026) of the
+submission branch, followed by a README update (demo video) and a post-submission update (fixes listed in Features). The real development history starts on **26/10/2026** (root commit `4817512`, tag
 `v2.0.0-baseline`, 26/10/2026 16:10:36 UTC) and is kept in the author's private repository, because older commits
 contain personal data that was removed from the code before publication.
 **Development history kept private (contains personal data); available to judges on request.**

@@ -545,7 +545,7 @@ extension NovaApp {
         let chainOK: Bool = tours.contains { ($0["statut"] as? String) == "ok" && (($0["premier_audio_ms"] as? Int) ?? -1) >= 0 }
         let chain: [String: Any] = ["id": "voice_chain", "recorded": chainOK,
                                     "source": "real Nova run (dormant/VOIX_TEST_REQUEST, synthetic public test phrases), sanitised",
-                                    "title": "Voice chain — Muse Voice Transcribe → Muse Spark 1.3 (reasoning_effort none) → on-device AVSpeechSynthesizer",
+                                    "title": "Voice chain — Muse Voice Transcribe → Muse Spark 1.3 (reasoning_effort minimal) → on-device AVSpeechSynthesizer",
                                     "started": started, "finished": nowISO(), "stages": etapes, "criteria": crit,
                                     "cost_usd": VoixTest.arrondi(cumul)]
         try? jsonData(chain).write(to: traces.appendingPathComponent("voice_chain.json"))
