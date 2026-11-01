@@ -52,9 +52,20 @@ a Meta model.** There is no other model provider in this code: no client, no key
     acronyms, never contacts or memory) and `languageBias` fields, with one retry without them on HTTP 400;
   - **Meta-only picker**: the brain selectors list Meta brains only.
 
-  Measured so far: first audio median **2.77 s** in the file-based voice bench of 01/11/2026 08:42 UTC (before this
-  update; the < 1 s target was not met). The gains of this update have **not yet been measured on real audio**; they
-  are covered by simulated tests only (`VoixRapideTests`, `VoixBancStreamingTests`, `MetaOnlySelecteurTests`).
+  Measured with the voice bench on 01/11/2026 16:39 UTC (same voice code, run in the author's everyday build of Nova;
+  every model call was Muse Voice Transcribe or Spark 1.3; 24 synthetic public phrases, 0.061 $ in total):
+  - **real-time conversation mode** (SFSpeech fed the audio in real time, the stable partial sent to Spark; 12 turns,
+    10 measured): first sound median **0.75 s** (the acknowledgement, 0.74 s); first audio of the actual answer
+    median **1.28 s** (p90 1.65 s), against **2.77 s** in the bench of 08:42 UTC before this update; end of speech →
+    first Spark token 1.21 s; barge-in 3 of 3, stop median 0 ms, resume median 0.72 s (2.5 to 3.5 s before);
+    word error rate of the partials 13.7 %;
+  - **file mode** (Muse Voice Transcribe dictation of each file, 24 turns): dictation median 1.81 s, Spark first token
+    1.09 s, end-to-end first audio median 3.15 s (the file dictation is included);
+  - all 24 turns: mean word error rate 5.5 %, **0 empty replies out of 24** (2 of 24 at 08:42), "Mali's" transcribed
+    correctly.
+
+  Limits: the actual answer still starts above 1 s, bounded by Spark's first token; in this bench SFSpeech did not run
+  on-device. Covered by simulated tests: `VoixRapideTests`, `VoixBancStreamingTests`, `MetaOnlySelecteurTests`.
 - **Images** (Muse Image), **segmentation** (SAM 3.1), mail and agenda triage, the Dots automations, budget ledger
   with spend caps, approvals, keyless demo replay.
 
