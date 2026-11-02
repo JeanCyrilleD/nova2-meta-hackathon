@@ -1,6 +1,6 @@
 # Nova — the augmented analyst · 100% Meta models
 
-**▶ Demo video (3 min):** https://youtu.be/TSjw5fsBKsM
+**▶ Demo video (2 min 27):** https://youtu.be/XUFS6rvUn8o
 
 📣 Like / repost / comment the demo on X (Most Viral track): https://x.com/DahaniPasc81200/status/2116924167429960109
 
