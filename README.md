@@ -213,6 +213,14 @@ or `Config`.
 Licence texts and copyright holders of the vendored files: `web/vendor/THIRD_PARTY_LICENSES.txt`. Nova's own code is
 under `LICENSE` (all rights reserved, evaluation permitted); these components keep their own licences.
 
+## 8b. Credits
+
+- **Origins of Nova.** Nova was started with Meta's **Muse Code** and **Muse Spark 1.3** as coding and design assistants:
+  they shaped its first architecture and code. Other AI coding assistants were used later in development; every model
+  Nova calls at runtime is a Meta model (section 3).
+- **Baseten** hosts Muse Spark Open, the open-weight Meta model Nova uses for independent review (section 5). Thanks to
+  the Baseten team for the access and support during the hackathon.
+
 ## 9. Privacy
 
 No personal data, internal organisation data or secrets are committed: run logs (`releves/`), working files

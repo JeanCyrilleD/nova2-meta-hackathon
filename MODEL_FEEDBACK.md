@@ -6,8 +6,9 @@ each one today, and what we would suggest to the model team. It is written to he
 
 ## How we measured
 
-- **Bench:** 21 fixed cases (mail triage, hidden prompt injection in a mail, refusing to show secrets, ambiguous
-  requests, sourced briefs from labelled public documents, evidence grading). Synthetic or public material only.
+- **Bench:** 21 fixed cases: mail triage, hidden prompt injection in a mail, refusing to show secrets, ambiguous
+  requests, sourced briefs from labelled public documents, evidence grading. Synthetic or public material only. 18 cases
+  are published in `eval/cas`; the 3 evidence-grading cases follow a private working format and stay private.
 - **Runs:** 9 full passes on 1–2 November 2026, i.e. 189 case runs, graded by deterministic checks in
   `Sources/NovaCore/Feat_BancEtendu.swift`.
 - **Outcome:** 22 failed case runs. About 4 were grader errors that we fixed in the grader, not in the model. With the
