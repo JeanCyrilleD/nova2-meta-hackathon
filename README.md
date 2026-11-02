@@ -2,7 +2,7 @@
 
 **▶ Demo video (2 min 27):** https://youtu.be/XUFS6rvUn8o
 
-📣 Like / repost / comment the demo on X (Most Viral track): https://x.com/DahaniPasc81200/status/2116924167429960109
+📣 Like / repost / comment the demo on X (Most Viral track): https://x.com/DahaniPasc81200/status/2117301027485466887
 
 📝 Model feedback for Meta (observed failures, mitigations, recommendations): [MODEL_FEEDBACK.md](MODEL_FEEDBACK.md)
 
