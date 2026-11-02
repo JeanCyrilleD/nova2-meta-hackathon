@@ -1,4 +1,4 @@
-# Nova — the augmented humanitarian analyst · 100% Meta models
+# Nova — the augmented analyst · 100% Meta models
 
 **▶ Demo video (3 min):** https://youtu.be/TSjw5fsBKsM
 
@@ -8,8 +8,8 @@
 
 License: All rights reserved — see LICENSE (evaluation permitted).
 
-Nova is a native macOS companion (Swift + a local web UI) for a humanitarian foresight analyst: it drafts sourced
-context notes (CAFU format: BLUF, tagged evidence, scenarios, recommendations), reviews them with an open-weight
+Nova is a native macOS companion (Swift + a local web UI) for an analyst who writes sourced notes: it drafts
+context notes (BLUF, tagged evidence, scenarios, recommendations), reviews them with an open-weight
 model, triages mail and agenda, dictates, generates images and talks back — **and every model it calls at runtime is
 a Meta model.** There is no other model provider in this code: no client, no key slot, no endpoint.
 
@@ -20,7 +20,7 @@ a Meta model.** There is no other model provider in this code: no client, no key
 
 - **Chat with tools** on Muse Spark 1.3: web search and fetch, files, mail, agenda, shell (with approval cards),
   several pure reads run in parallel in one step.
-- **CAFU context notes**: research → Spark 1.3 draft (BLUF, tagged evidence, scenarios, recommendations) →
+- **Sourced context notes** (note mode): research → Spark 1.3 draft (BLUF, tagged evidence, scenarios, recommendations) →
   Spark Open review, each step journaled and costed.
 - **Reliability rule** in the system prompt (safety first, then the explicit instruction of the message, then house
   style; unknown = said, never guessed; a failed tool is followed by 2–3 other ways) and a **source check**
@@ -50,7 +50,7 @@ a Meta model.** There is no other model provider in this code: no client, no key
   - **empty replies**: Spark's output cap is raised to 1024 tokens in voice mode (its non-streamed reasoning used up the
     previous 320-token floor: 2 empty replies out of 24 in the 08:42 bench), `finish_reason` and `refusal` are read and
     named, and an empty reply is retried once, then answered with an honest sentence instead of silence;
-  - **vocabulary**: dictation sends the documented `keywords` (fixed list of Sahel countries, cities and humanitarian
+  - **vocabulary**: dictation sends the documented `keywords` (fixed list of place names and domain
     acronyms, never contacts or memory) and `languageBias` fields, with one retry without them on HTTP 400;
   - **Meta-only picker**: the brain selectors list Meta brains only.
 
@@ -63,8 +63,8 @@ a Meta model.** There is no other model provider in this code: no client, no key
     word error rate of the partials 13.7 %;
   - **file mode** (Muse Voice Transcribe dictation of each file, 24 turns): dictation median 1.81 s, Spark first token
     1.09 s, end-to-end first audio median 3.15 s (the file dictation is included);
-  - all 24 turns: mean word error rate 5.5 %, **0 empty replies out of 24** (2 of 24 at 08:42), "Mali's" transcribed
-    correctly.
+  - all 24 turns: mean word error rate 5.5 %, **0 empty replies out of 24** (2 of 24 at 08:42), place names
+    transcribed correctly.
 
   Limits: the actual answer still starts above 1 s, bounded by Spark's first token; in this bench SFSpeech did not run
   on-device. Covered by simulated tests: `VoixRapideTests`, `VoixBancStreamingTests`, `MetaOnlySelecteurTests`.
@@ -101,10 +101,10 @@ costs, public source URLs only — no conversation text, keys, paths or e-mail a
 
 | Trace | What it shows | Recorded real run? |
 |---|---|---|
-| `cafu_note` | CAFU note on NGO regulation in Mali/Niger, public sources only — Muse Spark 1.3, `reasoning_effort=max`, 447 s, LLM cost 0.2254 $ (01/11/2026) | yes |
+| `cafu_note` | Analysis note from public sources only — Muse Spark 1.3, `reasoning_effort=max`, 447 s, LLM cost 0.2254 $ (01/11/2026) | yes |
 | `meta_routing` | the `meta_only` proof journal: every routed model call, all `meta: true` | yes |
 | `image` | Muse Image call (`muse-image-1.0`), journal lines only (no image file) | yes |
-| `spark_open_review` | Spark Open (Baseten) calls of 01/11/2026: the first ones with a wrong model id (`…-1026`, HTTP 404, now fixed to `meta-models/muse-spark-open`), then the CAFU review that succeeded at 06:44:54 UTC | yes |
+| `spark_open_review` | Spark Open (Baseten) calls of 01/11/2026: the first ones with a wrong model id (`…-1026`, HTTP 404, now fixed to `meta-models/muse-spark-open`), then the note review that succeeded at 06:44:54 UTC | yes |
 | `dictation` | Muse Voice Transcribe dictation (`POST /v1/asr/transcribe`), 24 calls of the voice bench of 01/11/2026 08:42 UTC, synthetic public phrases, no transcript text | yes |
 | `voice_chain` | the voice bench end to end: Muse Voice Transcribe → Spark 1.3 (`reasoning_effort` `minimal`) → macOS system voice; 21 measured turns, first audio median 2.77 s (the < 1 s target is not met in this file-based bench), barge-in 2 of 3, 0.0256 $ | yes |
 
@@ -115,11 +115,11 @@ with `python3 tools/demo/build_traces.py --diag <run-logs dir>`.
 
 | Meta model | Role in Nova | Where (file:line) |
 |---|---|---|
-| Muse Spark 1.3 (`muse-spark-1.3`) | default brain: chat, agents and tools, background tasks, vision, CAFU notes (`reasoning_effort` max → xhigh → high), voice-live brain (`minimal`) | `Sources/NovaCore/Brains.swift:176`, `Sources/NovaCore/MetaSpecialites.swift:89` |
+| Muse Spark 1.3 (`muse-spark-1.3`) | default brain: chat, agents and tools, background tasks, vision, context notes (`reasoning_effort` max → xhigh → high), voice-live brain (`minimal`) | `Sources/NovaCore/Brains.swift:176`, `Sources/NovaCore/MetaSpecialites.swift:89` |
 | Muse Wonder 1.0 (`muse-wonder-1.0`) | code, judge / second reader, deep fallback | `Sources/NovaCore/Brains.swift:172` |
 | Muse Spark 1.2 (`muse-spark-1.2`) | fallback of Spark 1.3 | `Sources/NovaCore/Brains.swift:180` |
 | Muse Spark 1.2/1.3 Contributor | explicit choice only, never in automatic chains (Meta may train on that tier) | `Sources/NovaCore/Brains.swift:193` |
-| Muse Spark Open (`meta-models/muse-spark-open`, Baseten) | open-weight Meta fallback, CAFU QA review, public news synthesis | `Sources/NovaCore/Brains.swift:203` |
+| Muse Spark Open (`meta-models/muse-spark-open`, Baseten) | open-weight Meta fallback, note QA review, public news synthesis | `Sources/NovaCore/Brains.swift:203` |
 | Muse Spark Open 816B (Hugging Face) | optional, hand-picked only (HF token) | `Sources/NovaCore/Brains.swift:200` |
 | Muse Code (CLI `muse exec`) | optional, hand-picked only (Muse Code subscription) | `Sources/NovaCore/Brains.swift:196` |
 | Muse Image (`muse-image-1.0`) | images (briefs, design studio) | `Sources/NovaCore/MetaCapabilities.swift:21`, `Sources/NovaCore/App.swift:1131` |
@@ -150,7 +150,7 @@ Muse Spark Open runs on Baseten, model `meta-models/muse-spark-open`, endpoint
 1. **Meta fallback.** Every automatic chain is Meta-only, and Spark Open is appended right after the Meta Model API
    brains (`Sources/NovaCore/MetaSpecialites.swift:188`; reroute pool `Sources/NovaCore/Router.swift:304`): an outage of
    the Meta API (5xx, 429, timeout, credit) falls over to the open-weight model, never to another vendor.
-2. **CAFU QA review.** After Spark 1.3 drafts a CAFU note, Spark Open reviews it (facts, evidence tags, score) as a
+2. **Note QA review.** After Spark 1.3 drafts a context note, Spark Open reviews it (facts, evidence tags, score) as a
    visible, journaled, costed step (`Sources/NovaCore/MetaSpecialites.swift:283`, called from
    `Sources/NovaCore/Feat_CafuMode.swift:1146`). Without a Baseten key the step is skipped and says so.
 3. **Public synthesis.** `POST /api/feed/synthese-ouverte` summarises public RSS headlines with Spark Open
@@ -175,7 +175,7 @@ The commit hashes below refer to that private history.
 - **Built during the event (26/10 16:57 UTC → 01/11/2026, every commit after the root in the private history).**
   Muse Wonder, Spark 1.2, Muse Image, Voice Transcribe and SAM 3.1 (commit `339e2b9`, 26/10 16:57 UTC), Spark Open on
   Baseten (`5ab0f5d`, 29/10), routing by specialty (`MetaSpecialites.swift`, 01/11) and the `meta_only` gate and proof
-  journal (`MetaOnly.swift`, 01/11), the CAFU mode (`Feat_CafuMode.swift`, first committed 31/10 in the bulk commit
+  journal (`MetaOnly.swift`, 01/11), the note mode (`Feat_CafuMode.swift`, first committed 31/10 in the bulk commit
   `7c08d37`: research → Spark 1.3 draft → Spark Open review), budget ledger and spend policy (`CostLedger.swift`,
   `SpendPolicy.swift`, 31/10), approvals (`SendApproval.swift`, 31/10), the web UI consolidation, and the Meta-only
   submission branch (removal of every non-Meta provider, keyless demo, personal-data review). Muse Spark 1.3 and
@@ -188,8 +188,8 @@ The commit hashes below refer to that private history.
 - Some visual assets (avatar illustrations, glass icons) were produced earlier with third-party creative tools; they
   are static files, and no model is called to produce or play them.
 - **Example data.** Names, addresses, amounts and portfolio lines that appear in prompts, tests and fixtures are
-  fictional (marked « fictif » / « exemple », `example.org`, `.example`). The CAFU and Fundings modules are kept as
-  generic code: the Fundings store starts empty and the CAFU evaluation case uses public sources only
+  fictional (marked « fictif » / « exemple », `example.org`, `.example`). The note and Fundings modules are kept as
+  generic code: the Fundings store starts empty and the note evaluation case uses public sources only
   (`eval/cas/brief_cafu_public.json`).
 
 ## 7. Tests
