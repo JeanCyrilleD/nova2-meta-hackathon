@@ -4,6 +4,8 @@
 
 📣 Like / repost / comment the demo on X (Most Viral track): https://x.com/DahaniPasc81200/status/2116924167429960109
 
+📝 Model feedback for Meta (observed failures, mitigations, recommendations): [MODEL_FEEDBACK.md](MODEL_FEEDBACK.md)
+
 License: All rights reserved — see LICENSE (evaluation permitted).
 
 Nova is a native macOS companion (Swift + a local web UI) for a humanitarian foresight analyst: it drafts sourced
