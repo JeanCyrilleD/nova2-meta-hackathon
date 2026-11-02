@@ -51,15 +51,12 @@ Le panneau flottant « assistant » est conservé (une seule WebView secondaire,
 
 ## 3. Cerveaux IA — chaîne réduite, échec rapide
 
-Diagnostic (audit §2.4, `diag-state.json`) : 21 fournisseurs, 17 morts (402 crédits OpenRouter épuisés, 404 modèles disparus, clés absentes), `firstTokenTimeout` de 9 s par tentative → le chat « plante » en attendant des faillites en série.
+Tous les cerveaux appelés à l'exécution sont des modèles Meta (Muse Spark 1.3, Muse Wonder 1.0, Muse Spark 1.2, Muse Spark Open via Baseten ; voir README, section 3). `Brains.swift` et `Router` encadrent la chaîne :
 
-Le `Router` existant sait déjà sauter les cerveaux sans clé, en panne (cooldowns) ou dont l'hôte est en crédit épuisé. Nova 2 durcit le cadre dans `Brains.swift` / `Router.swift` (marqués `// NOVA2:`) :
-
-1. **NOVA2-CATALOGUE** — Suppression du catalogue des deux modèles **prouvés morts par 404** : `spark-1.4` (`muse-spark-1.4`, absent des catalogues) et `or-gemini-flash` (`google/gemini-2.5-flash`). Ils sortent aussi des trois listes d'ordre (`fastOrder`, `bulkOrder`, `deepOrder`). Les fournisseurs sans clé (Anthropic, Z.ai, Moonshot directs) **restent au catalogue** : `plan()` les saute déjà tant qu'aucune clé n'est au Trousseau, et ils redeviennent disponibles le jour où une clé est ajoutée — sans code à retoucher.
-2. **NOVA2-DÉLAI** — `Router.firstTokenTimeout` : **9 s → 6 s** (cloud). Au-delà, le cerveau suivant prend la main ; l'utilisateur voit l'événement `failover`, pas un gel.
-3. **NOVA2-PLAFOND** — `plan()` plafonne la chaîne effective à **6 candidats** (+ le local toujours en dernier filet). Fini les chaînes de ~29 identifiants avec doublons.
-4. **NOVA2-DEADLINE** — `Router.chat()` reçoit une **échéance globale de 25 s** (`globalDeadline`) : passé ce délai, la boucle de repli s'arrête et émet une erreur claire (« Tous les cerveaux ont échoué » devient « Délai global dépassé — dernier essai : … »). Aucune requête ne peut plus attendre indéfiniment.
-5. **Chaîne cible résultante** (mode rapide, état réel au 20/10) : Claude direct si clé → DeepSeek direct si clé → Spark 1.3 (Meta) → gratuits OpenRouter vivants → Groq/Mistral/Cerebras si clés → **Ollama local en dernier, toujours**.
+1. **NOVA2-CATALOGUE** — les modèles prouvés morts (404) sortent du catalogue et des trois listes d'ordre (`fastOrder`, `bulkOrder`, `deepOrder`) ; un cerveau sans clé est sauté par `plan()`.
+2. **NOVA2-DÉLAI** — `Router.firstTokenTimeout` : **6 s** (cloud). Au-delà, le cerveau suivant prend la main ; l'utilisateur voit l'événement.
+3. **NOVA2-PLAFOND** — `plan()` plafonne la chaîne effective à **6 candidats**.
+4. **NOVA2-DEADLINE** — `Router.chat()` reçoit une **échéance globale de 25 s** (`globalDeadline`) : passé ce délai, la boucle de repli s'arrête et le dit.
 
 ---
 

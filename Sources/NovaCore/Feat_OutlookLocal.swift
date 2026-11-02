@@ -16,7 +16,7 @@ import Foundation
 /// s'il est présent). Il n'écrit RIEN, ne touche à aucun état Outlook, ne peut
 /// donc rien marquer comme lu. Le corps des messages (HxStore) reste hors de
 /// portée de cette voie ; le branchement dans mail_pj est demandé à [tiers]
-/// (dormant/DEMANDES_POUR_CLAUDE.md, D4).
+/// (dormant/DEMANDES.md, D4).
 /// Accès disque : si macOS refuse la lecture (Accès complet au disque non
 /// accordé à Nova), `inventory()` renvoie une liste vide et `accessState()`
 /// dit « refusé » — jamais de faux contenu.

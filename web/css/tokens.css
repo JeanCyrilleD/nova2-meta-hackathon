@@ -1,7 +1,7 @@
 /* tokens.css — FICHIER UNIQUE DES JETONS DE DESIGN de Nova 2 (Phase 4, 31/10/2026 ; règles : docs/DESIGN_RULES.md).
    Partie A : jetons de thème anciennement dispersés dans app.css et identite.css, déplacés ici par
    tools/ui/tokens_consolidate.py SANS modification (même ordre ; variables calculées identiques : tools/ui/root_vars_dump.py).
-   Partie B : système « NOVA Liquid Glass » (Gemini) + pont. Partie C (fin) : jetons Phase 4 (surfaces pleines, espacement,
+   Partie B : système « NOVA Liquid Glass » + pont. Partie C (fin) : jetons Phase 4 (surfaces pleines, espacement,
    rayons, mouvement, préférences d'accessibilité). Aucune autre feuille ne doit déclarer de jeton global. */
 /* ── Jetons venus de app.css (ordre de cascade conservé) ── */
 html[data-material="sable"][data-mode="jour"]{--ck-tile-hi:#FAF8F5; --ck-tile-lo:#EEEAE2}
@@ -200,10 +200,10 @@ html[data-identite][data-mode="nuit"]:not([data-material="sentinelle"]) {
 }
 
 /* ══ Partie B ══ */
-/* tokens.css — 30/10 09:16 : système de design « NOVA Liquid Glass » produit par Gemini (AI Studio, prompt 1 du document
+/* tokens.css — 30/10 09:16 : système de design « NOVA Liquid Glass » (prompt 1 du document
    « Nova — prompts de refonte visuelle »), intégré tel quel avec trois adaptations à Nova :
    1. sélecteur de thème : Nova pose data-material="harmattan|fleuve|sentinelle" (data-theme vaut « harmattan-nuit ») ;
-   2. --accent-ink (texte SUR l'accent chez Gemini) devient --on-accent : chez Nova, --accent-ink = texte COULEUR accent ;
+   2. --accent-ink (texte SUR l'accent dans la source) devient --on-accent : chez Nova, --accent-ink = texte COULEUR accent ;
    3. le PONT en fin de fichier branche ces jetons sur les variables que l'interface lit déjà (--text-1, --type-*, --bad…).
    Le verre (fond, flou) reste celui de V3·clair, transparent et neutre, validé par Ahadi le 30/10 08:14 : les fonds
    --glass-l1..l3 (blanc 56 à 84 %) ne sont PAS branchés, ils rendraient les cartes opaques. Chargé APRÈS identite.css. */
@@ -941,7 +941,7 @@ html[data-reduced-motion="true"] {
   --spring-avatar: linear !important;
 }
 
-/* ══ PONT Nova ← jetons Gemini (30/10) ═══════════════════════════════════════════════════════════════════════════
+/* ══ PONT Nova ← jetons (30/10) ═══════════════════════════════════════════════════════════════════════════
    Spécificité (0,3,1) > identite.css (0,2,1). Le verre n'est pas touché (voir en-tête). */
 html[data-identite][data-material][data-mode] {
   /* Familles */

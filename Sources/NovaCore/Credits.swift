@@ -142,7 +142,7 @@ public enum Credits {
         credit("meta", fundings: "meta", programme: "Meta Model API (facturation séparée)", montant: "150 $ (offre initiale du programme)", usd: 150,
                echeance: "", echeanceLabel: "non communiquée",
                sertA: "Muse Spark 1.3 et Wonder 1.0.",
-               usage: "Relais général de tous les postes (conversations, tri, briefs) tant que Claude n'est pas crédité.",
+               usage: "Relais général de tous les postes (conversations, tri, briefs).",
                objectif: "Ne jamais laisser Nova sans cerveau.",
                branchement: "branché", preuve: "Brains.swift — spark-1.3 / wonder-1.0 (clé nova-spark présente, réponses mesurées le 29/10)",
                action: "Surveiller le solde sur le portail Meta : c'est aujourd'hui le seul cerveau actif."),
@@ -443,7 +443,7 @@ public enum Credits {
         var acquis: Double = 0
         for c in out where (c["confirme"] as? Bool) == true { if let v = c["montant_usd"] as? Double { acquis += v } }
         var horsAcquis: [[String: Any]] = []
-        for fid in ["nebius", "reducto"] {
+        for fid in [String]() {
             if let row = byFund[fid] {
                 horsAcquis.append(["id": fid, "programme": (row["programme"] as? String) ?? fid, "montant": (row["montant"] as? String) ?? "",
                                    "statut": (row["statut"] as? String) ?? "", "note": (row["note"] as? String) ?? "", "compte": false])
@@ -453,10 +453,10 @@ public enum Credits {
             ["id": "amd", "titre": "AMD : ne pas activer", "detail": "Les 100 $ s'évaporent 30 jours après activation : attendre que les charges GPU soient prêtes.", "niveau": "verrou"],
             ["id": "composio", "titre": "Composio : trancher avant le 10/04/2027", "detail": "Annuler ou payer 29 $/mois à partir du 23/04/2027.", "days_left": Fundings.daysLeft("2027-04-10", now: now) ?? 0, "niveau": "decision"],
         ]
-        let totals: [String: Any] = ["acquis_usd": acquis, "point_usd": 15730, "note": "Acquis confirmés seulement. Nebius, Reducto et AMD : hors acquis, jamais additionnés."]
-        let partenaires: [String] = ["LangSmith 100 $", "Tavily 25 $", "Toloka 50 $", "Tandem 50 $"]
+        let totals: [String: Any] = ["acquis_usd": acquis, "point_usd": 15730, "note": "Acquis confirmés seulement ; les crédits hors acquis ne sont jamais additionnés."]
+        let partenaires: [String] = []
         return ["credits": out, "urgences": urgences, "hors_acquis": horsAcquis,
-                "partenaires_nebius": partenaires, "totals": totals,
+                "partenaires": partenaires, "totals": totals,
                 "local_events": (u["local_events"] as? [String: Any]) ?? [String: Any](),
                 "local_events_since": (u["local_events_since"] as? String) ?? "", "crash_local": crashCount(),
                 "solde_note": "Usage mesuré par Nova ≠ solde réel du fournisseur : le solde se vérifie sur chaque portail.",

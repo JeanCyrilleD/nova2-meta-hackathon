@@ -16,14 +16,14 @@ extension NovaApp {
         s.on("POST", "/api/confirm") { req, res in let okFlag = req.json["ok"] as? Bool ?? false; Amplitude.track(okFlag ? "approval_gate_approved" : "approval_gate_rejected"); res.json(["message": Tools.decide(id: req.json["id"] as? String ?? "", ok: okFlag, freeMinutes: req.json["free_minutes"] as? Int ?? 0, workspace: req.json["espace"] as? String)]) }   // WP5 : fenêtre et espace d'ingénierie liés au run de la demande   // AMPLITUDE (CRÉDITS 23/10) : verdict du gate — booléen seul
         s.on("GET", "/api/conversations") { [self] _, res in res.json(["items": convs.list()]) }
         // 26/10 : l'interface signale la conversation ouverte — les directs y arrivent (Feat_DirectActif.swift).
-        // 29/10 (Claude) : témoin de démarrage de l'interface → releves/diag/ui_boot.txt (vérifié après chaque mise à jour).
+        // 29/10 : témoin de démarrage de l'interface → releves/diag/ui_boot.txt (vérifié après chaque mise à jour).
         s.on("POST", "/api/ui/booted") { _, res in
             let dir: String = NSHomeDirectory() + "/spark-local/Nova2/releves/diag"
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
             try? ("UI OK " + nowISO() + "\n").write(toFile: dir + "/ui_boot.txt", atomically: true, encoding: .utf8)
             res.json(["ok": true])
         }
-        // 29/10 (Claude) : trace des pauses de volets (prise / remise de main) → releves/diag/ui_events.txt
+        // 29/10 : trace des pauses de volets (prise / remise de main) → releves/diag/ui_events.txt
         s.on("POST", "/api/ui/trace") { req, res in
             let line: String = nowISO() + " " + ((req.json["ev"] as? String) ?? "") + " " + ((req.json["pid"] as? String) ?? "") + " " + ((req.json["why"] as? String) ?? "") + "\n"
             let path: String = NSHomeDirectory() + "/spark-local/Nova2/releves/diag/ui_events.txt"

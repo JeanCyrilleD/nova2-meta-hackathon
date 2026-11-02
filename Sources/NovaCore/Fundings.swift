@@ -67,7 +67,7 @@ enum Fundings {
     /// un statut mis à jour par un message de programme n'est JAMAIS écrasé (l'écart est consigné dans migration_v2).
     static let seedV2Patches: [String: [String: Any]] = {
         var out: [String: [String: Any]] = [:]
-        for id in ["daytona", "composio", "reducto"] {
+        for id in ["daytona", "composio"] {
             guard let p = seedProgrammes.first(where: { ($0["id"] as? String) == id }) else { continue }
             var f: [String: Any] = [:]
             for k in ["statut", "montant", "montant_acquis_usd", "confirme", "action", "echeance"] { if let v = p[k] { f[k] = v } }

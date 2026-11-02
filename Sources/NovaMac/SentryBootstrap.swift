@@ -100,7 +100,7 @@ enum SentryBootstrap {
     /// sur le cerveau suivant — c'est un incident à tracer, pas une erreur applicative ; en
     /// .error, chaque 504 amont rouvrirait une issue « High » et recréerait le bruit NOVA2-1.
     /// Tag de discipline des incidents (ordre 23/10) : `remede_subventionne` = le remède
-    /// subventionné visé pour cette fragilité (Together AI / Nebius, couture Brains.swift).
+    /// subventionné visé pour cette fragilité (couture Brains.swift).
     private static func installRouterIncidentHook() {
         Router.incidentHook = { payload in
             DispatchQueue.global(qos: .utility).async {

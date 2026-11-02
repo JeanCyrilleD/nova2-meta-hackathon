@@ -1,6 +1,6 @@
 import Foundation
 
-// V5-P (25/10) — Rêves validables (#5, bug n°4 de VERIF_AUDIT_GEMINI.md).
+// V5-P (25/10) — Rêves validables (#5, bug n°4 de VERIF_AUDIT.md).
 // La distillation de 23:30 (Ame.swift → ameThink kind « reve ») écrivait des propositions dans ame_reves.json
 // sans aucun moyen de les valider : elles ne devenaient jamais de la mémoire. Ici :
 //  · GET  /api/reves             → propositions en attente + état de la dernière distillation ;

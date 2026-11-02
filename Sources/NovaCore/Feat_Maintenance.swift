@@ -55,7 +55,7 @@ public enum BrainRank {
         if blob.contains("gratuit") || blob.contains(":free") || blob.contains("-free") || blob.contains("best-free") { return "gratuit" }
         if s.baseURL.contains("127.0.0.1") || s.baseURL.contains("localhost") { return "gratuit" }
         let m: String = s.model.lowercased()
-        let premium: [String] = ["opus", "-sol", "fable", "argon"]
+        let premium: [String] = ["-sol", "fable", "argon"]
         for p in premium where m.contains(p) { return "premium" }
         return "payant"
     }

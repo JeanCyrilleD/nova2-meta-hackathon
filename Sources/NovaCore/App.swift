@@ -891,8 +891,8 @@ public final class NovaApp {
             _ = BlackBox.record(["tool": "app", "actor": "Nova", "why": "P-BRAIN : brain « auto » migré vers « spark-1.3 » au démarrage (cerveau verrouillé)", "ok": true, "effect": "écrit"])
         }
         // DIAG2-CERVEAUX : après l'élagage du catalogue, les réglages ne doivent plus nommer de cerveau
-        // supprimé. brains_off est filtré sur les ids encore servis (les orphelins « spark-1.4 » et
-        // « or-gemini-flash », retirés du catalogue le 20/10 mais jamais purgés des réglages, disparaissent) ;
+        // supprimé. brains_off est filtré sur les ids encore servis (l'orphelin « spark-1.4 »,
+        // retiré du catalogue le 20/10 mais jamais purgé des réglages, disparaît) ;
         // un défaut / cerveau de démo / cerveau des Dots qui nomme un id supprimé retombe sur son défaut
         // valide. Aucun choix vivant d'Ahadi n'est touché : seuls les ids INEXISTANTS sont purgés, et
         // brains_off conserve les ids gardés qu'il contient (la désactivation reste son réglage debout ;
@@ -1475,7 +1475,7 @@ extension NovaApp {
     }
 
     /// V5-T (25/10) : « ÉVÉNEMENTS RÉCENTS » — partie DYNAMIQUE du prompt de CHAQUE tour de chat, quel que soit
-    /// le cerveau ([tiers], Spark/openai, local) : 12 derniers éléments du Fil direct sur 24 h (journal
+    /// le cerveau ([tiers], Spark, local) : 12 derniers éléments du Fil direct sur 24 h (journal
     /// proactive_feed.json, dédupliqués) + 5 derniers résultats d'Éclats. V5-V (25/10, politique d'Ahadi 10:55) :
     /// SCI, Save the Children, revue de confirmation passent comme le reste ; seul un élément qui contient un SECRET
     /// (SecretsGuard.containsSecret : mot de passe avec valeur, OTP, clé, jeton, IBAN, carte) est écarté, le reste passe

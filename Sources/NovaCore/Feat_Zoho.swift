@@ -759,7 +759,6 @@ enum ZohoFundings {
         ZohoProg(id: "amd", domains: ["amd.com"], names: ["amd developer"], needs: []),
         ZohoProg(id: "retool", domains: ["retool.com"], names: ["retool"], needs: []),
         ZohoProg(id: "daytona", domains: ["daytona.io"], names: ["daytona"], needs: []),
-        ZohoProg(id: "reducto", domains: ["reducto.ai"], names: ["reducto"], needs: []),
         ZohoProg(id: "mongodb", domains: ["mongodb.com"], names: ["mongodb"], needs: []),
         ZohoProg(id: "microsoft", domains: ["microsoft.com"], names: ["microsoft for startups"], needs: ["startup", "founders"]),
         ZohoProg(id: "koyeb", domains: ["koyeb.com"], names: ["koyeb"], needs: []),

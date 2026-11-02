@@ -231,7 +231,7 @@ public enum CouncilParse {
         var out: [String] = []
         let sn: String = fold(shortName(label))
         if !sn.isEmpty { out.append(sn) }
-        let generic: Set<String> = ["claude", "direct", "cloud", "model", "membre", "local"]
+        let generic: Set<String> = ["direct", "cloud", "model", "membre", "local"]
         for t in sn.split(separator: " ") {
             let w: String = String(t)
             if w.count >= 4 && !generic.contains(w) && !w.contains(".") { out.append(w) }

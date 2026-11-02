@@ -27,7 +27,7 @@ simulées … ») et ses boutons n'envoient rien. Argent : **micro-dollars entie
   "profile": "main", "data_class": "personal", "cap_usd_micro": 750000, "steps_max": 6, "deadline": "2026-11-01T10:00:00Z",
   "spent_usd_micro": 8532, "estimated_usd_micro": 0, "reserved_usd_micro": 30000, "last_seq": 4, "updated_at": "…",
   "steps": [ { "seq": 2, "at": "…", "kind": "step", "label": "Lecture du fil", "state": "running",
-               "model": "claude-haiku-5-5", "profile": "triage", "cost": { "usd_micro": 412, "actual": true } } ],
+               "model": "spark-1.2", "profile": "triage", "cost": { "usd_micro": 412, "actual": true } } ],
   "approval": { "content_preview": "…texte exact montré…", "content_sha256": "hex", "destination": "mariam@… (Gmail)",
                 "data_leaving": ["texte du brouillon", "adresse"], "estimated_usd_micro": 0 },
   "receipt": null } ] }
@@ -38,7 +38,7 @@ simulées … ») et ses boutons n'envoient rien. Argent : **micro-dollars entie
 ### Flux : évènement SSE nommé `task` sur `/api/events` (flux partagé, `bus.on("task", …)`)
 ```json
 { "v": 1, "task_id": "t-…", "seq": 5, "at": "2026-10-31T18:41:03Z", "kind": "step",
-  "state": "running", "label": "Rédaction du brouillon", "model": "claude-sonnet-5-5", "profile": "main",
+  "state": "running", "label": "Rédaction du brouillon", "model": "spark-1.3", "profile": "main",
   "cost": { "usd_micro": 8120, "actual": true }, "reserved_usd_micro": 30000 }
 ```
 - `kind` : `created` (porte agent, title, profile, data_class, cap_usd_micro, deadline, steps_max) · `step` · `approval_requested`
@@ -69,10 +69,10 @@ Coûts reste donc sur son **jeu simulé annoncé**, et l'alerte de coût sur les
   "cap_usd_micro": 125000000, "planned_usd_micro": 110000000, "spent_usd_micro": 41270000, "reserved_usd_micro": 480000,
   "alert_thresholds_pct": [50, 80, 95],
   "by_profile": [ { "profile": "main", "spent_usd_micro": 17900000, "calls": 412 } ],
-  "by_model":   [ { "model": "claude-sonnet-5-5", "provider": "anthropic", "spent_usd_micro": 17900000, "allocated_usd_micro": 30000000, "calls": 412 } ],
-  "reservations": [ { "id": "r-…", "task_id": "t-…", "model": "claude-opus-5-5", "profile": "deep", "reserved_usd_micro": 420000, "at": "…" } ],
+  "by_model":   [ { "model": "spark-1.3", "provider": "meta", "spent_usd_micro": 17900000, "allocated_usd_micro": 30000000, "calls": 412 } ],
+  "reservations": [ { "id": "r-…", "task_id": "t-…", "model": "wonder-1.0", "profile": "deep", "reserved_usd_micro": 420000, "at": "…" } ],
   "savings": { "cache_usd_micro": 6120000, "fingerprint_usd_micro": 1880000, "fingerprint_hits": 342, "batch_usd_micro": 2950000 },
-  "prices": [ { "model": "claude-sonnet-5-5", "in": 2.0, "out": 10.0, "verified": "2026-10-31", "note": "" } ] }
+  "prices": [ { "model": "spark-1.3", "in": 2.0, "out": 10.0, "verified": "2026-10-31", "note": "" } ] }
 ```
 - `prices` en USD par million de jetons, recopiés de `Config/brains.json` avec leur date `verified` ; l'écran alerte au-delà de 30 jours.
 - Champ obligatoire pour être reconnu : `cap_usd_micro`. Sinon → jeu simulé.

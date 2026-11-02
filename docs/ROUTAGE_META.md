@@ -15,7 +15,7 @@ Rien n'est appliqué aux réglages réels : tout est livré dans la branche.
 | Muse Image | `muse-image-1.0` | Responses, `POST /v1/images/generations`, `/v1/images/edits` | génération et retouche d'images | 0,01 $ par image |
 | Muse Voice Transcribe | `muse-voice-transcribe-1.0` | `wss://api.meta.ai/v1/asr/realtime`, `POST /v1/asr/transcribe` | transcription | 0,18 $ par heure d'audio |
 | SAM 3.1 | `sam-3.1` | `POST /v1/responses`, Files API | segmentation image et vidéo | 2,50 $ / 1 000 images ; 0,20 $ / 1 000 images de vidéo (minimum 50) |
-| Muse Spark Open | aucun sur l'API Meta | auto-hébergé ou fournisseur (Baseten, Fireworks, Groq, Modal, Nebius, Together ; OpenRouter) | poids ouverts, agentique et code | Baseten (page du compte, 01/11) : 1,25 / 0,15 / 4,25 $ par M, 500 000 jetons/min, 120 req/min |
+| Muse Spark Open | aucun sur l'API Meta | auto-hébergé ou fournisseur (Baseten, Fireworks, Modal) | poids ouverts, agentique et code | Baseten (page du compte, 01/11) : 1,25 / 0,15 / 4,25 $ par M, 500 000 jetons/min, 120 req/min |
 | Muse Glimmer | aucun | auto-hébergé (`meta-models/Muse-Glimmer-30B`, Apache 2.0) | multimodal à poids ouverts | sans objet |
 | Synthèse vocale | **aucune** | — | la doc dit que Muse Voice Transcribe « does not synthesize speech » | — |
 

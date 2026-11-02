@@ -417,7 +417,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKUI
         // même si macOS active Nova au passage (ouverture d'URL sans -g).
         if Date().timeIntervalSince(panelSummonedAt) < 2 { return }
         if let w = main, w.isVisible, !w.isMiniaturized { panel?.orderOut(nil) }
-        // 29/10 (Claude, audit UI) : le compagnon flottant couvrait le bouton Envoyer du composeur et les cartes de
+        // 29/10 (audit UI) : le compagnon flottant couvrait le bouton Envoyer du composeur et les cartes de
         // l'Accueil. Dans Nova, l'avatar de l'app suffit : le compagnon flottant s'efface, et revient dès qu'on change d'app.
         if let w = main, w.isVisible, !w.isMiniaturized, let cp = compPanel, cp.isVisible { cp.orderOut(nil) }
     }

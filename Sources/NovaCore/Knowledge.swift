@@ -148,7 +148,7 @@ public final class Knowledge: @unchecked Sendable {
                 let r = r0.hasPrefix("~") ? home + r0.dropFirst() : r0
                 guard r == home || r.hasPrefix(home + "/"), !SecretsGuard.isSensitiveRoot(r), let en = fm.enumerator(atPath: r) else { continue }   // jamais hors du dossier personnel ni dans un dossier d'identifiants
                 // V5-V : une racine déclarée qui contient elle-même un motif exclu (~/Library/CloudStorage/OneDrive-…,
-                // ~/Library/Application Support/Claude) est jugée sur son chemin RELATIF ; les autres, comme avant.
+                // ~/Library/Application Support/<app>) est jugée sur son chemin RELATIF ; les autres, comme avant.
                 let relProbe: Bool = !Knowledge.allowedDir(r)
                 var rootFiles = 0
                 while let rel = en.nextObject() as? String {

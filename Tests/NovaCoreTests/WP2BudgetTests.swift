@@ -22,8 +22,8 @@ final class WP2BudgetTests: XCTestCase {
         BrainSpec(id: "alpha-max-direct", label: "alpha-max-direct", kind: .chat, baseURL: "https://api.vendoralpha.example/v1/messages", model: "alpha-max-5", keys: KeyChain([], fallback: "x"), tags: ["puissant"]),
         BrainSpec(id: "alpha-fable-direct", label: "alpha-fable-direct", kind: .chat, baseURL: "https://api.vendoralpha.example/v1/messages", model: "alpha-fable-5", keys: KeyChain([], fallback: "x"), tags: ["puissant"]),
         BrainSpec(id: "beta-sol", label: "beta-sol", kind: .chat, baseURL: "https://api.vendorbeta.example/v1/chat/completions", model: "beta-sol-6", keys: KeyChain([], fallback: "x"), tags: ["rapide", "puissant"]),
-        BrainSpec(id: "zeta-flash", label: "zeta-flash", kind: .chat, baseURL: "https://api.vendorzeta.example/v1beta/openai/chat/completions", model: "zeta-flash-3", keys: KeyChain([], fallback: "x"), tags: ["rapide"]),
-        BrainSpec(id: "zeta-argon", label: "zeta-argon", kind: .chat, baseURL: "https://api.vendorzeta.example/v1beta/openai/chat/completions", model: "zeta-argon-4", keys: KeyChain([], fallback: "x"), tags: ["puissant"]),
+        BrainSpec(id: "zeta-flash", label: "zeta-flash", kind: .chat, baseURL: "https://api.vendorzeta.example/v1beta/chat/completions", model: "zeta-flash-3", keys: KeyChain([], fallback: "x"), tags: ["rapide"]),
+        BrainSpec(id: "zeta-argon", label: "zeta-argon", kind: .chat, baseURL: "https://api.vendorzeta.example/v1beta/chat/completions", model: "zeta-argon-4", keys: KeyChain([], fallback: "x"), tags: ["puissant"]),
         BrainSpec(id: "epsilon-flash", label: "epsilon-flash", kind: .chat, baseURL: "https://api.vendorepsilon.example/api/paas/v4/chat/completions", model: "epsilon-flash-5", keys: KeyChain([], fallback: "x"), tags: ["rapide"]),
         BrainSpec(id: "epsilon-5", label: "epsilon-5", kind: .chat, baseURL: "https://api.vendorepsilon.example/api/paas/v4/chat/completions", model: "epsilon-5", keys: KeyChain([], fallback: "x"), tags: ["puissant"]),
         BrainSpec(id: "gamma-direct", label: "gamma-direct", kind: .chat, baseURL: "https://api.vendorgamma.example/v1/chat/completions", model: "gamma-k3", keys: KeyChain([], fallback: "x"), tags: ["puissant"]),
@@ -41,11 +41,11 @@ final class WP2BudgetTests: XCTestCase {
     /// Grille historique FICTIVE (mêmes tarifs que la grille v1 d'origine, fournisseurs renommés).
     static let fictionalLegacy: [PriceVersion] = {
         let an: String = "api.vendoralpha.example", g: String = "api.vendorzeta.example"
-        let haikuLong = LongContext(thresholdInputTokens: 100_000, inMilli: 5000, outMilli: 5000, cacheMilli: 5000)
+        let tierLong = LongContext(thresholdInputTokens: 100_000, inMilli: 5000, outMilli: 5000, cacheMilli: 5000)
         return [
             PriceBook.v1("alpha-main-direct", "vendoralpha", an, "alpha-main-5", PriceBook.usd(2.0, 10.0, cr: 0.20, cw: 2.5), verified: "2026-10-31", note: "fictif"),
             PriceBook.v1("alpha-max-direct", "vendoralpha", an, "alpha-max-5", PriceBook.usd(4.0, 20.0, cr: 0.20, cw: 5.0), verified: "2026-10-30", note: "fictif"),
-            PriceBook.v1("alpha-mini-direct", "vendoralpha", an, "alpha-mini-5", PriceBook.usd(0.10, 0.50, cr: 0.01, cw: 0.125), verified: "2026-10-31", note: "fictif", lc: haikuLong),
+            PriceBook.v1("alpha-mini-direct", "vendoralpha", an, "alpha-mini-5", PriceBook.usd(0.10, 0.50, cr: 0.01, cw: 0.125), verified: "2026-10-31", note: "fictif", lc: tierLong),
             PriceBook.v1("alpha-fable-direct", "vendoralpha", an, "alpha-fable-5", PriceBook.usd(10.0, 50.0, cr: 0.25, cw: 12.5), verified: "2026-10-31", note: "fictif"),
             PriceBook.v1("gamma-direct", "vendorgamma", "api.vendorgamma.example", "gamma-k3", PriceBook.usd(3.0, 15.0, cr: 0.30), verified: "2026-10-31", note: "fictif"),
             PriceBook.v1("zeta-argon", "vendorzeta", g, "zeta-argon-4", PriceBook.usd(2.0, 10.0, cr: 0.10), verified: nil, note: "fictif"),
@@ -107,7 +107,7 @@ final class WP2BudgetTests: XCTestCase {
         let bt = bk.billing(try spec("spark-open-baseten"))
         XCTAssertEqual(bt.label, "metered")
         XCTAssertEqual(bk.cost(bt, usage: Usage(input: 1_000_000, output: 1_000_000)), 5_500_000)
-        // MiniMax payant depuis le 23/10, GLM Flash publié à 0,15 / 0,50 $ : comptés, jamais gratuits.
+        // Paliers payants publiés : comptés, jamais gratuits.
         for id in ["mu-flash-cloud", "epsilon-flash"] {
             let b = bk.billing(try spec(id))
             XCTAssertEqual(b.label, "metered", id)
@@ -125,7 +125,7 @@ final class WP2BudgetTests: XCTestCase {
 
     func testVersionedPricesWithProvenance() throws {
         let bk = try book()
-        guard case .metered(let p) = bk.billing(try spec("alpha-main-direct")) else { return XCTFail("Sonnet facturé") }
+        guard case .metered(let p) = bk.billing(try spec("alpha-main-direct")) else { return XCTFail("alpha-main facturé") }
         XCTAssertEqual(p.provider, "vendoralpha"); XCTAssertEqual(p.endpoint, "api.vendoralpha.example"); XCTAssertEqual(p.model, "alpha-main-5")
         XCTAssertTrue(p.version.hasPrefix("brains.json#alpha-main-5@2026-10-31"), p.version)
         XCTAssertEqual(p.verified, "2026-10-31")
@@ -135,10 +135,10 @@ final class WP2BudgetTests: XCTestCase {
         // T3 du brief inchangé : 1 M + 100 K sortie = 3,00 $.
         XCTAssertEqual(bk.cost(.metered(p), usage: Usage(input: 1_000_000, output: 100_000)), 3_000_000)
         // Modèle absent du registre (gamma-k3, delta-chat) : grille historique, versionnée, provenance écrite.
-        guard case .metered(let k) = bk.billing(try spec("gamma-direct")) else { return XCTFail("Kimi facturé") }
+        guard case .metered(let k) = bk.billing(try spec("gamma-direct")) else { return XCTFail("gamma facturé") }
         XCTAssertTrue(k.version.hasPrefix("feat_depense-v1#gamma-direct"), k.version)
         XCTAssertTrue(k.source.contains("Feat_Depense"))
-        // Haiku : ×5 au-delà de 100 000 jetons d'entrée (les deux grilles).
+        // alpha-mini : ×5 au-delà de 100 000 jetons d'entrée (les deux grilles).
         let h = bk.billing(try spec("alpha-mini-direct"))
         XCTAssertEqual(bk.cost(h, usage: Usage(input: 100_000)), 10_000)
         XCTAssertEqual(bk.cost(h, usage: Usage(input: 100_001)), 50_001)
@@ -207,7 +207,7 @@ final class WP2BudgetTests: XCTestCase {
         let chain = [try spec("alpha-main-direct"), try spec("beta-sol"), try spec("muse-code")]
         // Banc strict : le cerveau épinglé seul, même sous le plafond.
         XCTAssertEqual(ids(try decide(chain, lane: .bench, pinned: "beta-sol", state: SpendState(monthCap: big, dayCap: 2_000_000))), ["beta-sol"])
-        // Épinglé absent de la chaîne (sans clé, en panne) : bloqué — jamais Sonnet sous l'étiquette de GPT.
+        // Épinglé absent de la chaîne (sans clé, en panne) : bloqué — jamais un cerveau sous l'étiquette d'un autre.
         let absent = try decide(chain, lane: .bench, pinned: "gamma-direct", state: SpendState(monthCap: big, dayCap: 2_000_000))
         if case .blocked(let w) = absent { XCTAssertTrue(w.contains("aucune substitution")) } else { XCTFail("banc : pas de substitution, obtenu \(ids(absent))") }
         // Plafond du banc atteint : dérogation requise, PAS de repli sur le gratuit (muse-code) ni sur un autre cerveau.

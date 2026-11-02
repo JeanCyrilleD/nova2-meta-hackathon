@@ -503,7 +503,7 @@ public final class Dots {
             text = "STATUT : ARRÊTÉ — exécution interrompue à ta demande après \(stepsTotal) outil(s)." + (dejaRedige.isEmpty ? "" : "\nCe qui était déjà rédigé :\n" + String(dejaRedige.prefix(1500)))
             _ = BlackBox.record(["tool": "dots_stop", "actor": "Nova", "why": "run \(runId) de l'Éclat \(id) interrompu à la demande après \(stepsTotal) outil(s) en \(Int(Date().timeIntervalSince(t0) * 1000)) ms", "ok": true, "effect": "arrêt"])
         }
-        // 26/10 : un cerveau « gpt-oss » renvoyait son format interne (<|start|>assistant<|channel|>commentary … <|call|>) comme rapport.
+        // 26/10 : un cerveau renvoyait son format interne (<|start|>assistant<|channel|>commentary … <|call|>) comme rapport.
         if text.contains("<|") { text = Dots.stripHarmony(text) }
         if !followUp, !wasStopped {
             let echecs = steps.filter { Dots.toolFailed($0["output"] ?? "") }.count
@@ -880,7 +880,7 @@ public final class Dots {
 
 
 extension Dots {
-    /// 26/10 : retire le balisage « harmony » (gpt-oss) qui fuyait dans les rapports d'Éclats ; vide si ce n'était qu'un appel d'outil avorté.
+    /// 26/10 : retire le balisage « harmony » qui fuyait dans les rapports d'Éclats ; vide si ce n'était qu'un appel d'outil avorté.
     static func stripHarmony(_ t: String) -> String {
         var s: String = t
         // un appel d'outil en clair : <|start|>assistant<|channel|>commentary to=… <|constrain|>json<|message|>{…}<|call|>

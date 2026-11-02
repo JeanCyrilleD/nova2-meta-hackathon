@@ -733,7 +733,7 @@ async function openInSlot(id, slot) {
     cleanupBootNotes(root);
     showInstance(inst, true);
     window.__novaBooted = true;
-    /* 29/10 (Claude) : témoin de démarrage — après chaque mise à jour, le moteur sait que l'interface a VRAIMENT démarré. */
+    /* 29/10 : témoin de démarrage — après chaque mise à jour, le moteur sait que l'interface a VRAIMENT démarré. */
     try { if (!window.__novaBootSent) { window.__novaBootSent = true; api.post("/api/ui/booted", { at: Date.now() }).catch(() => {}); } } catch (e) {}
     if (!window.__novaFirstPaint) window.__novaFirstPaint = {};
     if (!window.__novaFirstPaint[id]) { window.__novaFirstPaint[id] = 1; try { const pfp = api.post("/api/perf/first-paint", { ecran: id, delta_ms: Math.max(0, Math.round(performance.now() - __fpT0)) }); if (pfp && pfp.catch) pfp.catch(() => {}); } catch (e) {} }

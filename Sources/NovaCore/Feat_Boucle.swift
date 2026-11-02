@@ -1,6 +1,6 @@
 import Foundation
 
-// V5-P (25/10) — BOUCLE FERMÉE (P5 / #28, VERIF_AUDIT_GEMINI.md).
+// V5-P (25/10) — BOUCLE FERMÉE (P5 / #28, VERIF_AUDIT.md).
 //  1. Les manquements consignés par Ahadi (notes kind « manquement », écran Âme) sont RELUS dans chaque prompt :
 //     les 5 plus récents encore actifs (note.done != true), ≤ 700 caractères, à côté des leçons d'outils (Feat_Lecons).
 //  2. Auto-évaluation hebdomadaire ÉCRITE PAR NOVA, le dimanche soir (≥ 19 h, ou au premier passage après si le Mac

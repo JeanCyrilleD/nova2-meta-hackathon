@@ -47,7 +47,7 @@ extension NovaApp {
         if !patch.isEmpty { settings.set(patch) }
         var avant: [String: Any] = [:]
         for k in patch.keys { avant[k] = before[k] ?? NSNull() }
-        _ = BlackBox.record(["tool": "reglages_request", "actor": "Claude", "ok": true, "effect": "config",
+        _ = BlackBox.record(["tool": "reglages_request", "actor": "dev", "ok": true, "effect": "config",
                              "why": "demande de réglages sans écran (audit 31/10)", "result": patch.keys.sorted().joined(separator: ", ")])
         try? jsonData(["applique": patch, "avant": avant, "refuse": refused, "ts": nowISO()])
             .write(to: URL(fileURLWithPath: root + "/dormant/REGLAGES_REQUEST.done.json"))

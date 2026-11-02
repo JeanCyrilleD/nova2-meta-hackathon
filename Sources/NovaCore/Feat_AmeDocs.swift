@@ -2,7 +2,7 @@ import Foundation
 
 // V5-P (25/10) — documents d'âme lus avec tolérance + Gardien des relations branché sur les vrais échanges.
 //
-// Bugs corrigés (VERIF_AUDIT_GEMINI.md, bugs n°2 et n°3) :
+// Bugs corrigés (VERIF_AUDIT.md, bugs n°2 et n°3) :
 //  · « valeurs » et « laisser » : l'écran écrivait des CHAÎNES, le moteur castait en [[String: Any]] —
 //    une seule chaîne faisait échouer tout le cast, le contrat de valeurs n'atteignait jamais le prompt.
 //    Désormais : écriture normalisée {text, on, ts} (POST /api/ame/doc) ET lecture tolérante (chaîne = valeur active).

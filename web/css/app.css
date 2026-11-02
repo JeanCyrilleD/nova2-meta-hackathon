@@ -5549,7 +5549,7 @@ div.attente-row { cursor: default; }
 }
 
 
-/* 29/10 (Claude, audit UI) — historique des conversations : titres lisibles sur deux lignes, épingle en icône discrète. */
+/* 29/10 (audit UI) — historique des conversations : titres lisibles sur deux lignes, épingle en icône discrète. */
 .cs-row-t{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3}
 .cs-pin-ic{flex:none;display:inline-flex;color:var(--text-3,var(--text-2));opacity:.7}
 .cs-row{align-items:flex-start}

@@ -250,7 +250,7 @@ export function describeForBrain(attachments) {
 
 /* V4-D (24/10) — VISION MULTIMODALE : images jointes à passer au moteur
    (champ « images » de POST /api/chat) — le moteur relit le fichier dans son
-   dossier Attachments, le réduit si besoin et l'envoie à Claude en bloc image
+   dossier Attachments, le réduit si besoin et l'envoie au cerveau en bloc image
    base64. Formats que l'API accepte : JPEG, PNG, GIF, WebP. */
 export const VISION_EXT = ["jpg", "jpeg", "png", "gif", "webp"];
 export function visionImages(attachments) {

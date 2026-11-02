@@ -801,7 +801,7 @@ export async function mount(root, ctx) {
       const t = (j && j.totals) || {};
       const urg = arrOf(j, "urgences");
       const hors = arrOf(j, "hors_acquis");
-      const parts = arrOf(j, "partenaires_nebius");
+      const parts = arrOf(j, "partenaires");
       const ev = j.local_events || {};
       const nEv = Object.values(ev).reduce((a, b) => a + (Number(b) || 0), 0);
       body.replaceChildren(...[
@@ -820,7 +820,7 @@ export async function mount(root, ctx) {
         h("div", { class: "vf-crgrid" }, ...list.map((c) => card(c, j.pinecone_export))),
         h("div", { class: "vf-crfoot" },
           hors.length ? h("p", {}, h("b", {}, "Hors acquis (jamais additionnés) · "), hors.map((x) => String(x.programme) + " — " + String(x.montant)).join(" ; ") + ".") : null,
-          parts.length ? h("p", {}, h("b", {}, "Partenaires Nebius à réclamer · "), parts.join(", ") + " (conditions propres à chacun).") : null,
+          parts.length ? h("p", {}, h("b", {}, "Partenaires à réclamer · "), parts.join(", ") + " (conditions propres à chacun).") : null,
           h("p", { class: "ds-meta" }, "Replis locaux : " + fmtInt(nEv) + " événement(s) comptés en local" + (j.local_events_since ? " depuis le " + fmtDate(j.local_events_since) : "") + " · " + fmtInt(j.crash_local) + " plantage(s) au journal local."))].filter(Boolean));
       if (focusId) { const el = sec.querySelector("#credit-" + focusId); focusId = ""; if (el) { el.classList.add("flash"); setTimeout(() => { try { el.scrollIntoView({ block: "center" }); } catch (x) {} }, 60); setTimeout(() => el.classList.remove("flash"), 1800); } }
     };

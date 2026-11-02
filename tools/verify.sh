@@ -104,8 +104,7 @@ def decl(name):
     return m.group(1) if m else ''
 assert 'spark-1.3-contributor' not in decl('stagedDisabledByDefault'), 'Contributor re-desactive par code'
 assert 'spark-1.3-contributor' not in decl('hiddenByDefault'), 'Contributor re-masque'
-# PHASE 1 : tetes de chaine alignees sur la politique en vigueur « Claude d'abord » (decision d'Ahadi du 29/10, Brains.swift) ;
-# l'ancienne exigence « Muse d'abord » (26/10) est caduque. La regle 7 (Contributor jamais automatique) reste exigee, elargie.
+# PHASE 1 : tetes de chaine Spark 1.3 (Meta). La regle 7 (Contributor jamais automatique) reste exigee, elargie.
 head = lambda o: decl(o).split(',')[0].strip().strip(chr(34))
 assert head('fastOrder') == 'spark-1.3', 'fastOrder doit demarrer par Spark 1.3 (version Meta)'
 assert head('bulkOrder') == 'spark-1.3', 'bulkOrder doit demarrer par Spark 1.3 (version Meta)'
@@ -119,8 +118,7 @@ grep -q 'metaRoutes()' Sources/NovaCore/Extras.swift && echo "  OK  routes Meta 
 grep -q '"meta"' Sources/NovaCore/App.swift && echo "  OK  slot de clé « Meta Model API » dans Réglages (nova-meta)" || { echo "  FAIL slot clé Meta absent"; FAIL=1; }
 echo "── 6c. MUSE PARTOUT (26/10, ordre d'Ahadi) : outils et agents sur Muse par défaut ──"
 N=$(grep -rl "MUSE-PARTOUT" Sources/NovaCore/*.swift | wc -l | tr -d ' '); echo "  fichiers basculés Muse par défaut : $N (attendu ≥ 7)"; [ "$N" -ge 7 ] || FAIL=1
-# PHASE 1 : « aucun défaut épinglé Claude » contredisait la politique du 29/10 (Claude d'abord ; Feat_AutoEval épingle Haiku).
-# Contrôle remplacé par la règle de confidentialité toujours en vigueur : aucun défaut épinglé sur un palier Contributor / Muse Code.
+# PHASE 1 : contrôle par la règle de confidentialité toujours en vigueur : aucun défaut épinglé sur un palier Contributor / Muse Code.
 grep -rnE 'preferred: "(spark-1\.[0-9]-contributor|muse-code)' Sources/NovaCore/*.swift | grep . && { echo "  FAIL un défaut est épinglé sur un palier Contributor / Muse Code"; FAIL=1; } || echo "  OK  aucun défaut épinglé sur un palier Contributor / Muse Code"
 grep -q 'chairPreferred: \[String\] = \["wonder-1.0"\]' Sources/NovaCore/Council.swift && echo "  OK  Conseil présidé par Muse Wonder" || { echo "  FAIL présidence du Conseil non Muse"; FAIL=1; }
 grep -q 'v7-premium.css' web/css/app.css && grep -q 'css/app.css' web/index.html && echo "  OK  finition visuelle V7 incluse dans la feuille unique app.css (chargée par index.html)" || { echo "  FAIL V7 absente d app.css ou app.css non chargée"; FAIL=1; }

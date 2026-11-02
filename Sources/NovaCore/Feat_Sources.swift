@@ -187,11 +187,6 @@ enum NovaSources {
     /// Filtre fichier par fichier, appelé par Knowledge.scan (en plus de ses propres exclusions).
     static func admits(root: String, path: String) -> Bool {
         if SecretsGuard.isCredentialPath(path) { return false }
-        let claude: String = NSHomeDirectory() + "/Library/Application Support/Claude/"
-        if path.hasPrefix(claude) {
-            let n: String = (path as NSString).lastPathComponent.lowercased()
-            return ["conversation", "export", "chat"].contains(where: { (w: String) -> Bool in n.contains(w) })
-        }
         return true
     }
 

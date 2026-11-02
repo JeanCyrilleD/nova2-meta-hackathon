@@ -381,7 +381,7 @@ public final class HTTPServer {
         var extra: [String: String] = [:]
         // 29/10 (audit P0-2) : script-src 'none' (un livrable HTML servi n'exécute rien) ; frame-ancestors 'self'
         // au lieu de 'none' : la webview Nova doit pouvoir iframer ses propres aperçus, personne d'autre.
-        // 29/10 (correctif Claude) : appliqué à TOUT html, « script-src 'none' » bloquait aussi l'interface de Nova
+        // 29/10 : appliqué à TOUT html, « script-src 'none' » bloquait aussi l'interface de Nova
         // (index.html, panel.html, companion.html : écran figé sur le squelette au lancement). Les pages de l'interface
         // (racine du bundle web) gardent leurs scripts ; tout autre html servi (livrables, aperçus) reste sans script.
         if ext == "html" {

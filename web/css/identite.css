@@ -1173,7 +1173,7 @@ html[data-identite]:not([data-material="sentinelle"]) :is(.sb-search, .rail-sear
 .pv-companion:has(.avatar-glass) { overflow: visible !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
 .pv-companion:has(.avatar-glass) .avatar-3d { filter: none !important; }
 
-/* 30/10 — Icônes en VERRE (img/glass/, série Gemini) : posées telles quelles, sans pastille teintée ni ombre de tuile ;
+/* 30/10 — Icônes en VERRE (img/glass/) : posées telles quelles, sans pastille teintée ni ombre de tuile ;
    Sable garde ses céramiques. */
 html[data-identite] .mod.hq .hq-ico.has-glass { background: none !important; box-shadow: none !important; border: 0 !important; overflow: visible !important; }
 html[data-identite] .mod.hq .hq-ico.has-glass > img { display: none !important; }

@@ -303,7 +303,7 @@
     ]
    ],
    "hd": {
-    "dir": "/tmp/claude-0/-home-claude/cf13de1f-a427-5d1e-b2e0-d1fc77ead02b/scratchpad/hd_sel2",
+    "dir": "hd_sel2",
     "complete_mouth_series": true,
     "used_for_idle": true,
     "defringe_px": 1,
@@ -747,7 +747,7 @@
     ]
    ],
    "hd": {
-    "dir": "/tmp/claude-0/-home-claude/cf13de1f-a427-5d1e-b2e0-d1fc77ead02b/scratchpad/hd_sel2",
+    "dir": "hd_sel2",
     "complete_mouth_series": true,
     "used_for_idle": true,
     "defringe_px": 2,
@@ -930,7 +930,7 @@
     "full_vis_U.webp"
    ],
    "sources": {
-    "origine": "Gemini, 20 poses corps entier sur fond #00FF00 (25/10), détourées et recomposées (expressions sur l'image maître)"
+    "origine": "20 poses corps entier sur fond #00FF00 (25/10), détourées et recomposées (expressions sur l'image maître)"
    }
   }
  },

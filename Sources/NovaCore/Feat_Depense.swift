@@ -226,7 +226,7 @@ public enum LLMSpend {
     static func benchDayCap() -> Double { settingUSD("budget_banc_jour_usd", 2.0) }
     /// Configuration recommandée (docs/BUDGET_V1.md) : enveloppe d'Ahadi 100–125 $/mois HORS abonnement [tiers] Max — affichée, jamais appliquée seule.
     public static let recommended: [String: Any] = [
-        "budget_llm_mois_usd": ["min": 100, "max": 125, "conseil": 110, "note": "hors abonnement Claude Max (session de développement, non facturé à Nova)"] as [String: Any],
+        "budget_llm_mois_usd": ["min": 100, "max": 125, "conseil": 110, "note": "hors outils de développement (non facturés à Nova)"] as [String: Any],
         "budget_fond_jour_usd": 0.75, "budget_banc_jour_usd": 2.0, "voix_live_reserve_min": 10, "depense_reservations_v1": true,
         "garde_fournisseur": "garder aussi les plafonds de dépense côté fournisseur (console Meta, Baseten) quand ils existent",
     ]

@@ -66,6 +66,6 @@ if not dry:
     head = ("/* tokens.css — FICHIER UNIQUE DES JETONS DE DESIGN de Nova 2 (Phase 4, 31/10/2026 ; règles : docs/DESIGN_RULES.md).\n"
             "   Partie A : jetons de thème anciennement dispersés dans app.css et identite.css, déplacés ici par\n"
             "   tools/ui/tokens_consolidate.py SANS modification (même ordre ; variables calculées identiques : tools/ui/root_vars_dump.py).\n"
-            "   Partie B : système « NOVA Liquid Glass » (Gemini) + pont. Partie C (fin) : jetons Phase 4 (surfaces pleines, espacement,\n"
+            "   Partie B : système « NOVA Liquid Glass » + pont. Partie C (fin) : jetons Phase 4 (surfaces pleines, espacement,\n"
             "   rayons, mouvement, préférences d'accessibilité). Aucune autre feuille ne doit déclarer de jeton global. */\n")
     open(t, "w", encoding="utf-8").write(head + "".join(moved_txt) + "\n/* ══ Partie B ══ */\n" + old)

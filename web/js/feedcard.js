@@ -76,7 +76,7 @@ function dotOf(m) {
 /* 25/10 : corps de mail lisible — commentaires HTML/MSO, lignes vides en rafale, liens interminables
    (<https://…> → domaine), espaces insécables retirés. Le texte n'est pas réécrit, seulement nettoyé. */
 function tidyBody(t) {
-  /* 26/10 : balisage interne d'un cerveau gpt-oss (<|start|>…<|call|>) jamais affiché. */
+  /* 26/10 : balisage interne d'un cerveau (<|start|>…<|call|>) jamais affiché. */
   t = String(t || "").replace(/<\|start\|>[\s\S]*?<\|call\|>/g, " ").replace(/<\|[a-z_]+\|>/g, " ");
   let s = String(t || "");
   s = s.replace(/<!--[\s\S]*?-->/g, "").replace(/<!\[if[^\]]*\]>|<!\[endif\]>/gi, "");

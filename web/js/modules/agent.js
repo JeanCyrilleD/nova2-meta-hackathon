@@ -1192,7 +1192,7 @@ export async function mount(root, ctx) {
     const micBtn = h("button", { class: "btn icon cs-iconbtn cs-mic", type: "button", title: "Dicter (micro) — clique, parle, puis reclique ou Envoyer : le texte tombe dans le champ", "aria-label": "Dicter", "aria-pressed": "false", html: ic("mic", 17) });
     /* V4-D (24/10) — « Voir mon écran » : capture de la fenêtre active par le Témoin
        (GET /api/temoin/vision?explicit=1&image=1, image gardée en mémoire vive côté
-       moteur, jamais sur disque), jointe à ton PROCHAIN message : Claude la voit en
+       moteur, jamais sur disque), jointe à ton PROCHAIN message : le cerveau la voit en
        vision native ; un cerveau non multimodal le dit et n'a que le texte reconnu. */
     const screenBtn = h("button", { class: "btn icon cs-iconbtn", title: "Voir mon écran — joint la fenêtre active à ton prochain message (sur ton clic seulement)", "aria-label": "Voir mon écran", html: ic("look", 17), onclick: () => s.captureScreen() });
     const screenChipText = h("span", { class: "qtext" }, "");
