@@ -6,7 +6,7 @@
 
 📝 Model feedback for Meta (observed failures, mitigations, recommendations): [MODEL_FEEDBACK.md](MODEL_FEEDBACK.md)
 
-License: All rights reserved — see LICENSE (evaluation permitted).
+License: Apache License 2.0 — see LICENSE.
 
 Nova is a native macOS companion (Swift + a local web UI) for an analyst who writes sourced notes: it drafts
 context notes (BLUF, tagged evidence, scenarios, recommendations), reviews them with an open-weight
@@ -211,7 +211,7 @@ or `Config`.
 | Fraunces, Hanken Grotesk, Spline Sans Mono — `web/assets/fonts/` | SIL OFL 1.1 (licence files included) | fonts |
 
 Licence texts and copyright holders of the vendored files: `web/vendor/THIRD_PARTY_LICENSES.txt`. Nova's own code is
-under `LICENSE` (all rights reserved, evaluation permitted); these components keep their own licences.
+under the Apache License 2.0 (`LICENSE`); these components keep their own licences.
 
 ## 8b. Credits
 
